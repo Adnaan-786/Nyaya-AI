@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # =====================================================
 
     app_name: str = Field(default="NyayaAI Server")
-    app_env: Environment = Field(default=Environment.DEVELOPMENT)
+    environment: Environment = Field(default=Environment.DEVELOPMENT)
     debug: bool = Field(default=True)
 
     api_version: str = Field(default="v1")
@@ -53,15 +53,21 @@ class Settings(BaseSettings):
     # =====================================================
 
     redis_url: str
+    
 
     # =====================================================
     # Storage
     # =====================================================
 
-    s3_endpoint: str
-    s3_access_key: str
-    s3_secret_key: str
-    s3_bucket: str
+    minio_endpoint: str
+    minio_access_key: str
+    minio_secret_key: str
+    minio_bucket: str
+
+    # s3_endpoint: str
+    # s3_access_key: str
+    # s3_secret_key: str
+    # s3_bucket: str
 
     # =====================================================
     # External Services

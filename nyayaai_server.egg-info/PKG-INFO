@@ -12,6 +12,10 @@ Requires-Dist: python-multipart>=0.0.32
 Requires-Dist: sentry-sdk>=2.66.1
 Requires-Dist: structlog>=26.1.0
 Requires-Dist: uvicorn>=0.51.0
+Requires-Dist: sqlalchemy>=2.0.44
+Requires-Dist: asyncpg>=0.30.0
+Requires-Dist: alembic>=1.16.5
+Requires-Dist: greenlet>=3.2.4
 
 # NyayaAI Server
 

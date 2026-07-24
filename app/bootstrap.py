@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from app.core.logging import configure_logging, get_logger
 
 from app.config import get_settings
 from app.core.exceptions import AppException
@@ -12,6 +13,8 @@ from app.core.handlers import (
 from app.core.middleware import RequestContextMiddleware
 from app.api.router import api_router
 
+logger = get_logger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -20,16 +23,23 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
 
     # Startup
-    print(f"Starting {settings.app_name}...")
+    logger.info(
+        "Application starting",
+        app = settings.app_name,
+        environment = settings.environment.value
+    )
     yield
 
     # Shutdown
-    print("Shutting down application...")
+    logger.info("Application shutting down")
 
 def create_app() -> FastAPI:
     """
     Create and configure the FastAPI application.
     """
+    
+    configure_logging()
+    
     settings = get_settings()
 
     app = FastAPI(
