@@ -3,6 +3,7 @@ from typing import Any
 from app.core.constants import ErrorCode
 from app.core.responses import ApiResponse, ErrorResponse, Meta
 
+
 def success_response(
     data: Any = None,
     meta: Meta | None = None,

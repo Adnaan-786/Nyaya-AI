@@ -4,6 +4,7 @@ Version: 0.1.0
 Summary: Add your description here
 Requires-Python: >=3.12
 Description-Content-Type: text/markdown
+License-File: LICENSE
 Requires-Dist: fastapi>=0.139.2
 Requires-Dist: pydantic>=2.13.4
 Requires-Dist: pydantic-settings>=2.14.2
@@ -16,21 +17,8 @@ Requires-Dist: sqlalchemy>=2.0.44
 Requires-Dist: asyncpg>=0.30.0
 Requires-Dist: alembic>=1.16.5
 Requires-Dist: greenlet>=3.2.4
+Dynamic: license-file
 
-# NyayaAI Server
+<<<<<<< HEAD
+# Nyaya-AI
 
-Backend service for NyayaAI.
-
-## Tech Stack
-
-- Python 3.12
-- FastAPI
-- PostgreSQL
-- Redis
-- Celery
-- AWS S3
-- pgvector
-
-## Status
-
-Module M1 - In Progress

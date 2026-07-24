@@ -1,5 +1,7 @@
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
+
 from pydantic import BaseModel, ConfigDict, Field
+
 from app.core.constants import ErrorCode
 
 T = TypeVar("T")
@@ -48,7 +50,7 @@ class ErrorResponse(BaseModel):
     )
 
 
-class ApiResponse(BaseModel, Generic[T]):
+class ApiResponse[T](BaseModel):
     """
     Standard API response envelope.
     Every endpoint under /v1 must return this structure.

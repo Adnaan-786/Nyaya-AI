@@ -14,6 +14,7 @@ services:
 
     volumes:
       - .:/app
+      - venv_data:/app/.venv
 
 
     depends_on:
@@ -111,6 +112,7 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  venv_data:
 
 networks:
   nyayaai-network:

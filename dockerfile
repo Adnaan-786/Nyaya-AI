@@ -5,6 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Ensure logs appear immediately
 ENV PYTHONUNBUFFERED=1
+ENV UV_LINK_MODE=copy
 
 WORKDIR /app
 
@@ -26,4 +27,4 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD [".venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,5 +1,7 @@
 from typing import Any
+
 from app.core.constants import ErrorCode
+
 
 class AppException(Exception):
     """
@@ -132,7 +134,11 @@ class CNRInvalidException(AppException):
 
 
 class UpgradeRequiredException(AppException):
-    def __init__(self, message: str="App version below minimum", details: dict[str, Any]|None = None):
+    def __init__(
+        self, 
+        message: str="App version below minimum", 
+        details: dict[str, Any]|None = None
+    ):
         super().__init__(
             message=message,
             code=ErrorCode.UPGRADE_REQUIRED,
@@ -163,7 +169,11 @@ class InternalErrorException(AppException):
 
 
 class UpstreamUnavailableException(AppException):
-    def __init__(self, message: str="Service temporarily unavailable", details: dict[str, Any]|None = None):
+    def __init__(
+        self, 
+        message: str="Service temporarily unavailable", 
+        details: dict[str, Any]|None = None
+    ):
         super().__init__(
             message=message,
             code=ErrorCode.UPSTREAM_UNAVAILABLE,

@@ -1,17 +1,18 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from app.core.logging import configure_logging, get_logger
 
+from app.api.router import api_router
 from app.config import get_settings
 from app.core.exceptions import AppException
 from app.core.handlers import (
     app_exception_handler,
-    validation_exception_handler,
     unhandled_exception_handler,
+    validation_exception_handler,
 )
+from app.core.logging import configure_logging, get_logger
 from app.core.middleware import RequestContextMiddleware
-from app.api.router import api_router
 
 logger = get_logger(__name__)
 

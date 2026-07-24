@@ -1,5 +1,6 @@
 from enum import StrEnum
 
+
 class ErrorCode(StrEnum):
     VALIDATION_ERROR = "VALIDATION_ERROR"
     UNAUTHENTICATED = "UNAUTHENTICATED"
