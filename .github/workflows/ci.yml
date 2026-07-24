@@ -29,3 +29,12 @@ jobs:
 
       - name: Run Tests
         run: uv run pytest
+
+      - name: Start containers
+        run: docker compose up -d
+
+      - name: Wait
+        run: sleep 10
+
+      - name: Contract Test
+        run: uv run schemathesis run http://127.0.0.1:8000/openapi.json

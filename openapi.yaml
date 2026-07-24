@@ -1,0 +1,174 @@
+openapi: 3.1.0
+
+info:
+  title: NyayaAI Server
+  version: 1.0.0
+  description: |
+    Authoritative API contract for the NyayaAI Backend.
+
+servers:
+  - url: http://localhost:8000
+    description: Local Development
+
+tags:
+  - name: Health
+    description: Service health endpoints
+
+paths:
+  /v1/health:
+    get:
+      tags:
+        - Health
+      summary: Health Check
+      description: Returns the health status of the API.
+      operationId: healthCheck
+
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseHealth"
+
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+components:
+
+  schemas:
+
+    ApiResponseHealth:
+      type: object
+      required:
+        - success
+        - data
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+          type: object
+
+          properties:
+            status:
+              type: string
+              example: healthy
+
+            service:
+              type: string
+              example: NyayaAI Server
+
+            version:
+              type: string
+              example: "1.0.0"
+
+            environment:
+              type: string
+              example: development
+
+        error:
+          nullable: true
+
+        meta:
+          nullable: true
+
+    ErrorEnvelope:
+
+      type: object
+
+      required:
+        - success
+        - error
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        data:
+          nullable: true
+
+        error:
+          $ref: "#/components/schemas/ErrorResponse"
+
+        meta:
+          nullable: true
+
+    ErrorResponse:
+
+      type: object
+
+      required:
+        - code
+        - message
+
+      properties:
+
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+
+        message:
+          type: string
+          example: Validation failed
+
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    Meta:
+
+      type: object
+
+      required:
+        - page
+        - limit
+        - total
+
+      properties:
+
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 20
+
+        total:
+          type: integer
+          minimum: 0
+          example: 250
+
+    ErrorCode:
+
+      type: string
+
+      enum:
+        - VALIDATION_ERROR
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - QUOTA_EXCEEDED
+        - FORBIDDEN_ROLE
+        - CASE_NOT_FOUND
+        - CLIENT_NOT_FOUND
+        - DOCUMENT_NOT_FOUND
+        - USER_NOT_FOUND
+        - DUPLICATE_RESOURCE
+        - CNR_INVALID
+        - UPGRADE_REQUIRED
+        - RATE_LIMITED
+        - INTERNAL_ERROR
+        - UPSTREAM_UNAVAILABLE
