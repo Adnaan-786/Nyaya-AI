@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- B.11: mandatory, non-dismissible on every AI output surface. -->
+    <string name="ds_ai_disclaimer">AI-generated. Verify before relying on it in court.</string>
+
+    <string name="ds_hearing_today">Today</string>
+    <string name="ds_hearing_tomorrow">Tomorrow</string>
+    <string name="ds_hearing_in_days">in %1$d days</string>
+    <string name="ds_hearing_yesterday">Yesterday</string>
+    <string name="ds_hearing_days_ago">%1$d days ago</string>
+
+    <string name="ds_state_error_title">Something went wrong</string>
+    <string name="ds_state_retry">Try again</string>
+    <string name="ds_state_empty_title">Nothing here yet</string>
+</resources>

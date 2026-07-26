@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Placeholder brand colours so the launcher icon and splash have something to use.
+         The real token set is defined in core:designsystem in Sprint A2. -->
+    <color name="brand_navy">#16233B</color>
+    <color name="brand_ivory">#F6F2E8</color>
+</resources>

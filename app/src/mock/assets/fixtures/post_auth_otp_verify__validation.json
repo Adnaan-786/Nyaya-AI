@@ -1,0 +1,9 @@
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "That code is not correct. Please check and try again.",
+    "details": { "otp": "Incorrect or expired" }
+  }
+}

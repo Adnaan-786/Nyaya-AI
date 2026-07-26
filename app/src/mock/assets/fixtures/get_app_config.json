@@ -1,0 +1,12 @@
+{
+  "success": true,
+  "data": {
+    "min_supported_version": 1,
+    "latest_version": 1,
+    "feature_flags": { "researcher_enabled": true, "draftsman_enabled": true },
+    "status_banner": null,
+    "support_phone": "+919000000000",
+    "support_email": "support@nyayaai.in"
+  },
+  "error": null
+}

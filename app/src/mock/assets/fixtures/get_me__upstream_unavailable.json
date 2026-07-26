@@ -1,0 +1,5 @@
+{
+  "success": false,
+  "data": null,
+  "error": { "code": "UPSTREAM_UNAVAILABLE", "message": "eCourts is not responding.", "details": {} }
+}
