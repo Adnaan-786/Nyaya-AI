@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Staging flavor. Real staging is HTTPS; the one cleartext exception is 10.0.2.2, which
+  is the developer's own machine as seen from inside the emulator and can never resolve
+  to a real host. This is what lets the app run against a locally-hosted server before
+  staging is deployed. The prod flavor keeps the strict config from src/main.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

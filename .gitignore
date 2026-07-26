@@ -14,3 +14,11 @@ captures/
 google-services.json
 !app/src/mock/google-services.json
 /keystore.properties
+
+# Server
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.ruff_cache/

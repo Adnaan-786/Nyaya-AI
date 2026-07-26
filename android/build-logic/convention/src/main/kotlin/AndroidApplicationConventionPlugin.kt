@@ -47,7 +47,9 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                         buildConfigField(
                             "String",
                             "BASE_URL",
-                            "\"https://staging-api.nyayaai.in/v1/\"",
+                            // Local server during the build sprint; swaps to the deployed staging URL
+                            // the moment it exists. Nothing else about the flavor changes.
+                            "\"http://10.0.2.2:8000/v1/\"",
                         )
                         buildConfigField("boolean", "USE_FIXTURES", "false")
                         buildConfigField("String", "RAZORPAY_KEY_ID", "\"rzp_test_placeholder\"")
