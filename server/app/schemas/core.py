@@ -16,7 +16,7 @@ them inside the class body.
 import datetime as dt
 import uuid
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 CNR_LENGTH = 16
 
@@ -97,16 +97,15 @@ class CaseOut(BaseModel):
 
 
 class CnrLookupRequest(BaseModel):
-    cnr: str
+    """Length is deliberately **not** validated here.
 
-    @field_validator("cnr")
-    @classmethod
-    def check_length(cls, value: str) -> str:
-        cleaned = value.strip().upper().replace(" ", "")
-        if len(cleaned) != CNR_LENGTH:
-            # Surfaces as 422 CNR_INVALID, which the add-by-CNR field shows inline.
-            raise ValueError("CNR must be 16 characters.")
-        return cleaned
+    A Pydantic ValueError becomes a generic 400 VALIDATION_ERROR, but B.3 gives a bad
+    CNR its own code — 422 CNR_INVALID — and the app has a matching error type that
+    shows the message inline on the CNR field rather than as a toast. Validation
+    therefore happens in the router, which can raise the right code.
+    """
+
+    cnr: str
 
 
 class HearingCreate(BaseModel):

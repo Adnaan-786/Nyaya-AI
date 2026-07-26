@@ -10,16 +10,16 @@ import hashlib
 import secrets
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import Depends, Request
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import envelope
 from app.core.config import get_settings
 from app.core.db import get_session
-from app.core import envelope
 from app.models import User
 
 settings = get_settings()
@@ -37,7 +37,7 @@ class Principal:
 
 
 def create_access_token(user: User) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     claims: dict[str, Any] = {
         "sub": str(user.id),
         "tenant_id": str(user.tenant_id),
@@ -51,7 +51,7 @@ def create_access_token(user: User) -> str:
 def new_refresh_token() -> tuple[str, str, datetime]:
     """Returns (plaintext, hash, expiry). Only the hash is stored."""
     raw = secrets.token_urlsafe(48)
-    expiry = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_days)
+    expiry = datetime.now(UTC) + timedelta(days=settings.refresh_token_days)
     return raw, hash_token(raw), expiry
 
 

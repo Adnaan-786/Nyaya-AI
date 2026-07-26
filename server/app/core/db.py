@@ -1,15 +1,15 @@
 """Async engine, session factory, and the tenant-scoping helper."""
 
 from collections.abc import AsyncGenerator
-from typing import Any, TypeVar
+from typing import Any
 
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.core.config import get_settings
 # Import the package, not just the base module: this is what registers every
 # table on the metadata before create_all / Alembic autogenerate runs.
 import app.models  # noqa: F401
+from app.core.config import get_settings
 from app.models.base import Base
 
 settings = get_settings()
@@ -29,10 +29,7 @@ async def create_all() -> None:
         await conn.run_sync(Base.metadata.create_all)
 
 
-ModelT = TypeVar("ModelT")
-
-
-def scoped(model: type[ModelT], tenant_id: Any) -> Select:
+def scoped[ModelT](model: type[ModelT], tenant_id: Any) -> Select:
     """Every read of a tenant table must start here.
 
     Writing `select(Case)` directly is the bug that leaks firm A's cases to firm B.

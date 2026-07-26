@@ -9,7 +9,8 @@ The Android app parses exactly this shape and maps every code in `ApiError`, so 
 drift here is a client crash.
 """
 
-from typing import Any, Generic, TypeVar
+import logging
+from typing import Any
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -17,7 +18,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-T = TypeVar("T")
+logger = logging.getLogger(__name__)
 
 
 class PageMeta(BaseModel):
@@ -32,7 +33,7 @@ class ApiErrorBody(BaseModel):
     details: dict[str, Any] = {}
 
 
-class Envelope(BaseModel, Generic[T]):
+class Envelope[T](BaseModel):
     success: bool
     data: T | None = None
     error: ApiErrorBody | None = None
@@ -160,8 +161,10 @@ def install_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def _unhandled(_: Request, exc: Exception) -> JSONResponse:
-        # Never leak a stack trace to the client (C.3.2); Sentry gets the detail.
+    async def _unhandled(request: Request, exc: Exception) -> JSONResponse:
+        # Never leak a stack trace to the client (C.3.2) — but always log it in full,
+        # otherwise a 500 is undiagnosable from either side.
+        logger.exception("unhandled error on %s %s", request.method, request.url.path)
         return JSONResponse(
             status_code=500,
             content=fail("INTERNAL_ERROR", "Something went wrong on our side."),

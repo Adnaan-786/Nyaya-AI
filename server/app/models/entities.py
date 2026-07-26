@@ -7,10 +7,16 @@ Two conventions are load-bearing and are the same ones the Android client enforc
   `cases.next_hearing_date` and `invoices.due_date` are days on a cause list, not
   instants. Storing them as timestamps is what makes a hearing show up on the wrong
   day in any timezone behind UTC.
+
+
+The datetime import is qualified for the same reason as in the schemas: the columns
+genuinely named `date` and `time` would otherwise shadow the same-named types, and a
+shadowed annotation makes SQLAlchemy miss `Optional` and emit NOT NULL — which is how
+an optional hearing time becomes a required one.
 """
 
+import datetime as dt
 import uuid
-from datetime import date, datetime, time
 
 from sqlalchemy import (
     BigInteger,
@@ -25,7 +31,8 @@ from sqlalchemy import (
     Time,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PgUUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TenantScoped, Timestamped, UuidPk
@@ -80,9 +87,9 @@ class Case(UuidPk, TenantScoped, Timestamped, Base):
         PgUUID(as_uuid=True), ForeignKey("clients.id", ondelete="SET NULL")
     )
     # Calendar date. Never a timestamp — see the module docstring.
-    next_hearing_date: Mapped[date | None] = mapped_column(Date)
+    next_hearing_date: Mapped[dt.date | None] = mapped_column(Date)
     ecourts_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_synced_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     raw_ecourts: Mapped[dict | None] = mapped_column(JSONB)
 
 
@@ -103,8 +110,8 @@ class Hearing(UuidPk, TenantScoped, Timestamped, Base):
     case_id: Mapped[uuid.UUID] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("cases.id", ondelete="CASCADE"), nullable=False
     )
-    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    time: Mapped[time | None] = mapped_column(Time)
+    date: Mapped[dt.date] = mapped_column(Date, nullable=False, index=True)
+    time: Mapped[dt.time | None] = mapped_column(Time)
     purpose: Mapped[str | None] = mapped_column(String(300))
     courtroom: Mapped[str | None] = mapped_column(String(120))
     outcome_notes: Mapped[str | None] = mapped_column(Text)
@@ -150,7 +157,7 @@ class AiJob(UuidPk, TenantScoped, Timestamped, Base):
     result: Mapped[dict | None] = mapped_column(JSONB)
     error: Mapped[str | None] = mapped_column(Text)
     estimated_seconds: Mapped[int] = mapped_column(Integer, default=30, nullable=False)
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     conversation_id: Mapped[uuid.UUID | None] = mapped_column(PgUUID(as_uuid=True))
 
 
@@ -185,7 +192,7 @@ class Invoice(UuidPk, TenantScoped, Timestamped, Base):
     total_paise: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
     # draft | sent | paid | overdue (B.5)
     status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False)
-    due_date: Mapped[date | None] = mapped_column(Date)
+    due_date: Mapped[dt.date | None] = mapped_column(Date)
     pdf_key: Mapped[str | None] = mapped_column(String(500))
     payment_link: Mapped[str | None] = mapped_column(String(500))
 
@@ -202,7 +209,7 @@ class Payment(UuidPk, TenantScoped, Timestamped, Base):
     status: Mapped[str] = mapped_column(String(20), default="created", nullable=False)
     # B.10: an invoice is only marked paid once the server verifies the signature
     # AND the webhook lands. The app never decides this from its SDK result.
-    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    verified_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class TimeEntry(UuidPk, TenantScoped, Timestamped, Base):
@@ -214,13 +221,13 @@ class TimeEntry(UuidPk, TenantScoped, Timestamped, Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_seconds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     billable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     rate_paise: Mapped[int | None] = mapped_column(BigInteger)
     # Set when pulled into an invoice, so "import unbilled time" cannot double-bill.
-    invoiced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    invoiced_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Expense(UuidPk, TenantScoped, Timestamped, Base):
@@ -233,7 +240,7 @@ class Expense(UuidPk, TenantScoped, Timestamped, Base):
     amount_paise: Mapped[int] = mapped_column(BigInteger, nullable=False)
     category: Mapped[str | None] = mapped_column(String(80))
     receipt_document_id: Mapped[uuid.UUID | None] = mapped_column(PgUUID(as_uuid=True))
-    incurred_on: Mapped[date | None] = mapped_column(Date)
+    incurred_on: Mapped[dt.date | None] = mapped_column(Date)
 
 
 class Task(UuidPk, TenantScoped, Timestamped, Base):
@@ -246,7 +253,7 @@ class Task(UuidPk, TenantScoped, Timestamped, Base):
     assignee_id: Mapped[uuid.UUID | None] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )
-    due_date: Mapped[date | None] = mapped_column(Date)
+    due_date: Mapped[dt.date | None] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(20), default="open", nullable=False)
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
@@ -277,7 +284,7 @@ class Notification(UuidPk, TenantScoped, Timestamped, Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     deep_link: Mapped[str | None] = mapped_column(String(200))
     payload: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
-    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    read_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Device(UuidPk, TenantScoped, Timestamped, Base):
@@ -299,8 +306,8 @@ class OtpCode(UuidPk, Timestamped, Base):
 
     phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     code_hash: Mapped[str] = mapped_column(String(200), nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
 
@@ -311,9 +318,9 @@ class RefreshToken(UuidPk, Timestamped, Base):
         PgUUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     token_hash: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # B.4.4: rotation — the old token is invalidated the moment a new pair is issued.
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 # Full-text search over extracted document text (C.4 `ocr_text tsvector-indexed`).

@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 
-from app.api import auth
+from app.api import auth, calendar, cases, clients
 from app.core import envelope
 from app.core.config import get_settings
 from app.core.db import create_all
@@ -54,6 +54,9 @@ envelope.install_exception_handlers(app)
 
 v1 = APIRouter(prefix="/v1")
 v1.include_router(auth.router)
+v1.include_router(clients.router)
+v1.include_router(cases.router)
+v1.include_router(calendar.router)
 
 
 @v1.get("/health", tags=["ops"])

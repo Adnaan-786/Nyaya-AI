@@ -61,3 +61,44 @@ jobs:
             **/build/reports/detekt/
             **/build/reports/lint-results-*.html
           retention-days: 7
+
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: server
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: nyaya
+          POSTGRES_PASSWORD: nyaya
+          POSTGRES_DB: nyayaai
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://nyaya:nyaya@localhost:5432/nyayaai
+      FAKE_MODE: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: |
+          python -m venv .venv
+          ./.venv/bin/pip install -r requirements.txt
+
+      - name: Lint
+        run: ./.venv/bin/ruff check app tests
+
+      - name: Tests
+        run: ./.venv/bin/python -m pytest -q

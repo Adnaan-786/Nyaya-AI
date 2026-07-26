@@ -2,7 +2,7 @@
 
 import random
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
@@ -36,7 +36,7 @@ OTP_MAX_ATTEMPTS = 5
 @router.post("/auth/otp/request")
 async def request_otp(body: OtpRequest, session: AsyncSession = Depends(get_session)):
     """B.4.1: 6 digits, 5-minute validity, max 3/hour per phone."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     window_start = now - timedelta(hours=1)
 
     recent = await session.scalars(
@@ -62,7 +62,7 @@ async def request_otp(body: OtpRequest, session: AsyncSession = Depends(get_sess
 
 @router.post("/auth/otp/verify")
 async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get_session)):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     record = (
         await session.scalars(
             select(OtpCode)
@@ -123,7 +123,7 @@ async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get
 @router.post("/auth/refresh")
 async def refresh(body: RefreshRequest, session: AsyncSession = Depends(get_session)):
     """B.4.4: rotation. The presented token is revoked as the new pair is issued."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     token_hash = security.hash_token(body.refresh_token)
 
     record = (
