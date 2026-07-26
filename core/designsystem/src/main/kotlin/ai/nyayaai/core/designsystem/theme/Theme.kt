@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -50,18 +51,32 @@ fun NyayaTheme(
     val colorScheme = if (darkTheme) NyayaDarkColors else NyayaLightColors
     val semantic = if (darkTheme) DarkSemanticColors else LightSemanticColors
 
+    /*
+     * Font family is chosen by locale, not by string content.
+     *
+     * Compose resolves a FontFamily to one typeface and does no per-script fallback within
+     * it, so a single family has to cover everything a locale shows. Noto Sans Devanagari
+     * carries Latin too, which is what makes it the right choice for Hindi: "Aaj ki
+     * hearings", court names and CNR numbers all render from the same harmonised family
+     * instead of falling back to whatever Devanagari font the device happens to ship.
+     */
+    val locale = LocalConfiguration.current.locales[0]
+    val fontFamily = if (locale.language == HINDI_LANGUAGE) NotoSansDevanagari else NotoSans
+
     CompositionLocalProvider(
         LocalSpacing provides NyayaSpacing(),
         LocalSemanticColors provides semantic,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = NyayaTypography,
+            typography = nyayaTypography(fontFamily),
             shapes = NyayaShapes,
             content = content,
         )
     }
 }
+
+private const val HINDI_LANGUAGE = "hi"
 
 /** `NyayaTheme.spacing.md` alongside `MaterialTheme.colorScheme`. */
 object NyayaTheme {
