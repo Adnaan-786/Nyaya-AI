@@ -29,7 +29,9 @@ class Settings(BaseSettings):
     ecourts_api_key: str | None = None
     indiankanoon_api_key: str | None = None
     anthropic_api_key: str | None = None
-    llm_model: str = "claude-opus-4-6"
+    # Claude Opus 5 — the current flagship. Legal analysis is the product's
+    # differentiator, so this is not a place to economise on model choice.
+    llm_model: str = "claude-opus-5"
 
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"
