@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Only used for the window background before Compose takes over. All real theming
+         lives in core:designsystem. -->
+    <style name="Theme.NyayaAI.Starting" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/brand_ivory</item>
+    </style>
+</resources>

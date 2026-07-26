@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Production default: TLS only. The mock flavor overrides this file to permit cleartext to
+  the emulator host, which is what Prism and the local fixture server run on.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

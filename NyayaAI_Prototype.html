@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NyayaAI — Clickable Prototype</title>
+
+<!--
+  ============================================================
+  NyayaAI — investor / lawyer demo prototype
+  Everything on this page is FAKE and HARDCODED. No backend,
+  no network calls beyond the CDN libraries below, no storage.
+
+  DEMO SCRIPT (ideal click-through order, ~4 minutes):
+    1. Login        — type any phone number → Get OTP
+    2. OTP           — auto-fills → lands on Today dashboard
+    3. Today         — tap the bell (notifications), then tap
+                        "＋ Add Case" → paste any 16 chars as
+                        CNR → watch it fetch from eCourts
+    4. Case detail    — tap the first hearing card → flip
+                        through Overview / Hearings / Documents
+    5. AI Researcher — AI tab → Research Case Law → ask
+                        anything → see cited answer, tap a
+                        citation
+    6. AI Summarizer — AI tab → Summarize a Document →
+                        Chargesheet - Ramesh Kumar.pdf
+    7. Invoice        — More → Invoices & Payments → Preview
+                        client view
+    8. Client mode    — Pay ₹29,500 → pick a UPI app → success
+                        → Exit client preview to see the
+                        lawyer-side payment notification
+  ============================================================
+-->
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+:root{
+  --ink:#16233b;--ink-2:#0e1830;--ink-3:#243759;
+  --ivory:#f6f2e8;--paper:#fffdf7;--card:#fffefa;
+  --saffron:#e8861b;--saffron-d:#c96f0a;--saffron-t:#fdeeda;
+  --green:#1e7a4d;--green-t:#e3f2e9;
+  --red:#b3402f;--red-t:#f9e6e1;
+  --blue-t:#e8eef9;
+  --line:#e7e0d0;--muted:#847b69;--gold:#caa14a;
+  --white:#ffffff;
+  --surface-page:var(--ivory);--surface-card:var(--card);--surface-sunk:var(--paper);
+  --accent:var(--saffron);--accent-strong:var(--saffron-d);--accent-tint:var(--saffron-t);
+  --gold-accent:var(--gold);
+  --success:var(--green);--success-tint:var(--green-t);
+  --danger:var(--red);--danger-tint:var(--red-t);
+  --border:var(--line);
+  --font-serif:Georgia,'Times New Roman',serif;
+  --font-sans:-apple-system,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif;
+  --text-h2:16px;
+  --radius-md:14px;
+  --shadow-card:0 10px 24px rgba(22,35,59,.10);
+  --shadow-fab:0 10px 24px rgba(201,111,10,.45);
+  --shadow-crest:0 14px 34px rgba(201,111,10,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font-sans);
+  background:#0b0e14;
+  min-height:100vh;
+}
+.demo-stage{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;
+  background:radial-gradient(1200px 700px at 50% -10%,#232f4a 0%,#12161f 55%,#0b0e14 100%);
+}
+.kit-label{color:#8e97ab;font-family:var(--font-serif);text-align:center;font-size:15px}
+.kit-label b{color:#e9ddc0;font-size:19px;display:block;margin-bottom:3px}
+.phone{width:360px;height:800px;background:var(--ivory);border-radius:38px;border:10px solid #05070c;box-shadow:0 30px 80px rgba(0,0,0,.65);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.statusbar{height:34px;background:var(--ink);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:12px;font-weight:600;flex:none;font-family:var(--font-serif);letter-spacing:.3px}
+.screen{flex:1;overflow-y:auto;position:relative;-webkit-overflow-scrolling:touch}
+.screen-inner-wrap{height:100%}
+.screen-inner{padding:16px 16px 96px;animation:fadein .28s ease}
+.tight .screen-inner{padding-top:0}
+
+.appbar{background:var(--ink);color:#fff;padding:14px 16px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+.appbar h1{font-family:var(--font-serif);font-weight:600;font-size:19px;letter-spacing:.3px;margin:0}
+.appbar .sub{font-size:11px;color:#aeb8cd;margin-top:1px}
+.appbar .titlewrap{flex:1;min-width:0}
+.iconbtn{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12);border:0;color:#fff;font-size:16px;cursor:pointer;flex:none;position:relative;transition:transform .12s}
+.iconbtn.sm{width:32px;height:32px}
+.iconbtn:active{transform:scale(.9)}
+.badge{position:absolute;top:-4px;right:-4px;background:var(--saffron);color:#fff;font-size:9px;font-weight:800;border-radius:9px;min-width:16px;height:16px;line-height:16px;text-align:center;border:2px solid var(--ink);padding:0 3px}
+
+.tabs{display:flex;background:var(--surface-sunk);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:4}
+.tabs button{flex:1;background:none;border:0;padding:12px 2px;font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;font-family:var(--font-sans)}
+.tabs button.active{color:var(--ink);border-bottom-color:var(--saffron)}
+
+.card{background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-card);padding:14px;margin-bottom:12px}
+.card.pressable{cursor:pointer;transition:transform .1s}
+.card.pressable:active{transform:scale(.985)}
+.card.accent{border-left:4px solid var(--accent)}
+.card.inverse{background:linear-gradient(140deg,var(--ink),var(--ink-3));color:#fff;border:0}
+
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font-sans);transition:transform .08s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.saffron{background:linear-gradient(135deg,var(--saffron),var(--saffron-d));color:#fff;box-shadow:var(--shadow-fab)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.btn.half{width:auto;flex:1}
+.btn:disabled{opacity:.35;pointer-events:none}
+.btn-row{display:flex;gap:9px;margin-bottom:10px}
+
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.2px;font-family:var(--font-sans);border:0;cursor:default;flex-shrink:0;white-space:nowrap}
+.chip.today{background:var(--saffron-t);color:var(--saffron-d)}
+.chip.stage{background:var(--blue-t);color:var(--ink)}
+.chip.ok{background:var(--success-tint);color:var(--success)}
+.chip.err{background:var(--danger-tint);color:var(--danger)}
+.chip.plain{background:#efe9db;color:#6d6552}
+
+.shead{font-family:var(--font-serif);font-size:var(--text-h2);color:var(--ink);margin:18px 0 10px;display:flex;align-items:baseline;gap:8px}
+.shead small{font-family:var(--font-sans);font-size:11px;color:var(--muted);font-weight:600}
+
+.mrow{display:flex;align-items:center;gap:13px;background:var(--surface-card);border:1px solid var(--border);border-radius:13px;padding:14px;margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow-card);transition:transform .1s;width:100%;text-align:left}
+.mrow:active{transform:scale(.985)}
+.mrow .ic{font-size:20px;width:26px;text-align:center}
+.mrow .lb{font-weight:700;color:var(--ink);font-size:14px;flex:1}
+.mrow .tr{color:var(--muted)}
+
+.doc{display:flex;gap:12px;align-items:center;background:var(--surface-card);border:1px solid var(--border);border-radius:13px;padding:13px;margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow-card);transition:transform .1s;width:100%;text-align:left}
+.doc:active{transform:scale(.985)}
+.doc .ic{width:40px;height:46px;border-radius:8px;background:var(--danger-tint);color:var(--danger);font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none}
+.doc .meta{flex:1;min-width:0}
+.doc .name{font-size:13.5px;font-weight:700;color:var(--ink)}
+.doc .sub{font-size:11px;color:var(--muted);margin-top:3px}
+.doc .badge2{margin-left:auto;flex:none;display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--saffron-t);color:var(--saffron-d)}
+
+.nrow{display:flex;gap:11px;padding:12px 2px;border-bottom:1px solid var(--border)}
+.nrow:last-child{border-bottom:0}
+.nrow .ic{width:36px;height:36px;border-radius:11px;background:var(--saffron-t);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.nrow .t{font-size:13px;font-weight:700;color:var(--ink)}
+.nrow .m{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+.tl{position:relative;padding-left:22px;margin-bottom:16px}
+.tl .dot{position:absolute;left:6px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--saffron);border:2px solid #fff;box-shadow:0 0 0 1.5px var(--saffron)}
+.tl .line{position:absolute;left:9.5px;top:18px;bottom:-14px;width:2px;background:var(--border)}
+.tl .date{font-size:10.5px;font-weight:800;letter-spacing:.6px;color:var(--saffron-d);text-transform:uppercase}
+.tl .title{font-size:13.5px;color:var(--ink);font-weight:600;margin-top:2px}
+.tl .note{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45}
+
+.inv-line{display:flex;justify-content:space-between;font-size:13.5px;padding:9px 0;border-bottom:1px dashed var(--border);color:#3b382f}
+.inv-line b{color:var(--ink);text-align:right;max-width:60%}
+.inv-total{display:flex;justify-content:space-between;padding:12px 0 2px;font-size:16px;font-weight:800;color:var(--ink)}
+
+.bub{max-width:84%;padding:11px 14px;border-radius:16px;font-size:13.5px;line-height:1.55;margin-bottom:10px}
+.bub.user{background:var(--ink);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
+.bub.ai{background:#fff;border:1px solid var(--border);color:#2c2a24;border-bottom-left-radius:5px;box-shadow:var(--shadow-card)}
+.thinking-dots{display:inline-flex;gap:4px;padding:6px 4px}
+.thinking-dots i{width:7px;height:7px;border-radius:50%;background:#b9ad92;display:inline-block;animation:tpulse 1s infinite ease-in-out}
+.thinking-dots i:nth-child(2){animation-delay:.15s}
+.thinking-dots i:nth-child(3){animation-delay:.3s}
+
+.cite{background:var(--saffron-t);border:1px solid #f0d9b6;border-radius:11px;padding:9px 11px;margin-top:8px;cursor:pointer;transition:transform .1s}
+.cite:active{transform:scale(.98)}
+.cite .t{font-size:12.5px;font-weight:800;color:var(--ink)}
+.cite .s{font-size:11px;color:#8a6a33;margin-top:2px;line-height:1.4}
+
+.disc{background:#fbf4e6;border:1px dashed var(--gold);color:#7a6122;font-size:11px;padding:8px 11px;border-radius:10px;margin:10px 0;display:flex;gap:7px;line-height:1.45}
+
+.otps{display:flex;gap:8px;justify-content:space-between}
+.otps b{flex:1;height:52px;border-radius:12px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;font-weight:400;animation:popin .25s}
+.otps b.filled{background:rgba(232,134,27,.18);border-color:var(--saffron)}
+
+.role{border:1.5px solid var(--border);border-radius:14px;padding:14px;background:#fff;margin-bottom:11px;cursor:pointer;display:flex;gap:12px;align-items:center;transition:transform .1s}
+.role:active{transform:scale(.98)}
+.role.sel{border-color:var(--saffron);background:var(--saffron-t)}
+.role .ic{font-size:24px}
+.role .t{font-weight:800;color:var(--ink);font-size:14.5px}
+.role .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+.search{display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:12px;color:var(--muted);font-size:14px}
+.fchips{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field input,.field textarea{width:100%;border:1.5px solid var(--border);background:#fff;border-radius:12px;padding:13px;font-size:15px;font-family:var(--font-sans);outline:0;box-sizing:border-box}
+.field .hint{font-size:11px;color:var(--muted);margin-top:5px}
+
+#nav{position:absolute;bottom:0;left:0;right:0;background:var(--surface-sunk);border-top:1px solid var(--border);display:flex;padding:6px 4px 10px;z-index:6}
+#nav button{flex:1;background:none;border:0;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;padding:5px 0;border-radius:10px;font-family:var(--font-sans)}
+#nav button.active{color:var(--ink)}
+#nav button span{display:block;font-size:19px;margin-bottom:2px;opacity:.55;filter:grayscale(1)}
+#nav button.active span{opacity:1;filter:none}
+
+.fab{position:absolute;right:16px;bottom:86px;background:linear-gradient(135deg,var(--saffron),var(--saffron-d));color:#fff;border:0;border-radius:16px;padding:14px 18px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-fab);z-index:7;font-family:var(--font-sans);transition:transform .1s}
+.fab:active{transform:scale(.94)}
+
+#toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:82%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.scrim{position:absolute;inset:0;background:rgba(14,20,36,.5);opacity:0;pointer-events:none;transition:.25s;z-index:40}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface-sunk);border-radius:22px 22px 0 0;transform:translateY(105%);transition:.3s cubic-bezier(.2,.8,.25,1);z-index:50;padding:10px 18px 26px;max-height:80%;overflow-y:auto}
+.sheet.show{transform:none}
+.sheet .grabber{width:40px;height:4px;border-radius:4px;background:var(--border);margin:6px auto 14px}
+.sheet h2{font-family:var(--font-serif);font-size:18px;color:var(--ink);margin:0 0 4px}
+.sheet .subtitle{font-size:12px;color:var(--muted);margin-bottom:14px}
+
+.spinner{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--saffron);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+.spinner.lg{width:38px;height:38px;border-width:4px}
+.loadwrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px 20px;color:var(--muted);font-size:13px;font-weight:600}
+
+.pbar{height:8px;background:#ece5d4;border-radius:99px;overflow:hidden}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--saffron),var(--gold));border-radius:99px;transition:width .5s ease}
+
+.cal{background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-card);padding:14px}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cal-head b{font-family:var(--font-serif);font-size:16px;color:var(--ink)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.cal-dow{font-size:9.5px;font-weight:800;color:var(--muted);padding:4px 0;letter-spacing:.5px}
+.cal-day{position:relative;padding:8px 0 12px;font-size:12.5px;border-radius:9px;cursor:pointer;font-weight:600;color:#4b473c;border:0;background:transparent;font-family:var(--font-sans)}
+.cal-day.today{background:var(--ink);color:#fff}
+.cal-day.sel:not(.today){outline:2px solid var(--saffron)}
+.cal-day .dd{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--saffron)}
+
+.upi-row{display:flex;gap:12px;overflow-x:auto;padding:4px 0 6px}
+.upi-app{flex:none;width:66px;text-align:center;cursor:pointer;background:none;border:0;font-family:var(--font-sans)}
+.upi-app:active{transform:scale(.94)}
+.upi-app .ic{width:52px;height:52px;border-radius:14px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 5px}
+.upi-app .lb{font-size:10.5px;font-weight:700;color:var(--ink)}
+.check-ring{width:70px;height:70px;border-radius:50%;background:var(--success-tint);display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--success);margin:6px auto 0;animation:popin .4s}
+
+.plan-card{background:linear-gradient(140deg,var(--ink),var(--ink-3));color:#fff;border-radius:14px;padding:16px;margin-bottom:12px}
+.plan-card .eyebrow{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-accent);font-weight:800}
+.plan-card .plan-name{font-family:var(--font-serif);font-size:19px;margin-top:4px}
+.plan-card .usage{font-size:11.5px;color:#b9c2d6;margin-top:10px}
+.plan-card .track{height:7px;background:rgba(255,255,255,.18);border-radius:99px;margin-top:8px}
+.plan-card .track i{display:block;width:28%;height:100%;background:var(--saffron);border-radius:99px}
+
+.seg{display:flex;background:#efe9db;border-radius:12px;padding:3px;margin-bottom:6px}
+.seg button{flex:1;border:0;background:none;padding:9px 0;font-size:12.5px;font-weight:800;border-radius:9px;cursor:pointer;color:var(--muted);font-family:var(--font-sans)}
+.seg button.active{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+
+.tmpl{border:1.5px solid var(--border);border-radius:14px;padding:16px;background:#fff;margin-bottom:11px;cursor:pointer;transition:transform .1s}
+.tmpl:active{transform:scale(.98)}
+.tmpl .ic{font-size:22px;margin-bottom:6px}
+.tmpl .t{font-weight:800;color:var(--ink);font-size:14.5px;font-family:var(--font-serif)}
+.tmpl .s{font-size:11.5px;color:var(--muted);margin-top:3px}
+
+.notice-doc{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;font-family:var(--font-serif);font-size:12.5px;line-height:1.7;color:#2c2a24}
+.notice-doc h3{text-align:center;font-size:14px;letter-spacing:1px;margin:0 0 14px}
+
+.center{text-align:center}
+.muted{color:var(--muted)}
+
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes tpulse{0%,80%,100%{opacity:.35}40%{opacity:1}}
+@keyframes popin{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const {useState, useEffect, useRef} = React;
+
+/* ---------- demo data ---------- */
+const INITIAL_CASES = [
+  {id:'rk', title:'State vs. Ramesh Kumar', cnr:'DLND010045232026', court:'Saket District Court', judge:'Ms. Anita Verma', stage:'Evidence', client:'Ramesh Kumar', room:'Court Room 204', time:'10:30 AM', next:'Today · 10:30 AM', nextLong:'Today, 24 July 2026 · 10:30 AM', type:'Criminal · S.420 IPC / S.138 NI Act', day:24},
+  {id:'pm', title:'Priya Mehta vs. Sunrise Builders', cnr:'DLRERA00871822026', court:'RERA Delhi', judge:'Bench II', stage:'Arguments', client:'Priya Mehta', room:'Hall 3', time:'12:30 PM', next:'Today · 12:30 PM', nextLong:'Today, 24 July 2026 · 12:30 PM', type:'RERA · Delayed possession', day:24},
+  {id:'ks', title:'Kavita Singh vs. Anil Singh', cnr:'DLDW020033412026', court:'Family Court, Dwarka', judge:'Mr. R. S. Chauhan', stage:'Mediation', client:'Kavita Singh', room:'Mediation Cell 1', time:'3:00 PM', next:'Today · 3:00 PM', nextLong:'Today, 24 July 2026 · 3:00 PM', type:'Family · Maintenance u/s 125 CrPC', day:24},
+];
+
+const CITES = [
+  {t:'Rajesh Soni vs. Mukesh Verma', c:'Supreme Court · 2023', m:'Interim compensation u/s 143A is discretionary, not mandatory — reasons must be recorded.', body:'The Court held that while Section 143A empowers a Magistrate to direct interim compensation, the discretion must be exercised judicially. A blanket direction without recording reasons on the accused’s ability to pay and the complainant’s prima facie case is liable to be set aside.'},
+  {t:'G. J. Raja vs. Tejraj Surana', c:'Supreme Court · 2019', m:'S.143A is prospective; applies only to complaints filed after the 2018 amendment.', body:'A three-judge bench clarified that Section 143A, introduced by the 2018 amendment to the Negotiable Instruments Act, cannot be applied retrospectively to complaints instituted before the amendment came into force on 01.09.2018.'},
+  {t:'P. Mohanraj vs. Shah Brothers Ispat', c:'Supreme Court · 2021', m:'Clarifies the scope of S.138 proceedings — quasi-criminal in nature.', body:'The Court characterised Section 138 proceedings as a hybrid, quasi-criminal remedy aimed primarily at compensating the payee, distinguishing it from ordinary criminal prosecution for the purpose of moratorium under the IBC.'},
+];
+
+const NOTIFS = [
+  {ic:'📅', t:'Hearing in 5 days — State vs. Suresh Gupta', m:'29 July · Tis Hazari · CR-118 · Taiyari abhi se shuru kar dein.'},
+  {ic:'⚖️', t:'eCourts update — Priya Mehta vs. Sunrise Builders', m:'Stage changed to Arguments. Next date confirmed by RERA Delhi.'},
+];
+
+const DOCS = [
+  {label:'Chargesheet - Ramesh Kumar.pdf', meta:'Chargesheet · 42 pages · Searchable ✓', badge:null, key:'chargesheet'},
+  {label:'Order 28-May — Charge framed.pdf', meta:'Court order · 3 pages · Searchable ✓', badge:null, key:'order'},
+  {label:'Cheque + return memo (scan).pdf', meta:'Evidence · 2 pages · OCR pending…', badge:null, key:'evidence'},
+];
+
+const TEMPLATES = [
+  {key:'bail', ic:'🔓', t:'Bail Application', s:'Regular / anticipatory bail — S.437, S.438 CrPC'},
+  {key:'notice138', ic:'📩', t:'Legal Notice — S.138', s:'Cheque dishonour demand notice, NI Act 1881'},
+  {key:'rent', ic:'🏠', t:'Rent Agreement', s:'11-month leave & licence, standard clauses'},
+];
+
+const CNR_PREVIEW = {
+  title:'State vs. Suresh Gupta',
+  court:'Tis Hazari Court',
+  judge:'Mr. D.K. Malhotra',
+  stage:'Charge',
+  nextIn:'in 5 days',
+  cnr:'DLTH030098762026',
+};
+
+/* ---------- small primitives ---------- */
+function Toast({msg}){
+  return <div id="toast" className={msg ? 'show' : ''}>{msg}</div>;
+}
+function Sheet({open, onClose, children}){
+  return (
+    <React.Fragment>
+      <div className={'scrim' + (open ? ' show' : '')} onClick={onClose}></div>
+      <div className={'sheet' + (open ? ' show' : '')}>
+        <div className="grabber"></div>
+        {children}
+      </div>
+    </React.Fragment>
+  );
+}
+function AppBar({title, subtitle, backable, onBack, bell, bellCount, onBell}){
+  return (
+    <div className="appbar">
+      {backable && <button className="iconbtn sm" onClick={onBack}>‹</button>}
+      <div className="titlewrap">
+        <h1>{title}</h1>
+        {subtitle && <div className="sub">{subtitle}</div>}
+      </div>
+      {bell && (
+        <button className="iconbtn" onClick={onBell}>
+          🔔
+          {bellCount != null && <span className="badge">{bellCount}</span>}
+        </button>
+      )}
+    </div>
+  );
+}
+function TabBar({tabs, active, onChange}){
+  return (
+    <div className="tabs">
+      {tabs.map(t => (
+        <button key={t.key} className={active === t.key ? 'active' : ''} onClick={() => onChange(t.key)}>{t.label}</button>
+      ))}
+    </div>
+  );
+}
+function Card({children, accent, inverse, onClick, style}){
+  return (
+    <div className={'card' + (onClick ? ' pressable' : '') + (accent ? ' accent' : '') + (inverse ? ' inverse' : '')} onClick={onClick} style={style}>
+      {children}
+    </div>
+  );
+}
+function Btn({children, variant='primary', full=true, disabled, onClick, style}){
+  return (
+    <button className={'btn ' + variant + (full ? '' : ' half')} disabled={disabled} onClick={onClick} style={style}>{children}</button>
+  );
+}
+function Chip({children, tone='plain'}){ return <span className={'chip ' + tone}>{children}</span>; }
+function SectionHeader({title, hint}){
+  return <div className="shead">{title}{hint && <small>{hint}</small>}</div>;
+}
+function MenuRow({icon, label, onClick, trailing='›'}){
+  return (
+    <button className="mrow" onClick={onClick}>
+      <span className="ic">{icon}</span><span className="lb">{label}</span><span className="tr">{trailing}</span>
+    </button>
+  );
+}
+function DocRow({label, meta, badge, onClick}){
+  return (
+    <button className="doc" onClick={onClick}>
+      <span className="ic">PDF</span>
+      <span className="meta"><div className="name">{label}</div><div className="sub">{meta}</div></span>
+      {badge && <span className="badge2">{badge}</span>}
+    </button>
+  );
+}
+function NotifRow({icon, title, message}){
+  return (
+    <div className="nrow">
+      <div className="ic">{icon}</div>
+      <div><div className="t">{title}</div><div className="m">{message}</div></div>
+    </div>
+  );
+}
+function TimelineItem({date, title, note, last}){
+  return (
+    <div className="tl">
+      <div className="dot"></div>
+      {!last && <div className="line"></div>}
+      <div className="date">{date}</div>
+      <div className="title">{title}</div>
+      {note && <div className="note">{note}</div>}
+    </div>
+  );
+}
+function Timeline({items}){
+  return <div>{items.map((it,i) => <TimelineItem key={i} {...it} last={i===items.length-1} />)}</div>;
+}
+function Disclaimer({children}){
+  return <div className="disc"><span>⚖️</span><span>{children}</span></div>;
+}
+function ProgressBar({percent}){
+  return <div className="pbar"><i style={{width:percent+'%'}}></i></div>;
+}
+function ChatBubble({from='ai', thinking, children}){
+  if (thinking) return <div className="bub ai"><span className="thinking-dots"><i></i><i></i><i></i></span></div>;
+  return <div className={'bub ' + (from==='user' ? 'user' : 'ai')}>{children}</div>;
+}
+function CitationCard({title, source, note, onClick}){
+  return (
+    <div className="cite" onClick={onClick}>
+      <div className="t">📖 {title}</div>
+      <div className="s">{source} — {note}</div>
+    </div>
+  );
+}
+function OtpInput({digits, length=6}){
+  const cells = Array.from({length}, (_,i) => digits[i] || '');
+  return <div className="otps">{cells.map((d,i) => <b key={i} className={d ? 'filled' : ''}>{d}</b>)}</div>;
+}
+function RoleCard({icon, title, subtitle, selected, onClick}){
+  return (
+    <div className={'role' + (selected ? ' sel' : '')} onClick={onClick}>
+      <span className="ic">{icon}</span>
+      <div><div className="t">{title}</div><div className="s">{subtitle}</div></div>
+    </div>
+  );
+}
+function SearchBar({placeholder='Search…', onClick}){
+  return <div className="search" onClick={onClick}>🔍<span>{placeholder}</span></div>;
+}
+function TextField({label, value, onChange, placeholder, hint, multiline}){
+  const Tag = multiline ? 'textarea' : 'input';
+  return (
+    <div className="field">
+      {label && <label>{label}</label>}
+      <Tag value={value} placeholder={placeholder} onChange={onChange} rows={multiline ? 4 : undefined}></Tag>
+      {hint && <div className="hint">{hint}</div>}
+    </div>
+  );
+}
+function CalendarGrid({month, daysInMonth, today, selected, dots, onSelect}){
+  const dows = ['S','M','T','W','T','F','S'];
+  const days = Array.from({length:daysInMonth}, (_,i) => i+1);
+  return (
+    <div className="cal">
+      <div className="cal-head"><b>{month}</b></div>
+      <div className="cal-grid">
+        {dows.map((d,i) => <span key={'d'+i} className="cal-dow">{d}</span>)}
+        {days.map(d => (
+          <button key={d} className={'cal-day' + (d===today ? ' today' : '') + (d===selected ? ' sel' : '')} onClick={() => onSelect(d)}>
+            {d}{dots[d] && <i className="dd"></i>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+function Fab({children, onClick}){ return <button className="fab" onClick={onClick}>{children}</button>; }
+
+/* ---------- login / otp / onboarding ---------- */
+function LoginScreen({onSubmit}){
+  const [phone, setPhone] = useState('');
+  const digits = phone.replace(/\D/g,'');
+  return (
+    <div style={{minHeight:'100%', background:'linear-gradient(170deg,var(--ink) 0%,var(--ink-2) 62%,#0a1122 100%)', color:'#fff', display:'flex', flexDirection:'column', padding:'34px 26px'}}>
+      <div style={{width:64, height:64, borderRadius:18, background:'linear-gradient(135deg,var(--saffron),var(--saffron-d))', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--font-serif)', fontSize:30, boxShadow:'var(--shadow-crest)', marginBottom:22}}>§</div>
+      <div style={{fontFamily:'var(--font-serif)', fontSize:34, fontWeight:600, letterSpacing:.5}}>Nyaya<span style={{color:'var(--saffron)'}}>AI</span></div>
+      <div style={{color:'#b9c2d6', fontSize:13.5, margin:'10px 0 4px', lineHeight:1.6}}>Your practice. Your assistant.<br/>Cases, courts, drafting aur AI — ek hi app mein.</div>
+      <div style={{fontSize:12, color:'var(--gold-accent)', letterSpacing:.4}}>वकीलों के लिए · Built for Indian lawyers</div>
+      <div style={{marginTop:'auto', background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.12)', borderRadius:18, padding:18}}>
+        <label style={{fontSize:10.5, fontWeight:800, letterSpacing:1, textTransform:'uppercase', color:'#93a0ba', display:'block', marginBottom:8}}>Login with mobile number</label>
+        <div style={{display:'flex', alignItems:'center', gap:9, background:'rgba(255,255,255,.1)', border:'1.5px solid rgba(255,255,255,.18)', borderRadius:12, padding:'12px 14px'}}>
+          <b style={{color:'var(--gold-accent)', fontSize:15}}>+91</b>
+          <input value={phone} onChange={e=>setPhone(e.target.value)} maxLength={10} placeholder="98123 45678" style={{flex:1, background:'none', border:0, outline:0, color:'#fff', fontSize:16, letterSpacing:1, fontFamily:'var(--font-sans)'}} />
+        </div>
+        <div style={{height:12}}></div>
+        <Btn variant="saffron" disabled={digits.length < 10} onClick={()=>onSubmit(phone)}>Get OTP</Btn>
+        <div style={{fontSize:11, color:'#93a0ba', textAlign:'center', marginTop:10}}>Demo: any 10-digit number works</div>
+      </div>
+    </div>
+  );
+}
+function OtpScreen({phone, onVerify, onBack}){
+  const [digits, setDigits] = useState('');
+  useEffect(() => {
+    const full = '482916';
+    let i = 0;
+    const iv = setInterval(() => {
+      i++;
+      setDigits(full.slice(0,i));
+      if (i>=6){ clearInterval(iv); setTimeout(onVerify, 700); }
+    }, 130);
+    return () => clearInterval(iv);
+  }, []);
+  return (
+    <div style={{minHeight:'100%', background:'linear-gradient(170deg,var(--ink) 0%,var(--ink-2) 62%,#0a1122 100%)', color:'#fff', display:'flex', flexDirection:'column', padding:'34px 26px'}}>
+      <button className="iconbtn sm" onClick={onBack} style={{alignSelf:'flex-start'}}>‹</button>
+      <div style={{marginTop:26}}>
+        <div style={{fontFamily:'var(--font-serif)', fontSize:26, fontWeight:600}}>Verify OTP</div>
+        <div style={{color:'#b9c2d6', fontSize:13.5, marginTop:10}}>Sent to +91 {phone || '98123 45678'}<br/><span style={{fontSize:12, color:'#7f8aa3'}}>Auto-detecting SMS…</span></div>
+      </div>
+      <div style={{height:26}}></div>
+      <OtpInput digits={digits} />
+      <div style={{marginTop:'auto', background:'rgba(255,255,255,.06)', border:'1px solid rgba(255,255,255,.12)', borderRadius:18, padding:18}}>
+        <Btn variant="saffron" onClick={onVerify}>Verify &amp; Continue</Btn>
+        <div style={{fontSize:11, color:'#93a0ba', textAlign:'center', marginTop:10}}>Demo: OTP auto-fills — or tap Verify</div>
+      </div>
+    </div>
+  );
+}
+function OnboardScreen({onDone}){
+  const [role, setRole] = useState('solo');
+  return (
+    <div className="screen-inner">
+      <div style={{fontFamily:'var(--font-serif)', fontSize:24, color:'var(--ink)'}}>Welcome, Advocate.</div>
+      <div style={{fontSize:13, color:'var(--muted)', margin:'8px 0 20px'}}>Set up your practice in 10 seconds. Sab kuch baad mein badla ja sakta hai.</div>
+      <TextField label="Your name" value="Adv. Rajesh Sharma" onChange={()=>{}} />
+      <div style={{fontSize:11.5, fontWeight:800, letterSpacing:.6, textTransform:'uppercase', color:'var(--muted)', marginBottom:6}}>I practice as</div>
+      <RoleCard icon="⚖️" title="Solo Advocate" subtitle="Independent practice — full control" selected={role==='solo'} onClick={()=>setRole('solo')} />
+      <RoleCard icon="🏛️" title="Law Firm" subtitle="Team, interns aur shared cases" selected={role==='firm'} onClick={()=>setRole('firm')} />
+      <div style={{height:8}}></div>
+      <Btn variant="saffron" onClick={onDone}>Start Practicing Smarter →</Btn>
+    </div>
+  );
+}
+
+/* ---------- lawyer: today / cases / case detail ---------- */
+function TodayScreen({cases, onOpenCase, onBell, onAddCnr, onAskAi, onScanDoc, lang}){
+  const todays = cases.filter(c => c.day === 24);
+  const hi = lang === 'hi';
+  return (
+    <div>
+      <div style={{background:'linear-gradient(160deg,var(--ink) 0%,var(--ink-3) 100%)', color:'#fff', padding:'20px 16px 58px', position:'relative'}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+          <div>
+            <div style={{fontSize:11, letterSpacing:2, textTransform:'uppercase', color:'var(--gold-accent)', fontWeight:700}}>{hi ? 'शुक्रवार · 24 जुलाई 2026' : 'Friday · 24 July 2026'}</div>
+            <div style={{fontFamily:'var(--font-serif)', fontSize:24, fontWeight:600, marginTop:6}}>{hi ? `Aaj ki hearings — ${todays.length}` : `Today's hearings — ${todays.length}`}</div>
+            <div style={{fontSize:12.5, color:'#b9c2d6', marginTop:3}}>{hi ? 'Suprabhat, Adv. Rajesh Sharma' : 'Good morning, Adv. Rajesh Sharma'}</div>
+          </div>
+          <button className="iconbtn" onClick={onBell}>🔔<span className="badge">2</span></button>
+        </div>
+      </div>
+      <div style={{marginTop:-40, padding:'0 16px 96px'}}>
+        {todays.map((c,i) => (
+          <Card key={c.id} accent onClick={() => onOpenCase(c)}>
+            <div style={{fontFamily:'var(--font-serif)', fontSize:15.5, color:'var(--ink)', fontWeight:600}}>{c.title}</div>
+            <div style={{fontSize:12, color:'var(--muted)', marginTop:4}}>{c.court} · {c.room} · {c.judge}</div>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:9}}>
+              <Chip tone="stage">{c.stage}</Chip>
+              <span style={{fontSize:13, fontWeight:800, color:'var(--saffron-d)'}}>{c.time}</span>
+            </div>
+          </Card>
+        ))}
+        <div style={{display:'flex', gap:9, marginTop:14}}>
+          {[['➕','Add Case', onAddCnr], ['📄','Scan Doc', onScanDoc], ['✦','Ask AI', onAskAi]].map((q,i) => (
+            <button key={i} onClick={q[2]} style={{flex:1, background:'var(--card)', border:'1px solid var(--border)', borderRadius:13, padding:'12px 6px', boxShadow:'var(--shadow-card)', fontFamily:'var(--font-sans)', cursor:'pointer'}}>
+              <span style={{fontSize:20, display:'block', marginBottom:5}}>{q[0]}</span>
+              <span style={{fontSize:10.5, fontWeight:800, color:'var(--ink)'}}>{q[1]}</span>
+            </button>
+          ))}
+        </div>
+        <SectionHeader title="Tomorrow — 25 July" hint="1 hearing" />
+        <Card>
+          <div style={{display:'flex', justifyContent:'space-between'}}>
+            <div>
+              <div style={{fontFamily:'var(--font-serif)', fontWeight:600, color:'var(--ink)'}}>State vs. Mohit Verma</div>
+              <div style={{fontSize:11.5, color:'var(--muted)', marginTop:4}}>Karkardooma Court · CR-091 · bail hearing</div>
+            </div>
+            <Chip tone="plain">11:15 AM</Chip>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+function CasesScreen({cases, onOpenCase, onAddCnr}){
+  return (
+    <div>
+      <AppBar title="Cases" subtitle={`${cases.length} active · sorted by next hearing`} />
+      <div className="screen-inner">
+        <SearchBar placeholder="Search cases, clients, CNR…" />
+        <div className="fchips">
+          {['All','Criminal','Civil','Family','RERA','Disposed'].map((f,i) => <Chip key={f} tone={i===0 ? 'stage' : 'plain'}>{f}</Chip>)}
+        </div>
+        {cases.map(c => (
+          <Card key={c.id} onClick={() => onOpenCase(c)}>
+            <div style={{display:'flex', justifyContent:'space-between', gap:8}}>
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontFamily:'var(--font-serif)', fontSize:15, color:'var(--ink)', fontWeight:600}}>{c.title}</div>
+                <div style={{fontSize:11.5, color:'var(--muted)', marginTop:4}}>{c.court} · {c.judge}</div>
+                <div style={{fontSize:11.5, color:'#a39a85', marginTop:2}}>{c.type}</div>
+                <div style={{fontSize:10, color:'var(--success)', fontWeight:700, marginTop:7}}>⇄ Synced 2h ago · eCourts</div>
+              </div>
+              <div style={{textAlign:'right', flex:'none'}}>
+                <Chip tone="today">{c.next}</Chip>
+                <div style={{height:7}}></div>
+                <Chip tone="stage">{c.stage}</Chip>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+      <Fab onClick={onAddCnr}>＋ Add Case</Fab>
+    </div>
+  );
+}
+function CaseDetailScreen({curCase, onBack, onAskAi, onSync, onSummarize}){
+  const [tab, setTab] = useState('overview');
+  const c = curCase;
+  return (
+    <div>
+      <AppBar title={c.title} subtitle={'CNR ' + c.cnr} backable onBack={onBack} />
+      <TabBar tabs={[{key:'overview',label:'Overview'},{key:'hearings',label:'Hearings'},{key:'docs',label:'Documents'},{key:'notes',label:'Notes'}]} active={tab} onChange={setTab} />
+      <div className="screen-inner">
+        {tab === 'overview' && (
+          <React.Fragment>
+            <Card>
+              {[['Court', c.court],['Judge', c.judge],['Courtroom', c.room],['Stage', c.stage],['Client', c.client],['Matter', c.type]].map(r => (
+                <div key={r[0]} className="inv-line"><span>{r[0]}</span><b>{r[1]}</b></div>
+              ))}
+            </Card>
+            <Card inverse>
+              <div style={{fontSize:10.5, letterSpacing:1.5, textTransform:'uppercase', color:'var(--gold-accent)', fontWeight:800}}>Next hearing</div>
+              <div style={{fontFamily:'var(--font-serif)', fontSize:19, marginTop:6}}>{c.nextLong}</div>
+              <div style={{fontSize:12, color:'#b9c2d6', marginTop:4}}>{c.room} · Purpose: {c.stage === 'Evidence' ? 'PW-3 cross-examination' : 'Proceedings'}</div>
+            </Card>
+            <div style={{display:'flex', gap:9}}>
+              <Btn variant="ghost" full={false} onClick={onSync}>⇄ Sync now</Btn>
+              <Btn variant="primary" full={false} onClick={onAskAi}>✦ Ask AI</Btn>
+            </div>
+          </React.Fragment>
+        )}
+        {tab === 'hearings' && (
+          <React.Fragment>
+            <SectionHeader title="Upcoming" />
+            <Timeline items={[{date:c.nextLong, title: c.stage==='Evidence' ? 'PW-3 cross-examination' : 'Next proceedings', note: c.room + ' · ' + c.judge}]} />
+            <SectionHeader title="Past hearings" hint="from eCourts" />
+            <Timeline items={[
+              {date:'10 Jul 2026', title:'PW-2 examined', note:'Cross concluded; PW-3 summoned.'},
+              {date:'19 Jun 2026', title:'Evidence — PW-1', note:'IO deposition part-heard, adjourned.'},
+              {date:'28 May 2026', title:'Charge framed', note:'Accused pleaded not guilty; trial to commence.'},
+              {date:'02 May 2026', title:'Complaint registered', note:'Cognizance taken; summons issued.'},
+            ]} />
+          </React.Fragment>
+        )}
+        {tab === 'docs' && (
+          <React.Fragment>
+            <div className="fchips" style={{paddingBottom:12}}>
+              {['All','Chargesheets','Orders','Evidence'].map((f,i) => <Chip key={f} tone={i===0 ? 'stage' : 'plain'}>{f}</Chip>)}
+            </div>
+            {DOCS.map(d => <DocRow key={d.key} label={d.label} meta={d.meta} onClick={() => d.key==='chargesheet' ? onSummarize() : null} />)}
+          </React.Fragment>
+        )}
+        {tab === 'notes' && (
+          <React.Fragment>
+            <Card>
+              <div style={{fontSize:11, color:'var(--muted)', fontWeight:700}}>21 JULY · YOU</div>
+              <div style={{fontSize:13.5, color:'#33302a', marginTop:5, lineHeight:1.55}}>PW-3 is the bank manager — focus cross on signature verification register.</div>
+            </Card>
+            <Card>
+              <div style={{fontSize:11, color:'var(--muted)', fontWeight:700}}>14 JULY · INTERN (ANJALI)</div>
+              <div style={{fontSize:13.5, color:'#33302a', marginTop:5, lineHeight:1.55}}>Certified copy of return memo collected from bank.</div>
+            </Card>
+          </React.Fragment>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- add case by CNR (sheet) ---------- */
+function AddCnrSheet({open, onClose, onConfirm}){
+  const [stage, setStage] = useState('input'); // input | fetching | preview
+  const [cnr, setCnr] = useState('');
+  useEffect(() => { if (!open){ setStage('input'); setCnr(''); } }, [open]);
+  function fetchNow(){
+    setStage('fetching');
+    setTimeout(() => setStage('preview'), 2000);
+  }
+  return (
+    <Sheet open={open} onClose={onClose}>
+      {stage === 'input' && (
+        <React.Fragment>
+          <h2>Add case by CNR</h2>
+          <div className="subtitle">Paste the 16-character CNR number — we'll pull everything else from eCourts.</div>
+          <TextField label="CNR Number" value={cnr} placeholder="DLXXNNNNNNNNNNNN" onChange={e => setCnr(e.target.value.toUpperCase().slice(0,16))} hint={cnr.length + ' / 16 characters'} />
+          <Btn variant="saffron" disabled={cnr.length !== 16} onClick={fetchNow}>Fetch from eCourts</Btn>
+        </React.Fragment>
+      )}
+      {stage === 'fetching' && (
+        <div className="loadwrap">
+          <span className="spinner lg"></span>
+          <div>Fetching from eCourts…</div>
+        </div>
+      )}
+      {stage === 'preview' && (
+        <React.Fragment>
+          <h2>Case found ✓</h2>
+          <div className="subtitle">Confirm to add this case to your list.</div>
+          <Card>
+            <div style={{fontFamily:'var(--font-serif)', fontSize:16, color:'var(--ink)', fontWeight:600}}>{CNR_PREVIEW.title}</div>
+            <div style={{fontSize:11.5, color:'var(--muted)', marginTop:4}}>{CNR_PREVIEW.court} · Judge {CNR_PREVIEW.judge}</div>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:9}}>
+              <Chip tone="stage">Stage: {CNR_PREVIEW.stage}</Chip>
+              <span style={{fontSize:13, fontWeight:800, color:'var(--saffron-d)'}}>Next hearing {CNR_PREVIEW.nextIn}</span>
+            </div>
+          </Card>
+          <div className="btn-row">
+            <Btn variant="ghost" full={false} onClick={onClose}>Cancel</Btn>
+            <Btn variant="saffron" full={false} onClick={onConfirm}>Confirm &amp; Add</Btn>
+          </div>
+        </React.Fragment>
+      )}
+    </Sheet>
+  );
+}
+
+/* ---------- AI hub / researcher / summarizer / draftsman ---------- */
+function AiHubScreen({onResearch, onSummarizer, onDraftsman}){
+  return (
+    <div>
+      <AppBar title="AI Assistant" subtitle="Grounded on Indian Kanoon · 2.8 crore judgments" />
+      <div className="screen-inner">
+        <Disclaimer>AI-generated. Verify before relying on it in court.<br/><i>AI dwara nirmit — adalat mein upyog se pehle jaanch lein.</i></Disclaimer>
+        <MenuRow icon="✦" label="Research Case Law" onClick={onResearch} />
+        <MenuRow icon="📑" label="Summarize a Document" onClick={onSummarizer} />
+        <MenuRow icon="📝" label="Draft a Document" onClick={onDraftsman} />
+        <SectionHeader title="Recent AI results" />
+        <Card onClick={onResearch}>
+          <div style={{fontSize:13, fontWeight:700, color:'var(--ink)'}}>Research — S.138 interim compensation</div>
+          <div style={{fontSize:11.5, color:'var(--muted)', marginTop:2}}>3 verified citations · yesterday</div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+function ResearchScreen({onBack, onOpenCite}){
+  const [chat, setChat] = useState([]);
+  const [q, setQ] = useState('');
+  const endRef = useRef(null);
+  function ask(text){
+    const query = text || q || 'Section 138 mein interim compensation kab milta hai?';
+    setChat(c => [...c, {who:'user', text:query}, {who:'think'}]);
+    setQ('');
+    setTimeout(() => {
+      setChat(c => c.slice(0,-1).concat([{who:'ai'}]));
+    }, 1800);
+  }
+  useEffect(() => { endRef.current && endRef.current.scrollIntoView({behavior:'smooth'}); }, [chat]);
+  return (
+    <div>
+      <AppBar title="AI Researcher" subtitle="Cited answers only — no hallucinations" backable onBack={onBack} />
+      <div style={{padding:'14px 14px 150px'}}>
+        <Disclaimer>AI-generated. Verify before relying on it in court.</Disclaimer>
+        {chat.length === 0 && (
+          <div style={{textAlign:'center', padding:'46px 24px'}}>
+            <div style={{fontSize:38}}>✦</div>
+            <div style={{fontFamily:'var(--font-serif)', fontSize:18, color:'var(--ink)'}}>Case law, on demand.</div>
+          </div>
+        )}
+        {chat.map((m,i) => (
+          m.who === 'think' ? <ChatBubble key={i} thinking /> :
+          m.who === 'ai' ? (
+            <ChatBubble key={i} from="ai">
+              <b>Interim compensation under S.143A, NI Act</b> — the court may direct up to <b>20% of the cheque amount</b> as interim compensation once the accused pleads not guilty.
+              {CITES.map((c,j) => <CitationCard key={j} title={c.t} source={c.c} note={c.m} onClick={() => onOpenCite(c)} />)}
+            </ChatBubble>
+          ) : <ChatBubble key={i} from="user">{m.text}</ChatBubble>
+        ))}
+        <div ref={endRef}></div>
+      </div>
+      <div style={{position:'absolute', left:0, right:0, bottom:64, background:'var(--paper)', borderTop:'1px solid var(--border)', padding:'9px 12px'}}>
+        <div style={{display:'flex', gap:7, overflowX:'auto', paddingBottom:8}}>
+          {['S.138 mein interim compensation kab milta hai?', 'Anticipatory bail S.420 IPC — leading cases?', 'Rent agreement mein lock-in period likhna zaroori hai?'].map(text => (
+            <button key={text} onClick={() => ask(text)} style={{flex:'none', background:'#fff', border:'1px solid var(--border)', borderRadius:999, padding:'7px 12px', fontSize:11.5, color:'var(--ink)', fontWeight:600, fontFamily:'var(--font-sans)', cursor:'pointer'}}>{text}</button>
+          ))}
+        </div>
+        <div style={{display:'flex', gap:8}}>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask in Hinglish…" style={{flex:1, border:'1.5px solid var(--border)', borderRadius:999, padding:'11px 16px', fontSize:14, outline:0, fontFamily:'var(--font-sans)'}} />
+          <button onClick={() => ask()} style={{width:44, height:44, borderRadius:'50%', border:0, background:'var(--saffron)', color:'#fff', fontSize:17, cursor:'pointer'}}>➤</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+function CiteSheet({open, onClose, cite}){
+  if (!cite) return <Sheet open={open} onClose={onClose}></Sheet>;
+  return (
+    <Sheet open={open} onClose={onClose}>
+      <div style={{fontSize:10.5, fontWeight:800, letterSpacing:1, color:'var(--saffron-d)', textTransform:'uppercase'}}>Indian Kanoon · preview</div>
+      <h2>{cite.t}</h2>
+      <div className="subtitle">{cite.c}</div>
+      <div style={{fontSize:13, lineHeight:1.6, color:'#33302a', marginBottom:16}}>{cite.body}</div>
+      <Btn variant="ghost">🔗 Open full judgment on Indian Kanoon</Btn>
+    </Sheet>
+  );
+}
+function SummarizerScreen({onBack, onDoneFile}){
+  return (
+    <div>
+      <AppBar title="Summarize a Document" subtitle="Pick a file from this case" backable onBack={onBack} />
+      <div className="screen-inner">
+        <Disclaimer>AI-generated. Verify before relying on it in court.</Disclaimer>
+        <SectionHeader title="Chargesheet - Ramesh Kumar.pdf" hint="tap to summarize" />
+        {DOCS.map(d => <DocRow key={d.key} label={d.label} meta={d.meta} onClick={() => onDoneFile(d)} />)}
+      </div>
+    </div>
+  );
+}
+function SummarizingScreen(){
+  const stages = ['Reading document…', 'Running OCR…', 'Extracting sections…'];
+  const [i, setI] = useState(0);
+  const [pct, setPct] = useState(4);
+  useEffect(() => {
+    const t1 = setTimeout(()=>{setI(1); setPct(38);}, 1000);
+    const t2 = setTimeout(()=>{setI(2); setPct(72);}, 2000);
+    const t3 = setTimeout(()=>{setPct(100);}, 2900);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+  return (
+    <div className="screen-inner">
+      <div style={{textAlign:'center', padding:'60px 20px 20px'}}>
+        <span className="spinner lg"></span>
+        <div style={{fontFamily:'var(--font-serif)', fontSize:18, color:'var(--ink)', marginTop:18}}>{stages[i]}</div>
+        <div style={{margin:'18px 6px 0'}}><ProgressBar percent={pct} /></div>
+        <div style={{fontSize:11.5, color:'var(--muted)', marginTop:8}}>Chargesheet - Ramesh Kumar.pdf · 42 pages</div>
+      </div>
+    </div>
+  );
+}
+function SummaryResultScreen({onBack}){
+  return (
+    <div>
+      <AppBar title="Summary" subtitle="Chargesheet - Ramesh Kumar.pdf" backable onBack={onBack} />
+      <div className="screen-inner">
+        <Disclaimer>AI-generated. Verify before relying on it in court.<br/><i>AI dwara nirmit — adalat mein upyog se pehle jaanch lein.</i></Disclaimer>
+        <SectionHeader title="Case reference" />
+        <Card>
+          <div className="inv-line"><span>CNR</span><b>DLND010045232026</b></div>
+          <div className="inv-line"><span>Sections</span><b>S.420 IPC · S.138 NI Act, 1881</b></div>
+          <div className="inv-line"><span>Investigating officer</span><b>Insp. Vinod Rathi</b></div>
+        </Card>
+        <SectionHeader title="Key facts" />
+        <Card>
+          <div style={{fontSize:13, lineHeight:1.75}}>
+            • Cheque of ₹2,50,000 issued by accused dishonoured for "insufficient funds" on 10 July 2026.<br/>
+            • Statutory demand notice served on 12 July 2026; no payment within 15 days.<br/>
+            • Complaint filed under S.138 NI Act, clubbed with S.420 IPC on facts of inducement.
+          </div>
+        </Card>
+        <SectionHeader title="Witnesses (4)" />
+        <Card>
+          <div style={{fontSize:13, lineHeight:1.9}}>PW-1 Investigating Officer · PW-2 Complainant (Ramesh Kumar) · PW-3 Bank Manager, signature verification · PW-4 Independent witness to notice service</div>
+        </Card>
+        <SectionHeader title="Evidence relied upon" />
+        <Card>
+          <div style={{fontSize:13, lineHeight:1.9}}>Dishonoured cheque + bank return memo · Certified bank statement · Copy of statutory notice with postal tracking · Signature specimen register</div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+function DraftsmanScreen({onBack, onPick}){
+  return (
+    <div>
+      <AppBar title="Draft a Document" subtitle="Choose a template to get started" backable onBack={onBack} />
+      <div className="screen-inner">
+        <Disclaimer>AI-generated. Verify before relying on it in court.</Disclaimer>
+        {TEMPLATES.map(t => (
+          <div key={t.key} className="tmpl" onClick={() => onPick(t)}>
+            <div className="ic">{t.ic}</div>
+            <div className="t">{t.t}</div>
+            <div className="s">{t.s}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+function DraftFormScreen({onBack, onGenerate}){
+  const [f, setF] = useState({name:'Suresh Gupta', amount:'Rs. 2,50,000', date:'10 July 2026'});
+  return (
+    <div>
+      <AppBar title="Legal Notice — S.138" subtitle="Fill in the details" backable onBack={onBack} />
+      <div className="screen-inner">
+        <TextField label="Recipient name" value={f.name} onChange={e=>setF({...f,name:e.target.value})} />
+        <TextField label="Cheque amount" value={f.amount} onChange={e=>setF({...f,amount:e.target.value})} />
+        <TextField label="Cheque bounce date" value={f.date} onChange={e=>setF({...f,date:e.target.value})} />
+        <Btn variant="saffron" onClick={() => onGenerate(f)}>Generate Notice</Btn>
+      </div>
+    </div>
+  );
+}
+function GeneratingScreen(){
+  return (
+    <div className="loadwrap" style={{paddingTop:120}}>
+      <span className="spinner lg"></span>
+      <div>Drafting your legal notice…</div>
+    </div>
+  );
+}
+function DraftResultScreen({onBack, form, onShare}){
+  const f = form || {name:'Suresh Gupta', amount:'Rs. 2,50,000', date:'10 July 2026'};
+  return (
+    <div>
+      <AppBar title="Legal Notice" subtitle="Ready to send" backable onBack={onBack} />
+      <div className="screen-inner">
+        <Disclaimer>AI-generated. Verify before relying on it in court.</Disclaimer>
+        <div className="notice-doc">
+          <h3>LEGAL NOTICE</h3>
+          <p>To,<br/>{f.name}</p>
+          <p>Under instructions from and on behalf of my client, I hereby serve you this notice as follows:</p>
+          <p>That a cheque amounting to <b>{f.amount}</b> issued by you was presented for encashment and returned unpaid by the bank on <b>{f.date}</b> for reasons of "insufficient funds", thereby constituting an offence under <b>Section 138 of the Negotiable Instruments Act, 1881</b>.</p>
+          <p>You are hereby called upon to make payment of the said amount to my client within <b>15 days of receipt of this notice</b>, failing which my client shall be constrained to initiate criminal proceedings against you, at your risk, cost and consequences.</p>
+          <p style={{marginTop:18}}>Adv. Rajesh Sharma<br/>24 July 2026</p>
+        </div>
+        <div style={{height:14}}></div>
+        <Btn variant="saffron" onClick={onShare}>Share as DOCX</Btn>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- calendar / more / settings / invoice ---------- */
+function CalendarScreen({onOpenCase}){
+  const [sel, setSel] = useState(24);
+  const agenda = {
+    24: [['10:30 AM','State vs. Ramesh Kumar','Saket · CR-204 · PW-3 cross','rk'],['12:30 PM','Priya Mehta vs. Sunrise Builders','RERA Delhi · Hall 3','pm'],['3:00 PM','Kavita Singh vs. Anil Singh','Dwarka · Mediation Cell 1','ks']],
+    25: [['10:00 AM','State vs. Mohit Verma','Karkardooma · CR-091 · bail','']],
+    29: [['11:00 AM','State vs. Suresh Gupta','Tis Hazari · framing of charge','']],
+    31: [['2:00 PM','Priya Mehta vs. Sunrise Builders','RERA Delhi · arguments continued','pm']],
+  };
+  const ag = agenda[sel] || [];
+  return (
+    <div>
+      <AppBar title="Calendar" subtitle="July 2026 · 6 hearings this month" />
+      <div className="screen-inner">
+        <CalendarGrid month="July 2026" daysInMonth={31} today={24} selected={sel} dots={{24:true,25:true,29:true,31:true}} onSelect={setSel} />
+        <SectionHeader title={sel===24 ? 'Today — 24 July' : sel+' July'} hint={ag.length + ' hearing' + (ag.length!==1 ? 's' : '')} />
+        {ag.length ? ag.map((h,i) => (
+          <Card key={i} onClick={() => h[3] && onOpenCase(h[3])}>
+            <div style={{display:'flex', justifyContent:'space-between'}}>
+              <div>
+                <div style={{fontFamily:'var(--font-serif)', color:'var(--ink)', fontWeight:600}}>{h[1]}</div>
+                <div style={{fontSize:12, color:'var(--muted)'}}>{h[2]}</div>
+              </div>
+              <Chip tone="today">{h[0]}</Chip>
+            </div>
+          </Card>
+        )) : <div style={{textAlign:'center', padding:26, color:'var(--muted)', fontSize:12.5}}>Koi hearing nahi — a rare free day.</div>}
+      </div>
+    </div>
+  );
+}
+function MoreScreen({onInvoice, onClientMode, onSettings}){
+  return (
+    <div>
+      <AppBar title="More" subtitle="Sharma & Associates · Solo plan" />
+      <div className="screen-inner">
+        <div className="plan-card">
+          <div className="eyebrow">Current plan</div>
+          <div className="plan-name">Advocate · Rs 499/mo</div>
+          <div className="usage">AI usage — 14 of 50 this month</div>
+          <div className="track"><i></i></div>
+        </div>
+        <MenuRow icon="🧾" label="Invoices & Payments" onClick={onInvoice} />
+        <MenuRow icon="🔁" label="View as client (Ramesh Kumar)" onClick={onClientMode} />
+        <MenuRow icon="⚙️" label="Settings & Language" onClick={onSettings} />
+        <div style={{textAlign:'center', marginTop:16, fontSize:11, color:'var(--muted)'}}>NyayaAI v0.1 (prototype) · Data stays in India 🇮🇳 · DPDP-ready</div>
+      </div>
+    </div>
+  );
+}
+function SettingsScreen({onBack, lang, setLang, onSoon}){
+  return (
+    <div>
+      <AppBar title="Settings" subtitle="Plan, usage &amp; language" backable onBack={onBack} />
+      <div className="screen-inner">
+        <div className="plan-card">
+          <div className="eyebrow">Current plan</div>
+          <div className="plan-name">Advocate · Rs 499/mo</div>
+          <div className="usage">AI usage — 14 of 50 this month</div>
+          <div className="track"><i></i></div>
+        </div>
+        <Btn variant="ghost" onClick={onSoon}>Manage subscription</Btn>
+        <div style={{height:8}}></div>
+        <SectionHeader title="App language" hint="teaser only" />
+        <div className="seg">
+          <button className={lang==='en' ? 'active' : ''} onClick={() => setLang('en')}>English</button>
+          <button className={lang==='hi' ? 'active' : ''} onClick={() => setLang('hi')}>हिंदी</button>
+        </div>
+        <div style={{fontSize:11.5, color:'var(--muted)', lineHeight:1.6}}>Switching to Hindi swaps the Today dashboard headers as a preview — full translation coming in beta.</div>
+      </div>
+    </div>
+  );
+}
+function InvoiceScreen({paid, onBack, onPreview, onSend}){
+  return (
+    <div>
+      <AppBar title="INV-2026-0042" subtitle="State vs. Ramesh Kumar" backable onBack={onBack} />
+      <div className="screen-inner">
+        <Card>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+            <div>
+              <div style={{fontFamily:'var(--font-serif)', fontSize:17, color:'var(--ink)', fontWeight:600}}>Ramesh Kumar</div>
+              <div style={{fontSize:11.5, color:'var(--muted)'}}>Due 31 July 2026</div>
+            </div>
+            {paid ? <Chip tone="ok">✓ Paid</Chip> : <Chip tone="today">Sent</Chip>}
+          </div>
+          <div className="inv-line"><span>Court appearance × 4</span><b>Rs 16,000</b></div>
+          <div className="inv-line"><span>Drafting — reply &amp; notice</span><b>Rs 6,000</b></div>
+          <div className="inv-line"><span>Case research (AI-assisted)</span><b>Rs 3,000</b></div>
+          <div className="inv-line"><span>Subtotal</span><b>Rs 25,000</b></div>
+          <div className="inv-line"><span>GST @ 18%</span><b>Rs 4,500</b></div>
+          <div className="inv-total"><span>Total</span><span>Rs 29,500</span></div>
+        </Card>
+        <div className="btn-row">
+          <Btn variant="ghost" full={false}>Share PDF</Btn>
+          <Btn variant="primary" full={false} onClick={onSend}>Send to Client</Btn>
+        </div>
+        <Btn variant="saffron" onClick={onPreview}>👁 Preview client view</Btn>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- client mode ---------- */
+function ClientCasesScreen({onOpen}){
+  return (
+    <div>
+      <AppBar title="My Cases" subtitle="Namaste, Ramesh Kumar ji" />
+      <div className="screen-inner">
+        <Card accent onClick={onOpen}>
+          <div style={{fontFamily:'var(--font-serif)', fontSize:16, color:'var(--ink)', fontWeight:600}}>Your cheque-bounce case</div>
+          <div style={{fontSize:12, color:'var(--muted)', marginTop:4}}>State vs. Ramesh Kumar · Saket Court</div>
+          <div style={{display:'flex', justifyContent:'space-between', marginTop:9}}>
+            <Chip tone="stage">Witnesses being heard</Chip>
+            <span style={{fontSize:13, fontWeight:800, color:'var(--saffron-d)'}}>Next: Today 10:30 AM</span>
+          </div>
+        </Card>
+        <Card>
+          <div style={{fontSize:13, lineHeight:1.6, color:'#33302a'}}>💬 <b>What is happening?</b><br/>Aapke case mein abhi gawahon ke bayan chal rahe hain. Aaj bank manager se sawaal-jawaab honge.</div>
+        </Card>
+        <Btn variant="ghost" onClick={onOpen}>📞 Call your lawyer</Btn>
+      </div>
+    </div>
+  );
+}
+function ClientCaseStatusScreen({onBack}){
+  return (
+    <div>
+      <AppBar title="Case status" subtitle="State vs. Ramesh Kumar" backable onBack={onBack} />
+      <div className="screen-inner">
+        <Card inverse>
+          <div style={{fontSize:10.5, letterSpacing:1.5, textTransform:'uppercase', color:'var(--gold-accent)', fontWeight:800}}>Aapko kya karna hai</div>
+          <div style={{fontFamily:'var(--font-serif)', fontSize:17, marginTop:6}}>Aapko court aane ki zaroorat nahi hai</div>
+          <div style={{fontSize:12, color:'#b9c2d6', marginTop:4}}>Aapke wakeel aaj gawaah se sawaal-jawaab karenge.</div>
+        </Card>
+        <SectionHeader title="Case journey" />
+        <Timeline items={[
+          {date:'Today, 24 Jul', title:'Witness cross-examination', note:'PW-3, bank manager — in progress'},
+          {date:'10 Jul 2026', title:'Previous witness examined', note:'Cross concluded; next witness summoned.'},
+          {date:'28 May 2026', title:'Charge framed', note:'Aapne "not guilty" plea diya tha.'},
+          {date:'02 May 2026', title:'Case shuru hua', note:'Complaint darj hui; summons jaari hua.'},
+        ]} />
+      </div>
+    </div>
+  );
+}
+function ClientInvoicesScreen({paid, onPay}){
+  return (
+    <div>
+      <AppBar title="Invoices" subtitle="Ramesh Kumar" />
+      <div className="screen-inner">
+        <Card>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+            <div>
+              <div style={{fontFamily:'var(--font-serif)', fontSize:16, color:'var(--ink)', fontWeight:600}}>INV-2026-0042</div>
+              <div style={{fontSize:11.5, color:'var(--muted)'}}>Adv. Rajesh Sharma · Due 31 Jul 2026</div>
+            </div>
+            {paid ? <Chip tone="ok">✓ Paid</Chip> : <Chip tone="today">Due</Chip>}
+          </div>
+          <div className="inv-line"><span>Legal services (Jul 2026)</span><b>Rs 25,000</b></div>
+          <div className="inv-line"><span>GST @ 18%</span><b>Rs 4,500</b></div>
+          <div className="inv-total"><span>Total</span><span>Rs 29,500</span></div>
+        </Card>
+        {paid
+          ? <div style={{textAlign:'center', color:'var(--success)', fontSize:13, fontWeight:700}}>✓ Paid on 24 July 2026</div>
+          : <Btn variant="saffron" onClick={onPay}>Pay Rs 29,500</Btn>}
+      </div>
+    </div>
+  );
+}
+function ClientProfileScreen({onExit, onSoon}){
+  return (
+    <div>
+      <AppBar title="Profile" subtitle="Ramesh Kumar" />
+      <div className="screen-inner">
+        <Card>
+          <div style={{fontFamily:'var(--font-serif)', fontSize:17, color:'var(--ink)', fontWeight:600}}>Ramesh Kumar</div>
+          <div style={{fontSize:12, color:'var(--muted)', marginTop:4}}>+91 98123 45678 · 1 active case</div>
+        </Card>
+        <MenuRow icon="🔔" label="Notification preferences" onClick={onSoon} />
+        <MenuRow icon="🌐" label="Language · English" onClick={onSoon} />
+        <MenuRow icon="🔒" label="Privacy &amp; data" onClick={onSoon} />
+        <Btn variant="ghost" onClick={onExit}>↩ Exit client preview</Btn>
+      </div>
+    </div>
+  );
+}
+function UpiSheet({open, onClose, onSuccess}){
+  const [stage, setStage] = useState('pick'); // pick | processing | success
+  useEffect(() => { if (!open) setStage('pick'); }, [open]);
+  function pick(){
+    setStage('processing');
+    setTimeout(() => { setStage('success'); setTimeout(onSuccess, 1100); }, 2000);
+  }
+  return (
+    <Sheet open={open} onClose={stage==='pick' ? onClose : undefined}>
+      {stage === 'pick' && (
+        <React.Fragment>
+          <h2>Pay Rs 29,500</h2>
+          <div className="subtitle">Choose a UPI app</div>
+          <div className="upi-row">
+            {[['🟢','GPay'],['🟣','PhonePe'],['🔵','Paytm'],['⚪','BHIM']].map(a => (
+              <button key={a[1]} className="upi-app" onClick={pick}><span className="ic">{a[0]}</span><span className="lb">{a[1]}</span></button>
+            ))}
+          </div>
+        </React.Fragment>
+      )}
+      {stage === 'processing' && (
+        <div className="loadwrap"><span className="spinner lg"></span><div>Processing payment…</div></div>
+      )}
+      {stage === 'success' && (
+        <div className="loadwrap">
+          <div className="check-ring">✓</div>
+          <div style={{color:'var(--ink)', fontWeight:700}}>Payment successful</div>
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
+/* ---------- root app ---------- */
+function NyayaApp(){
+  const [view, setView] = useState('login');
+  const [phone, setPhone] = useState('');
+  const [cases, setCases] = useState(INITIAL_CASES);
+  const [curCase, setCurCase] = useState(null);
+  const [clientMode, setClientMode] = useState(false);
+  const [paid, setPaid] = useState(false);
+  const [toast, setToast] = useState('');
+  const [lang, setLang] = useState('en');
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [citeOpen, setCiteOpen] = useState(false);
+  const [cite, setCite] = useState(null);
+  const [addCnrOpen, setAddCnrOpen] = useState(false);
+  const [upiOpen, setUpiOpen] = useState(false);
+  const [draftForm, setDraftForm] = useState(null);
+  const [paymentNotifPending, setPaymentNotifPending] = useState(false);
+  const toastTimer = useRef(null);
+
+  function showToast(m){
+    setToast(m);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 2200);
+  }
+  function soon(){ showToast('Coming soon in beta'); }
+  function openCase(c){
+    const found = typeof c === 'string' ? cases.find(x => x.id === c) : c;
+    if (!found) return;
+    setCurCase(found);
+    setView('casedetail');
+  }
+  function confirmAddCnr(){
+    const newCase = {
+      id: 'sg2', title: CNR_PREVIEW.title, cnr: CNR_PREVIEW.cnr, court: CNR_PREVIEW.court,
+      judge: CNR_PREVIEW.judge, stage: CNR_PREVIEW.stage, client:'Suresh Gupta', room:'Court Room 5',
+      time:'11:00 AM', next:'29 Jul · 11:00 AM', nextLong:'Wednesday, 29 July 2026 · 11:00 AM',
+      type:'Criminal · S.138 NI Act', day:29,
+    };
+    setCases(cs => [newCase, ...cs]);
+    setAddCnrOpen(false);
+    showToast('Case added & synced');
+  }
+  function goClientMode(){
+    setClientMode(true);
+    setView('ccases');
+    showToast('Viewing as client');
+  }
+  function exitClientMode(){
+    setClientMode(false);
+    setView('today');
+    if (paymentNotifPending){
+      setPaymentNotifPending(false);
+      setTimeout(() => showToast('💰 Payment received — Ramesh Kumar paid Rs 29,500'), 400);
+    }
+  }
+  function onUpiSuccess(){
+    setPaid(true);
+    setUpiOpen(false);
+    setPaymentNotifPending(true);
+  }
+
+  const NAV_L = [['today','🏛️','Today'],['cases','🗂️','Cases'],['ai','✦','AI'],['cal','📅','Calendar'],['more','☰','More']];
+  const NAV_C = [['ccases','🗂️','My Cases'],['cinv','🧾','Invoices'],['cprof','👤','Profile']];
+  const hideNav = ['login','otp','onboard'].includes(view);
+  const navList = clientMode ? NAV_C : NAV_L;
+  const navActive = clientMode
+    ? view
+    : ['casedetail'].includes(view) ? 'cases'
+    : ['research','summarizer','summarizing','summary','draftsman','draftform','generating','draftresult'].includes(view) ? 'ai'
+    : ['invoice','settings'].includes(view) ? 'more'
+    : view;
+
+  let body = null;
+  if (view === 'login') body = <LoginScreen onSubmit={p => { setPhone(p); setView('otp'); }} />;
+  else if (view === 'otp') body = <OtpScreen phone={phone} onBack={() => setView('login')} onVerify={() => setView('onboard')} />;
+  else if (view === 'onboard') body = <OnboardScreen onDone={() => setView('today')} />;
+  else if (view === 'today') body = <TodayScreen cases={cases} onOpenCase={openCase} onBell={() => setNotifOpen(true)} onAddCnr={() => setAddCnrOpen(true)} onAskAi={() => setView('research')} onScanDoc={soon} lang={lang} />;
+  else if (view === 'cases') body = <CasesScreen cases={cases} onOpenCase={openCase} onAddCnr={() => setAddCnrOpen(true)} />;
+  else if (view === 'casedetail') body = <CaseDetailScreen curCase={curCase} onBack={() => setView('cases')} onAskAi={() => setView('research')} onSync={() => showToast('Synced just now')} onSummarize={() => setView('summarizing')} />;
+  else if (view === 'ai') body = <AiHubScreen onResearch={() => setView('research')} onSummarizer={() => setView('summarizer')} onDraftsman={() => setView('draftsman')} />;
+  else if (view === 'research') body = <ResearchScreen onBack={() => setView('ai')} onOpenCite={(c) => { setCite(c); setCiteOpen(true); }} />;
+  else if (view === 'summarizer') body = <SummarizerScreen onBack={() => setView('ai')} onDoneFile={(d) => d.key==='chargesheet' ? setView('summarizing') : soon()} />;
+  else if (view === 'summarizing') body = <SummarizingScreenWrap onDone={() => setView('summary')} />;
+  else if (view === 'summary') body = <SummaryResultScreen onBack={() => setView('ai')} />;
+  else if (view === 'draftsman') body = <DraftsmanScreen onBack={() => setView('ai')} onPick={(t) => t.key==='notice138' ? setView('draftform') : soon()} />;
+  else if (view === 'draftform') body = <DraftFormScreen onBack={() => setView('draftsman')} onGenerate={(f) => { setDraftForm(f); setView('generating'); }} />;
+  else if (view === 'generating') body = <GeneratingScreenWrap onDone={() => setView('draftresult')} />;
+  else if (view === 'draftresult') body = <DraftResultScreen onBack={() => setView('draftsman')} form={draftForm} onShare={() => showToast('Shared as DOCX')} />;
+  else if (view === 'cal') body = <CalendarScreen onOpenCase={openCase} />;
+  else if (view === 'more') body = <MoreScreen onInvoice={() => setView('invoice')} onClientMode={goClientMode} onSettings={() => setView('settings')} />;
+  else if (view === 'settings') body = <SettingsScreen onBack={() => setView('more')} lang={lang} setLang={setLang} onSoon={soon} />;
+  else if (view === 'invoice') body = <InvoiceScreen paid={paid} onBack={() => setView('more')} onPreview={goClientMode} onSend={() => showToast('Sent via WhatsApp + SMS')} />;
+  else if (view === 'ccases') body = <ClientCasesScreen onOpen={() => setView('cstatus')} />;
+  else if (view === 'cstatus') body = <ClientCaseStatusScreen onBack={() => setView('ccases')} />;
+  else if (view === 'cinv') body = <ClientInvoicesScreen paid={paid} onPay={() => setUpiOpen(true)} />;
+  else if (view === 'cprof') body = <ClientProfileScreen onExit={exitClientMode} onSoon={soon} />;
+
+  return (
+    <div className="demo-stage">
+      <div className="kit-label"><b>NyayaAI</b>Investor / lawyer demo — click through the phone</div>
+      <div className="phone">
+        <div className="statusbar"><span>NyayaAI</span><span>9:41</span></div>
+        <div className="screen">
+          <div key={view + (clientMode?'-c':'')} className="screen-inner-wrap">{body}</div>
+        </div>
+        {!hideNav && (
+          <div id="nav">
+            {navList.map(it => (
+              <button key={it[0]} className={navActive===it[0] ? 'active' : ''} onClick={() => setView(it[0])}>
+                <span>{it[1]}</span>{it[2]}
+              </button>
+            ))}
+          </div>
+        )}
+        <Toast msg={toast} />
+        <Sheet open={notifOpen} onClose={() => setNotifOpen(false)}>
+          <h2>Notifications</h2>
+          <div className="subtitle">2 new</div>
+          {NOTIFS.map((n,i) => <NotifRow key={i} icon={n.ic} title={n.t} message={n.m} />)}
+        </Sheet>
+        <CiteSheet open={citeOpen} onClose={() => setCiteOpen(false)} cite={cite} />
+        <AddCnrSheet open={addCnrOpen} onClose={() => setAddCnrOpen(false)} onConfirm={confirmAddCnr} />
+        <UpiSheet open={upiOpen} onClose={() => setUpiOpen(false)} onSuccess={onUpiSuccess} />
+      </div>
+    </div>
+  );
+}
+
+function SummarizingScreenWrap({onDone}){
+  useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, []);
+  return <SummarizingScreen />;
+}
+function GeneratingScreenWrap({onDone}){
+  useEffect(() => { const t = setTimeout(onDone, 2000); return () => clearTimeout(t); }, []);
+  return <GeneratingScreen />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<NyayaApp />);
+</script>
+</body>
+</html>

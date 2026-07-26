@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tone per D.4.3: respectful Hinglish where pure Hindi reads awkwardly. Needs a review
+  pass by a Hindi-speaking lawyer before release.
+-->
+<resources>
+    <string name="auth_title">साइन इन करें</string>
+    <string name="auth_phone_label">मोबाइल नंबर</string>
+    <string name="auth_phone_prefix">+91</string>
+    <string name="auth_phone_helper">हम आपको 6 अंकों का कोड भेजेंगे</string>
+    <string name="auth_get_otp">OTP भेजें</string>
+    <string name="auth_otp_title">कोड डालें</string>
+    <string name="auth_otp_sent_to">%1$s पर भेजा गया</string>
+    <string name="auth_otp_label">6 अंकों का कोड</string>
+    <string name="auth_verify">वेरिफाई करें</string>
+    <string name="auth_change_number">नंबर बदलें</string>
+    <string name="auth_signed_in_as">%1$s के रूप में साइन इन</string>
+    <string name="auth_sign_out">साइन आउट</string>
+</resources>

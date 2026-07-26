@@ -1,0 +1,9 @@
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many attempts. Try again in an hour.",
+    "details": { "retry_after_seconds": "3600" }
+  }
+}
