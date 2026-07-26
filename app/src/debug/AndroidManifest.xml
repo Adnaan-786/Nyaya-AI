@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!--
+          Debug-only launcher entry for the design-system gallery (A2 definition of done).
+          It gets its own icon so a reviewer can open it directly without a hidden gesture,
+          and it cannot ship: this manifest is merged into debug builds only.
+        -->
+        <activity
+            android:name="ai.nyayaai.app.debug.GalleryActivity"
+            android:exported="true"
+            android:label="@string/debug_gallery_label">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

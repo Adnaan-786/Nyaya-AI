@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tone per D.4.3: respectful Hinglish where pure Hindi reads awkwardly. Needs a review
+     pass by a Hindi-speaking lawyer before release. -->
+<resources>
+    <!-- B.11 specifies this Hindi wording exactly. Do not paraphrase it. -->
+    <string name="ds_ai_disclaimer">AI dwara nirmit. Adalat mein upyog se pehle jaanch lein.</string>
+
+    <string name="ds_hearing_today">Aaj</string>
+    <string name="ds_hearing_tomorrow">Kal</string>
+    <string name="ds_hearing_in_days">%1$d din mein</string>
+    <string name="ds_hearing_yesterday">Kal</string>
+    <string name="ds_hearing_days_ago">%1$d din pehle</string>
+
+    <string name="ds_state_error_title">कुछ गड़बड़ हो गई</string>
+    <string name="ds_state_retry">फिर कोशिश करें</string>
+    <string name="ds_state_empty_title">अभी यहाँ कुछ नहीं है</string>
+</resources>

@@ -11,6 +11,8 @@ android {
         applicationId = "ai.nyayaai"
         versionCode = 1
         versionName = "0.1.0"
+        // Hilt needs its own Application during instrumented tests.
+        testInstrumentationRunner = "ai.nyayaai.app.HiltTestRunner"
     }
 
     buildTypes {
@@ -58,4 +60,6 @@ dependencies {
 
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }

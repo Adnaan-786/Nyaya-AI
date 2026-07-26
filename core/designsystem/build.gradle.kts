@@ -8,7 +8,9 @@ android {
 }
 
 dependencies {
-    implementation(projects.core.common)
+    // `api`, not `implementation`: components take domain types (CourtDate, Paise) in their
+    // public signatures, so features must see them transitively.
+    api(projects.core.common)
     implementation(libs.androidx.core.ktx)
     api(libs.androidx.compose.material.icons.extended)
 }

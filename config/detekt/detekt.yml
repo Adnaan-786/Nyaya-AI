@@ -23,6 +23,9 @@ style:
     max: 4
   UnusedPrivateMember:
     active: true
+    # @Preview composables are invoked by the tooling, never by our code. Without this,
+    # every preview we add is a build failure — which would mean nobody adds previews.
+    ignoreAnnotated: ['Preview', 'PreviewLightDark', 'PreviewFontScale']
 
 naming:
   FunctionNaming:
