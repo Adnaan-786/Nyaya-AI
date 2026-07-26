@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import Page, get_scoped_or_404, paginate
 from app.core import envelope, security
 from app.core.db import get_session, scoped
+from app.core.india import today_in_india
 from app.integrations import ecourts
 from app.models import Case, CaseAssignee, CaseNote, Client, Document, Hearing
 from app.schemas.core import (
@@ -287,7 +288,7 @@ async def add_hearing(
     # Keep the denormalised next_hearing_date honest: the case list and Today screen
     # sort on it, so a manually added future hearing must move it.
     is_sooner = case.next_hearing_date is None or body.date < case.next_hearing_date
-    if is_sooner and body.date >= dt.date.today():
+    if is_sooner and body.date >= today_in_india():
         case.next_hearing_date = body.date
 
     await session.commit()

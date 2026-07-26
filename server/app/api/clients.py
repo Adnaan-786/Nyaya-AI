@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import Page, get_scoped_or_404, paginate
 from app.core import envelope, security
 from app.core.db import get_session, scoped
+from app.core.phone import normalise_phone
 from app.integrations import sms
 from app.models import Case, Client, User
 from app.schemas.core import CaseOut, ClientCreate, ClientOut, ClientUpdate
@@ -122,15 +123,19 @@ async def invite_client(
     server filters everything by identity."""
     client = await get_scoped_or_404(session, Client, client_id, principal.tenant_id, "client")
 
+    # Normalised again here rather than trusting the stored value: client rows
+    # written before phones were canonicalised would otherwise create a login the
+    # client can never actually sign in to.
+    login_phone = normalise_phone(client.phone)
     existing = (
-        await session.scalars(select(User).where(User.phone == client.phone))
+        await session.scalars(select(User).where(User.phone == login_phone))
     ).first()
 
     if existing is None:
         user = User(
             tenant_id=principal.tenant_id,
             name=client.name,
-            phone=client.phone,
+            phone=login_phone,
             role="client",
             client_id=client.id,
         )
@@ -149,8 +154,8 @@ async def invite_client(
 
     code = secrets.token_hex(3).upper()
     await sms.send_text(
-        client.phone,
+        login_phone,
         f"{client.name}, you can now follow your case with NyayaAI. "
         f"Sign in with this number. Reference: {code}",
     )
-    return envelope.ok({"ok": True, "invited_phone": client.phone})
+    return envelope.ok({"ok": True, "invited_phone": login_phone})

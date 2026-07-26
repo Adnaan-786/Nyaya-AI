@@ -16,18 +16,27 @@ them inside the class body.
 import datetime as dt
 import uuid
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.core.phone import normalise_phone
 
 CNR_LENGTH = 16
 
 
 class ClientCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
+    # Stored in the same canonical form as login phones, so a portal invite for this
+    # client actually matches the account they sign in with.
     phone: str = Field(min_length=10, max_length=20)
     email: str | None = None
     address: str | None = None
     notes: str | None = None
     tags: list[str] = []
+
+    @field_validator("phone")
+    @classmethod
+    def normalise(cls, value: str) -> str:
+        return normalise_phone(value)
 
 
 class ClientUpdate(BaseModel):

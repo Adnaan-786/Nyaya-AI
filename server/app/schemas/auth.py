@@ -10,6 +10,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.core.phone import normalise_phone
+
 
 class OtpRequest(BaseModel):
     phone: str = Field(examples=["+919812345678"])
@@ -17,14 +19,7 @@ class OtpRequest(BaseModel):
     @field_validator("phone")
     @classmethod
     def normalise(cls, value: str) -> str:
-        digits = "".join(ch for ch in value if ch.isdigit())
-        # Indian mobiles are 10 digits; accept with or without the country code and
-        # store one canonical form so OTP lookup cannot miss on formatting.
-        if len(digits) == 10:
-            return f"+91{digits}"
-        if len(digits) == 12 and digits.startswith("91"):
-            return f"+{digits}"
-        raise ValueError("Enter a 10-digit Indian mobile number.")
+        return normalise_phone(value)
 
 
 class OtpVerifyRequest(OtpRequest):

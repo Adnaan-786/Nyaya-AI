@@ -11,12 +11,13 @@ court data deterministically from the CNR, so demos and screenshots look real an
 
 import hashlib
 import logging
-from datetime import date, timedelta
+from datetime import timedelta
 
 import httpx
 
 from app.core import envelope
 from app.core.config import get_settings
+from app.core.india import today_in_india
 from app.schemas.core import CnrPreviewOut
 
 logger = logging.getLogger(__name__)
@@ -91,7 +92,7 @@ def _synthesise(cnr: str) -> CnrPreviewOut:
     if respondent == petitioner:
         respondent = _PARTY_POOL[(seed // 13 + 1) % len(_PARTY_POOL)]
 
-    today = date.today()
+    today = today_in_india()
     next_hearing = today + timedelta(days=(seed % 21) + 1)
 
     number_prefix = case_type.split()[0][:3].upper()
@@ -113,7 +114,7 @@ def synth_history(cnr: str) -> list[dict]:
     """Past hearings for a synthesised case, kept separate so the router can persist
     them as real Hearing rows when the case is created."""
     seed = int(hashlib.sha256(cnr.encode()).hexdigest()[:8], 16)
-    today = date.today()
+    today = today_in_india()
     return [
         {
             "date": today - timedelta(days=(i + 1) * 45 + (seed % 10)),

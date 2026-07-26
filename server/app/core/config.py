@@ -38,6 +38,9 @@ class Settings(BaseSettings):
 
     razorpay_key_id: str | None = None
     razorpay_key_secret: str | None = None
+    # Separate from the API secret: webhooks are unauthenticated HTTP, and this
+    # signature is the only thing preventing a stranger marking invoices paid.
+    razorpay_webhook_secret: str | None = None
 
     # Storage root used when S3 is not configured (local demo).
     local_storage_dir: str = "./storage"
