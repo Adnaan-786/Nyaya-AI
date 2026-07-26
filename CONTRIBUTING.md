@@ -30,6 +30,20 @@ to match `MaxLineLength` in `config/detekt/detekt.yml`. If those two ever diverg
 `ktlintFormat` will collapse expressions onto lines detekt then rejects, and the build can
 never be both formatted and green.
 
+## Instrumented tests
+
+```bash
+./gradlew :app:connectedMockDebugAndroidTest
+```
+
+`LoginFlowTest` is the Sprint A1 definition of done as a repeatable check: it drives the
+real login screen through the real OkHttp stack and asserts the app reaches the signed-in
+state using the token it just stored. If the auth interceptor ever stops attaching the
+bearer token, that test is what fails.
+
+Emulator note: `adb exec-out screencap` returns black frames on this AVD (an EGL emulation
+bug, not an app bug). Verify against the Compose semantics tree, not screenshots.
+
 ## Build flavors
 
 | Flavor | Base URL | Data |
