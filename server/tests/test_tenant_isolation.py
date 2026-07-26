@@ -8,6 +8,8 @@ Isolation is checked against a *known* id rather than a guessed one, because the
 threat is not enumeration, it is a stale or shared identifier reaching the wrong query.
 """
 
+import uuid
+
 import pytest
 from httpx import AsyncClient
 
@@ -23,7 +25,9 @@ async def _seed_firm(http: AsyncClient, name: str) -> tuple[dict, str, str]:
         await http.post(
             f"{BASE}/clients",
             headers=headers,
-            json={"name": f"{name} client", "phone": "+919820000000"},
+            # Unique per firm: a shared number would trip the per-phone OTP rate
+            # limit when several tests invite "their" client to the portal.
+            json={"name": f"{name} client", "phone": f"+91{uuid.uuid4().int % 10**10:010d}"},
         )
     ).json()["data"]["id"]
 

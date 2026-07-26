@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 
-from app.api import auth, calendar, cases, clients
+from app.api import auth, calendar, cases, clients, documents, search
 from app.core import envelope
 from app.core.config import get_settings
 from app.core.db import create_all
@@ -57,6 +57,8 @@ v1.include_router(auth.router)
 v1.include_router(clients.router)
 v1.include_router(cases.router)
 v1.include_router(calendar.router)
+v1.include_router(documents.router)
+v1.include_router(search.router)
 
 
 @v1.get("/health", tags=["ops"])
