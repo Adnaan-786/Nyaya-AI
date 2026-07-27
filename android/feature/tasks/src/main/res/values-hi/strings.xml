@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasks_title">काम</string>
+    <string name="tasks_empty">कोई काम नहीं</string>
+    <string name="tasks_empty_detail">अगली तारीख से पहले जो करना है, वह जोड़ें।</string>
+    <string name="tasks_due">%1$s तक</string>
+    <string name="tasks_overdue">समय बीत चुका</string>
+</resources>

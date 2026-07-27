@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "ai.nyayaai.feature.settings"
 }
+
+dependencies {
+    implementation(libs.androidx.appcompat)
+}

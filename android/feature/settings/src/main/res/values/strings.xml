@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_hi">हिन्दी</string>
+    <string name="settings_logout">Sign out</string>
+    <string name="settings_logout_title">Sign out?</string>
+    <string name="settings_logout_body">You will need an OTP to sign back in.</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_role_firm_admin">Firm admin</string>
+    <string name="settings_role_lawyer">Advocate</string>
+    <string name="settings_role_intern">Intern</string>
+    <string name="settings_role_client">Client</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_title">कैलेंडर</string>
+    <string name="calendar_today">आज</string>
+    <string name="calendar_no_time">समय दर्ज नहीं</string>
+    <string name="calendar_empty">कुछ भी सूचीबद्ध नहीं</string>
+    <string name="calendar_empty_detail">अगले चार महीनों में कोई hearing नहीं है।</string>
+</resources>

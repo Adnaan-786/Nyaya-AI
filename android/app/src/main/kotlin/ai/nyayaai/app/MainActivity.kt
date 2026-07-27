@@ -35,7 +35,13 @@ class MainActivity : ComponentActivity() {
                     } else {
                         // The role picks the shell. A client-mode login never reaches the
                         // staff destinations at all (D.10).
-                        NyayaApp(role = user.role, onOpenUrl = ::openUrl)
+                        NyayaApp(
+                            user = user,
+                            onOpenUrl = ::openUrl,
+                            // Dropping the user back to null returns the whole app to the
+                            // login screen; the token wipe already happened in Settings.
+                            onLoggedOut = { signedInUser = null },
+                        )
                     }
                 }
             }

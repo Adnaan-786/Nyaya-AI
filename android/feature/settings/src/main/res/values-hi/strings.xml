@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">सेटिंग्स</string>
+    <string name="settings_language">भाषा</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_hi">हिन्दी</string>
+    <string name="settings_logout">साइन आउट</string>
+    <string name="settings_logout_title">साइन आउट करें?</string>
+    <string name="settings_logout_body">दोबारा साइन इन करने के लिए OTP चाहिए होगा।</string>
+    <string name="settings_cancel">रहने दें</string>
+    <string name="settings_role_firm_admin">फर्म एडमिन</string>
+    <string name="settings_role_lawyer">अधिवक्ता</string>
+    <string name="settings_role_intern">प्रशिक्षु</string>
+    <string name="settings_role_client">क्लाइंट</string>
+</resources>

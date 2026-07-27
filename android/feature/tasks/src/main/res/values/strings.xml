@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasks_title">Tasks</string>
+    <string name="tasks_empty">No tasks</string>
+    <string name="tasks_empty_detail">Add what needs doing before the next date.</string>
+    <string name="tasks_due">Due %1$s</string>
+    <string name="tasks_overdue">Overdue</string>
+</resources>

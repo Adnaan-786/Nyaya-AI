@@ -6,4 +6,12 @@
     <string name="nav_invoices">बिल</string>
     <string name="nav_my_cases">मेरे मुकदमे</string>
     <string name="no_browser">कोई ब्राउज़र ऐप नहीं मिला।</string>
+    <string name="nav_vault">दस्तावेज़</string>
+    <string name="nav_settings">प्रोफ़ाइल</string>
+    <string name="action_back">वापस</string>
+    <string name="title_case">मुकदमा</string>
+    <string name="title_add_case">केस जोड़ें</string>
+    <string name="title_calendar">कैलेंडर</string>
+    <string name="title_tasks">काम</string>
+    <string name="title_settings">सेटिंग्स</string>
 </resources>

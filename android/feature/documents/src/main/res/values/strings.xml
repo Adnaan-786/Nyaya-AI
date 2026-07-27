@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vault_title">Vault</string>
+    <string name="vault_empty">No documents yet</string>
+    <string name="vault_empty_detail">Scanned and uploaded documents appear here, searchable once OCR finishes.</string>
+    <string name="vault_folder_all">All</string>
+    <string name="vault_folder_pleadings">Pleadings</string>
+    <string name="vault_folder_evidence">Evidence</string>
+    <string name="vault_folder_orders">Orders</string>
+    <string name="vault_folder_correspondence">Correspondence</string>
+    <string name="vault_ocr_done">Searchable</string>
+    <string name="vault_ocr_pending">Processing</string>
+    <string name="vault_ocr_failed">Not searchable</string>
+</resources>

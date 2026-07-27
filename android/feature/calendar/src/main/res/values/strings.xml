@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_title">Calendar</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_no_time">Time not listed</string>
+    <string name="calendar_empty">Nothing listed</string>
+    <string name="calendar_empty_detail">No hearings in the next four months.</string>
+</resources>

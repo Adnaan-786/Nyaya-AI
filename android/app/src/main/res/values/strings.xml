@@ -7,4 +7,12 @@
     <string name="nav_invoices">Invoices</string>
     <string name="nav_my_cases">My cases</string>
     <string name="no_browser">No browser app found.</string>
+    <string name="nav_vault">Vault</string>
+    <string name="nav_settings">Profile</string>
+    <string name="action_back">Back</string>
+    <string name="title_case">Case</string>
+    <string name="title_add_case">Add case</string>
+    <string name="title_calendar">Calendar</string>
+    <string name="title_tasks">Tasks</string>
+    <string name="title_settings">Settings</string>
 </resources>

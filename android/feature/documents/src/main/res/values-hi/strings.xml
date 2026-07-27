@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vault_title">दस्तावेज़</string>
+    <string name="vault_empty">अभी कोई दस्तावेज़ नहीं</string>
+    <string name="vault_empty_detail">स्कैन और अपलोड किए दस्तावेज़ यहाँ दिखेंगे, OCR पूरा होते ही खोजे जा सकेंगे।</string>
+    <string name="vault_folder_all">सभी</string>
+    <string name="vault_folder_pleadings">वाद-पत्र</string>
+    <string name="vault_folder_evidence">साक्ष्य</string>
+    <string name="vault_folder_orders">आदेश</string>
+    <string name="vault_folder_correspondence">पत्राचार</string>
+    <string name="vault_ocr_done">खोजने योग्य</string>
+    <string name="vault_ocr_pending">प्रक्रिया में</string>
+    <string name="vault_ocr_failed">खोजने योग्य नहीं</string>
+</resources>
