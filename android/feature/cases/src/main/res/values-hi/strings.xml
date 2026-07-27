@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cases_title">मुकदमे</string>
+    <string name="cases_search_hint">केस, क्लाइंट या CNR खोजें</string>
+    <string name="cases_filter_all">सभी</string>
+    <string name="cases_filter_active">चालू</string>
+    <string name="cases_filter_disposed">निपटाए गए</string>
+    <string name="cases_empty_title">अभी कोई केस नहीं</string>
+    <string name="cases_empty_detail">CNR डालकर केस जोड़ें — हम eCourts से जानकारी ले आएंगे।</string>
+    <string name="cases_empty_search">इस खोज से कुछ नहीं मिला</string>
+    <string name="cases_add">केस जोड़ें</string>
+    <string name="cases_manual_badge">मैन्युअल</string>
+    <string name="cases_synced_never">सिंक नहीं हुआ</string>
+    <string name="cases_synced_ago">%1$s सिंक हुआ</string>
+
+    <string name="cnr_title">CNR से केस जोड़ें</string>
+    <string name="cnr_hint">16 अक्षरों का CNR</string>
+    <string name="cnr_help">CNR cause list और किसी भी order sheet पर मिलेगा।</string>
+    <string name="cnr_fetching">eCourts से ला रहे हैं…</string>
+    <string name="cnr_fetch">केस लाएं</string>
+    <string name="cnr_confirm">यह केस जोड़ें</string>
+    <string name="cnr_manual_instead">मैन्युअल रूप से जोड़ें</string>
+    <string name="cnr_length_error">CNR ठीक 16 अक्षरों का होता है।</string>
+
+    <string name="case_tab_overview">विवरण</string>
+    <string name="case_tab_hearings">सुनवाई</string>
+    <string name="case_tab_documents">दस्तावेज़</string>
+    <string name="case_court">न्यायालय</string>
+    <string name="case_judge">न्यायाधीश</string>
+    <string name="case_type">प्रकार</string>
+    <string name="case_stage">चरण</string>
+    <string name="case_number">केस नंबर</string>
+    <string name="case_cnr">CNR</string>
+    <string name="case_next_hearing">अगली सुनवाई</string>
+    <string name="case_sync">eCourts से सिंक करें</string>
+    <string name="case_no_hearings">कोई सुनवाई दर्ज नहीं</string>
+    <string name="case_no_documents">अभी कोई दस्तावेज़ नहीं</string>
+    <string name="case_hearing_outcome">परिणाम</string>
+</resources>

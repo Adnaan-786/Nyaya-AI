@@ -29,8 +29,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * proves is the A1 contract: a full OTP round-trip through the real OkHttp stack.
  */
 @Composable
-fun LoginRoute(viewModel: LoginViewModel = hiltViewModel()) {
+fun LoginRoute(
+    onSignedIn: (ai.nyayaai.core.model.User) -> Unit = {},
+    viewModel: LoginViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Hoisted to the caller so the shell — not this screen — decides where a signed-in
+    // user lands. The role in the returned user is what picks the staff or client shell.
+    androidx.compose.runtime.LaunchedEffect(state.signedInUser) {
+        state.signedInUser?.let(onSignedIn)
+    }
 
     LoginScreen(
         state = state,

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_title">Today</string>
+    <string name="today_greeting">Aaj ki hearings</string>
+    <string name="today_no_hearings">No hearings today</string>
+    <string name="today_no_hearings_detail">Nothing listed for today. Tomorrow has %1$d.</string>
+    <string name="today_no_hearings_free">Nothing listed for today or tomorrow.</string>
+    <string name="today_tomorrow_count">%1$d tomorrow</string>
+    <string name="today_unread">%1$d unread</string>
+    <string name="today_outcomes_pending">%1$d hearings need an outcome</string>
+    <string name="today_tasks">Tasks</string>
+    <string name="today_task_overdue">Overdue</string>
+    <string name="today_no_tasks">No open tasks</string>
+    <string name="today_courtroom">%1$s</string>
+    <string name="today_time_unspecified">Time not listed</string>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="portal_cases_title">My cases</string>
+    <string name="portal_invoices_title">My bills</string>
+    <string name="portal_no_cases">No cases yet</string>
+    <string name="portal_no_cases_detail">Your lawyer will add your matter here.</string>
+    <string name="portal_no_invoices">Nothing to pay right now</string>
+    <string name="portal_next_hearing">Next date: %1$s</string>
+    <string name="portal_no_next_hearing">No date fixed yet</string>
+    <string name="portal_pay">Pay this bill</string>
+    <string name="portal_due">Due by %1$s</string>
+    <string name="portal_paid">Paid</string>
+</resources>

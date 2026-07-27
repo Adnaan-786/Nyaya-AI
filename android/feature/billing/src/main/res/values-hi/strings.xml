@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="billing_title">बिल</string>
+    <string name="billing_empty_title">अभी कोई बिल नहीं</string>
+    <string name="billing_empty_detail">किसी केस में दर्ज काम का बिल क्लाइंट को भेजें।</string>
+    <string name="billing_status_draft">ड्राफ़्ट</string>
+    <string name="billing_status_sent">भेजा गया</string>
+    <string name="billing_status_paid">भुगतान हुआ</string>
+    <string name="billing_status_overdue">बकाया</string>
+    <string name="billing_due">%1$s तक देय</string>
+    <string name="billing_send">भेजें</string>
+    <string name="billing_pay">अभी भुगतान करें</string>
+    <string name="billing_subtotal">उप-योग</string>
+    <string name="billing_gst">GST %1$d%%</string>
+    <string name="billing_reverse_charge">reverse charge के तहत GST प्राप्तकर्ता को देना है</string>
+    <string name="billing_total">कुल</string>
+</resources>

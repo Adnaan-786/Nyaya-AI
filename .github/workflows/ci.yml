@@ -35,7 +35,11 @@ jobs:
       # D.3.1 gate order matches what developers run locally, so a green local run
       # means a green CI run. Style first because it fails in seconds.
       - name: ktlint
-        run: ./gradlew ktlintCheck
+        # The ktlint Gradle plugin (14.2.0) still cannot serialize its Android
+        # source-set tasks for the configuration cache, which is on by default in
+        # gradle.properties. Opting this one step out is cheaper than turning the
+        # cache off for the whole build.
+        run: ./gradlew ktlintCheck --no-configuration-cache
 
       - name: detekt
         run: ./gradlew detekt

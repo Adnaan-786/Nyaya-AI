@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cases_title">Cases</string>
+    <string name="cases_search_hint">Search cases, clients, CNR</string>
+    <string name="cases_filter_all">All</string>
+    <string name="cases_filter_active">Active</string>
+    <string name="cases_filter_disposed">Disposed</string>
+    <string name="cases_empty_title">No cases yet</string>
+    <string name="cases_empty_detail">Add a case with its CNR and we will fetch it from eCourts.</string>
+    <string name="cases_empty_search">Nothing matched that search</string>
+    <string name="cases_add">Add case</string>
+    <string name="cases_manual_badge">Manual</string>
+    <string name="cases_synced_never">Not synced</string>
+    <string name="cases_synced_ago">Synced %1$s</string>
+
+    <!-- Add by CNR (D.5) -->
+    <string name="cnr_title">Add case by CNR</string>
+    <string name="cnr_hint">16-character CNR</string>
+    <string name="cnr_help">The CNR is on the cause list and on any order sheet.</string>
+    <string name="cnr_fetching">Fetching from eCourts…</string>
+    <string name="cnr_fetch">Fetch case</string>
+    <string name="cnr_confirm">Add this case</string>
+    <string name="cnr_manual_instead">Add manually instead</string>
+    <string name="cnr_length_error">A CNR is exactly 16 characters.</string>
+
+    <!-- Case detail -->
+    <string name="case_tab_overview">Overview</string>
+    <string name="case_tab_hearings">Hearings</string>
+    <string name="case_tab_documents">Documents</string>
+    <string name="case_court">Court</string>
+    <string name="case_judge">Judge</string>
+    <string name="case_type">Type</string>
+    <string name="case_stage">Stage</string>
+    <string name="case_number">Case number</string>
+    <string name="case_cnr">CNR</string>
+    <string name="case_next_hearing">Next hearing</string>
+    <string name="case_sync">Sync with eCourts</string>
+    <string name="case_no_hearings">No hearings recorded</string>
+    <string name="case_no_documents">No documents yet</string>
+    <string name="case_hearing_outcome">Outcome</string>
+</resources>

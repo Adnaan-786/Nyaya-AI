@@ -15,6 +15,7 @@ them inside the class body.
 
 import datetime as dt
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -145,6 +146,44 @@ class HearingOut(BaseModel):
     source: str
 
 
+class TodayHearingOut(HearingOut):
+    """A hearing plus the case context the Today screen needs.
+
+    Plain `HearingOut` carries only `case_id`, which would force the app to make one
+    request per row just to print a name — and a hearing card reading "Evidence — PW1
+    examination" with no case name is unusable in a corridor outside a courtroom.
+    """
+
+    case_title: str
+    court_name: str | None = None
+
+
+class TaskCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    case_id: uuid.UUID | None = None
+    due_date: dt.date | None = None
+    assignee_id: uuid.UUID | None = None
+
+
+class TaskUpdate(BaseModel):
+    title: str | None = None
+    due_date: dt.date | None = None
+    status: Literal["open", "in_progress", "done"] | None = None
+    assignee_id: uuid.UUID | None = None
+
+
+class TaskOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    case_id: uuid.UUID | None = None
+    title: str
+    assignee_id: uuid.UUID | None = None
+    due_date: dt.date | None = None
+    status: str
+    created_by: uuid.UUID | None = None
+
+
 class CnrPreviewOut(BaseModel):
     """What eCourts returned, before the user commits to creating the case."""
 
@@ -187,9 +226,9 @@ class CalendarDay(BaseModel):
 
 class TodayOut(BaseModel):
     date: dt.date
-    hearings: list[HearingOut] = []
+    hearings: list[TodayHearingOut] = []
     tomorrow_count: int = 0
     unread_notifications: int = 0
     # Hearings whose date has passed with no outcome recorded — the "Kal ki hearing ka
     # outcome update karein" nudge on the Today screen (D.6).
-    overdue_outcomes: list[HearingOut] = []
+    overdue_outcomes: list[TodayHearingOut] = []

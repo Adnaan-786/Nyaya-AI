@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">NyayaAI</string>
+    <string name="nav_today">Today</string>
+    <string name="nav_cases">Cases</string>
+    <string name="nav_ai">Research</string>
+    <string name="nav_invoices">Invoices</string>
+    <string name="nav_my_cases">My cases</string>
+    <string name="no_browser">No browser app found.</string>
 </resources>

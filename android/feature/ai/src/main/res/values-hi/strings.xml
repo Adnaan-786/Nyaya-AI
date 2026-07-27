@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_title">रिसर्च</string>
+    <string name="ai_hint">सवाल पूछें — English या Hinglish में</string>
+    <string name="ai_ask">पूछें</string>
+    <string name="ai_working">काम चल रहा है…</string>
+    <string name="ai_working_eta">लगभग %1$d सेकंड</string>
+    <string name="ai_recent">हाल के नतीजे</string>
+    <string name="ai_citations">प्राधिकरण</string>
+    <string name="ai_confidence_high">पूरी तरह समर्थित</string>
+    <string name="ai_confidence_medium">आंशिक रूप से समर्थित</string>
+    <string name="ai_insufficient_title">कोई भरोसेमंद आधार नहीं मिला</string>
+    <string name="ai_insufficient_detail">रिकॉर्ड में ऐसा कुछ नहीं जिससे भरोसे के साथ जवाब दिया जा सके। इसे शुरुआत मानें, रिसर्च नहीं।</string>
+    <string name="ai_quota_title">आज की सीमा पूरी हुई</string>
+    <string name="ai_upgrade">%1$s में अपग्रेड करें</string>
+    <string name="ai_empty">किसी धारा, फैसले या प्रक्रिया के बारे में पूछें।</string>
+</resources>

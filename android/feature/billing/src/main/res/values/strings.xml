@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="billing_title">Invoices</string>
+    <string name="billing_empty_title">No invoices yet</string>
+    <string name="billing_empty_detail">Bill a client for work already recorded against a case.</string>
+    <string name="billing_status_draft">Draft</string>
+    <string name="billing_status_sent">Sent</string>
+    <string name="billing_status_paid">Paid</string>
+    <string name="billing_status_overdue">Overdue</string>
+    <string name="billing_due">Due %1$s</string>
+    <string name="billing_send">Send</string>
+    <string name="billing_pay">Pay now</string>
+    <string name="billing_subtotal">Subtotal</string>
+    <string name="billing_gst">GST at %1$d%%</string>
+    <string name="billing_reverse_charge">GST payable by the recipient under reverse charge</string>
+    <string name="billing_total">Total</string>
+</resources>

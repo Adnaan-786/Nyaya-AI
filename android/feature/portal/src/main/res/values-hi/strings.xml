@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="portal_cases_title">मेरे मुकदमे</string>
+    <string name="portal_invoices_title">मेरे बिल</string>
+    <string name="portal_no_cases">अभी कोई मुकदमा नहीं</string>
+    <string name="portal_no_cases_detail">आपके वकील आपका मामला यहाँ जोड़ेंगे।</string>
+    <string name="portal_no_invoices">अभी कुछ भी देय नहीं है</string>
+    <string name="portal_next_hearing">अगली तारीख: %1$s</string>
+    <string name="portal_no_next_hearing">अभी तारीख तय नहीं</string>
+    <string name="portal_pay">यह बिल भरें</string>
+    <string name="portal_due">%1$s तक देय</string>
+    <string name="portal_paid">भुगतान हो गया</string>
+</resources>

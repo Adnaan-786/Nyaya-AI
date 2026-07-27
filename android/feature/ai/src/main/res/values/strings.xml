@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ai_title">Research</string>
+    <string name="ai_hint">Ask a question — English or Hinglish</string>
+    <string name="ai_ask">Ask</string>
+    <string name="ai_working">Working on it…</string>
+    <string name="ai_working_eta">About %1$d seconds</string>
+    <string name="ai_recent">Recent results</string>
+    <string name="ai_citations">Authorities</string>
+    <string name="ai_confidence_high">Well supported</string>
+    <string name="ai_confidence_medium">Partly supported</string>
+    <string name="ai_insufficient_title">No reliable authority found</string>
+    <string name="ai_insufficient_detail">Nothing on record supports a confident answer. Treat this as a starting point, not as research.</string>
+    <string name="ai_quota_title">Daily limit reached</string>
+    <string name="ai_upgrade">Upgrade to %1$s</string>
+    <string name="ai_empty">Ask about a section, a judgment, or a procedure.</string>
+</resources>

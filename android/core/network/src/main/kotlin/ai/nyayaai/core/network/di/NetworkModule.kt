@@ -9,8 +9,14 @@ import ai.nyayaai.core.network.fixture.FixtureInterceptor
 import ai.nyayaai.core.network.fixture.FixtureSource
 import ai.nyayaai.core.network.interceptor.AuthInterceptor
 import ai.nyayaai.core.network.interceptor.IdempotencyInterceptor
+import ai.nyayaai.core.network.service.AiService
 import ai.nyayaai.core.network.service.AuthRefreshService
 import ai.nyayaai.core.network.service.AuthService
+import ai.nyayaai.core.network.service.BillingService
+import ai.nyayaai.core.network.service.CalendarService
+import ai.nyayaai.core.network.service.CaseService
+import ai.nyayaai.core.network.service.DocumentService
+import ai.nyayaai.core.network.service.PortalService
 import dagger.Binds
 import dagger.BindsOptionalOf
 import dagger.Module
@@ -131,6 +137,32 @@ object NetworkModule {
     fun provideAuthRefreshService(
         @RefreshClient retrofit: Retrofit,
     ): AuthRefreshService = retrofit.create(AuthRefreshService::class.java)
+
+    // Feature services. All share the one authenticated client above, so every feature
+    // gets envelope unwrapping, token refresh and idempotency without opting in.
+    @Provides
+    @Singleton
+    fun provideCaseService(retrofit: Retrofit): CaseService = retrofit.create(CaseService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCalendarService(retrofit: Retrofit): CalendarService = retrofit.create(CalendarService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideDocumentService(retrofit: Retrofit): DocumentService = retrofit.create(DocumentService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideBillingService(retrofit: Retrofit): BillingService = retrofit.create(BillingService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAiService(retrofit: Retrofit): AiService = retrofit.create(AiService::class.java)
+
+    @Provides
+    @Singleton
+    fun providePortalService(retrofit: Retrofit): PortalService = retrofit.create(PortalService::class.java)
 
     private fun loggingInterceptor() =
         HttpLoggingInterceptor().apply {
