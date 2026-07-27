@@ -18,14 +18,15 @@ Two artefacts: one for the app, one for the server. They come from the same proj
 1. Go to <https://console.firebase.google.com> and **Add project**. Name it `NyayaAI`.
    Google Analytics is optional — decline it, it isn't used.
 2. In the project, click the **Android** icon to add an app.
-3. **Android package name** — this must match exactly, and there are three builds:
-   - `ai.nyayaai.staging` ← register this one first, it's what you're demoing
-   - `ai.nyayaai.mock`
-   - `ai.nyayaai` (production)
+3. **Android package name** — must match exactly, and there are three builds. Add each
+   as a separate Android app **in the same project**; one download then covers all three:
+   - `ai.nyayaai.staging` ← register first, it's what you demo
+   - `ai.nyayaai.mock` — needed for CI, which builds the mock flavor
+   - `ai.nyayaai` — production, needed before release
 
-   Register all three *in the same Firebase app entry* is not possible — instead add
-   three Android apps to the same project. One `google-services.json` downloaded after
-   adding all three contains all of them.
+   A variant with no client entry does **not** break the build: its Google Services
+   processing task is switched off and that flavor simply builds without FCM, logging
+   `No Firebase client for <package>`. So you can register them one at a time.
 4. Skip the SHA-1 step. It's only needed for Google Sign-In and Dynamic Links, neither of
    which this app uses.
 5. Download `google-services.json` and put it at:

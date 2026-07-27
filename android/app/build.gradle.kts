@@ -4,12 +4,30 @@ plugins {
     alias(libs.plugins.nyayaai.android.hilt)
 }
 
-// The google-services plugin hard-fails the build when google-services.json is absent,
-// which would mean nobody could build or demo this app until a Firebase project existed.
-// Applying it only when the file is present keeps push opt-in: drop the file in and FCM
-// starts working, leave it out and everything else still runs.
-val hasFirebaseConfig = file("google-services.json").exists()
-if (hasFirebaseConfig) {
+// The google-services plugin hard-fails in two different ways, and both would stop
+// people building this app:
+//
+//   1. google-services.json missing entirely -> every variant fails.
+//   2. The file present but with no client for that variant's applicationId -> only
+//      that variant fails ("No matching client found for package name ...").
+//
+// Case 2 is the normal state while a Firebase project is being filled in one package at
+// a time, and it would break `assembleMockDebug` in CI purely because nobody had yet
+// registered ai.nyayaai.mock. So the plugin is applied when the file exists, and its
+// processing task is switched off for exactly the variants the file does not cover —
+// those build fine and simply have no FCM, which is the honest outcome.
+val firebaseConfig = file("google-services.json")
+val firebasePackages: Set<String> =
+    if (firebaseConfig.exists()) {
+        Regex("\"package_name\"\\s*:\\s*\"([^\"]+)\"")
+            .findAll(firebaseConfig.readText())
+            .map { it.groupValues[1] }
+            .toSet()
+    } else {
+        emptySet()
+    }
+
+if (firebaseConfig.exists()) {
     apply(
         plugin =
             libs.plugins.google.services
@@ -49,6 +67,29 @@ android {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
+
+// Flavor -> the applicationId that flavor produces, which is what google-services
+// matches against.
+val flavorApplicationIds =
+    mapOf(
+        "mock" to "ai.nyayaai.mock",
+        "staging" to "ai.nyayaai.staging",
+        "prod" to "ai.nyayaai",
+    )
+
+tasks.matching { it.name.startsWith("process") && it.name.endsWith("GoogleServices") }
+    .configureEach {
+        val flavor = flavorApplicationIds.keys.firstOrNull { name.contains(it, ignoreCase = true) }
+        val applicationId = flavorApplicationIds[flavor]
+
+        if (applicationId != null && applicationId !in firebasePackages) {
+            enabled = false
+            logger.lifecycle(
+                "No Firebase client for $applicationId — building that variant without FCM. " +
+                    "Add the package in the Firebase console to enable push there.",
+            )
+        }
+    }
 
 dependencies {
     implementation(projects.core.common)

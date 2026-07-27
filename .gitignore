@@ -22,3 +22,7 @@ __pycache__/
 .env
 .pytest_cache/
 .ruff_cache/
+
+# Local Postgres cluster. Lives in the project rather than /tmp, which macOS wipes —
+# losing the whole dev database along with it.
+.pgdata/

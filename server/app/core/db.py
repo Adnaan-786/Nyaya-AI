@@ -3,7 +3,7 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # Import the package, not just the base module: this is what registers every
@@ -26,6 +26,11 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 async def create_all() -> None:
     """Used for local bring-up and tests; staging goes through Alembic."""
     async with engine.begin() as conn:
+        # `pg_trgm` backs the trigram index on documents.ocr_text that universal search
+        # uses. Creating it here rather than leaving it as a README step: a fresh cluster
+        # otherwise fails on "operator class gin_trgm_ops does not exist" halfway through
+        # table creation, which reads like a code bug rather than a missing extension.
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.create_all)
 
 
