@@ -17,6 +17,7 @@ Requires-Dist: sqlalchemy>=2.0.44
 Requires-Dist: asyncpg>=0.30.0
 Requires-Dist: alembic>=1.16.5
 Requires-Dist: greenlet>=3.2.4
+Requires-Dist: pgvector>=0.5.0
 Dynamic: license-file
 
 # NyayaAI Server
