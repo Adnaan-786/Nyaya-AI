@@ -77,7 +77,8 @@ val flavorApplicationIds =
         "prod" to "ai.nyayaai",
     )
 
-tasks.matching { it.name.startsWith("process") && it.name.endsWith("GoogleServices") }
+tasks
+    .matching { it.name.startsWith("process") && it.name.endsWith("GoogleServices") }
     .configureEach {
         val flavor = flavorApplicationIds.keys.firstOrNull { name.contains(it, ignoreCase = true) }
         val applicationId = flavorApplicationIds[flavor]

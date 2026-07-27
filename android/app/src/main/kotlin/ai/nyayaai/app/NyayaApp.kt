@@ -1,5 +1,7 @@
 package ai.nyayaai.app
 
+import ai.nyayaai.core.common.DeepLink
+import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.User
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -24,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -41,9 +44,13 @@ fun NyayaApp(
     user: User,
     onOpenUrl: (String) -> Unit,
     onLoggedOut: () -> Unit,
+    deepLink: String? = null,
+    onDeepLinkHandled: () -> Unit = {},
     navController: NavHostController = rememberNavController(),
 ) {
     val destinations = destinationsFor(user.role)
+
+    HandleDeepLink(deepLink, user.role.isClient, navController, onDeepLinkHandled)
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
@@ -161,3 +168,43 @@ private fun StaffActions(
         }
     }
 }
+
+/**
+ * B.8: a push and an in-app tap must land in identical state, so an incoming link is
+ * resolved by the same parser and navigated with the same routes.
+ *
+ * Client-mode logins are excluded outright — a link to a staff screen must never become
+ * a way into one.
+ */
+@Composable
+private fun HandleDeepLink(
+    deepLink: String?,
+    isClient: Boolean,
+    navController: NavHostController,
+    onHandled: () -> Unit,
+) {
+    LaunchedEffect(deepLink) {
+        if (deepLink == null) return@LaunchedEffect
+
+        DeepLink.parse(deepLink)?.takeUnless { isClient }?.let { target ->
+            routeFor(target)?.let(navController::navigate)
+        }
+        onHandled()
+    }
+}
+
+/**
+ * Maps a parsed deep link to a route.
+ *
+ * Job and task links resolve to their nearest existing home rather than being dropped:
+ * the AI hub lists recent results, and tasks live on their own screen. A push that
+ * opens nothing at all is worse than one that opens the right neighbourhood.
+ */
+private fun routeFor(link: DeepLink): String? =
+    when (link) {
+        is DeepLink.Case -> Route.caseDetail(CaseId(link.caseId))
+        is DeepLink.Job -> Route.AI
+        is DeepLink.Invoice -> Route.INVOICES
+        is DeepLink.Task -> Route.TASKS
+        DeepLink.Today -> Route.TODAY
+    }

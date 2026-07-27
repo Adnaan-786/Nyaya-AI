@@ -67,3 +67,9 @@ uvicorn==0.51.0
 uvloop==0.22.1
 watchfiles==1.2.0
 websockets==16.1.1
+
+# FCM HTTP v1 push (B.8). `requests` is not used by application code — it is
+# google-auth's default transport for the token exchange, and google-auth raises a
+# confusing ImportError without it.
+google-auth==2.56.2
+requests==2.32.5

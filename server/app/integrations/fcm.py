@@ -54,8 +54,14 @@ async def _access_token() -> str | None:
     try:
         from google.auth.transport.requests import Request  # type: ignore[import-untyped]
         from google.oauth2 import service_account  # type: ignore[import-untyped]
-    except ImportError:
-        logger.error("google-auth is not installed; cannot send FCM. pip install google-auth")
+    except ImportError as exc:
+        # Reports the real import error rather than assuming which package is missing.
+        # google-auth can be installed and still fail here because its default transport
+        # needs `requests`, which this codebase otherwise has no use for — a message
+        # saying "google-auth is not installed" sends you looking in the wrong place.
+        logger.error(
+            "cannot send FCM: %s. Install with: pip install google-auth requests", exc
+        )
         return None
 
     credentials = service_account.Credentials.from_service_account_file(

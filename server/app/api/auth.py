@@ -47,7 +47,11 @@ async def request_otp(body: OtpRequest, session: AsyncSession = Depends(get_sess
         # SMS-bombing service pointed at any Indian mobile number.
         raise envelope.rate_limited("Too many attempts. Try again in an hour.", 3600)
 
-    code = sms.FAKE_OTP if settings.fake_mode else f"{random.randint(0, 999999):06d}"
+    # Gated on whether SMS can actually be *delivered*, not on the global flag. With no
+    # MSG91 key the code only ever reaches a server log, so a random one is no more
+    # secure than the fixed one — it just makes the app unusable for anyone who turned
+    # FAKE_MODE off to enable some unrelated integration like push.
+    code = f"{random.randint(0, 999999):06d}" if sms.is_live() else sms.FAKE_OTP
     session.add(
         OtpCode(
             phone=body.phone,

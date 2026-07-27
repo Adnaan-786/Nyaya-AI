@@ -19,8 +19,18 @@ settings = get_settings()
 FAKE_OTP = "123456"
 
 
+def is_live() -> bool:
+    """True only when a real SMS can actually be delivered.
+
+    Every integration answers this question about its *own* credentials rather than
+    about the global FAKE_MODE flag, so enabling one live integration cannot silently
+    change the behaviour of another.
+    """
+    return bool(not settings.fake_mode and settings.msg91_auth_key)
+
+
 async def send_otp(phone: str, code: str) -> None:
-    if settings.fake_mode or not settings.msg91_auth_key:
+    if not is_live():
         logger.info("FAKE SMS -> %s: your NyayaAI code is %s", phone, code)
         return
 
@@ -39,7 +49,7 @@ async def send_otp(phone: str, code: str) -> None:
 
 async def send_text(phone: str, message: str) -> None:
     """Used for client portal invites and payment links (B.4 roles, B.10)."""
-    if settings.fake_mode or not settings.msg91_auth_key:
+    if not is_live():
         logger.info("FAKE SMS -> %s: %s", phone, message)
         return
 
