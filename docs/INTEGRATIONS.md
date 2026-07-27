@@ -24,9 +24,21 @@ Two artefacts: one for the app, one for the server. They come from the same proj
    - `ai.nyayaai.mock` — needed for CI, which builds the mock flavor
    - `ai.nyayaai` — production, needed before release
 
-   A variant with no client entry does **not** break the build: its Google Services
-   processing task is switched off and that flavor simply builds without FCM, logging
-   `No Firebase client for <package>`. So you can register them one at a time.
+   All three are registered on project `nyayaai-aaef7`. If you ever add a flavor, note
+   that a variant with no client entry does **not** break the build: its Google Services
+   processing task is switched off and that flavor builds without FCM, logging
+   `No Firebase client for <package>`. Packages can be added one at a time.
+
+   Apps can also be created without the console, using the service-account key:
+
+   ```
+   POST https://firebase.googleapis.com/v1beta1/projects/<project>/androidApps
+   {"packageName": "...", "displayName": "..."}
+   ```
+
+   and the full `google-services.json` fetched from
+   `GET .../androidApps/<appId>/config` — that endpoint already returns **every**
+   client in the project, so one call gives the whole file.
 4. Skip the SHA-1 step. It's only needed for Google Sign-In and Dynamic Links, neither of
    which this app uses.
 5. Download `google-services.json` and put it at:
@@ -85,6 +97,14 @@ For real push, schedule it:
 
 **Emulator note:** push needs an emulator image **with Google Play**, not plain AOSP.
 `nyaya_pixel` uses `google_apis`, which works.
+
+**Two things that make push look broken when it isn't:**
+
+* `adb shell am force-stop` puts an app in Android's *stopped state*, and FCM will not
+  wake it. Test by backgrounding (HOME), not force-stopping.
+* Re-running the seed deletes users, which cascades to their device rows — so there is
+  nothing to push to until someone signs in again. `send_reminders` reports devices
+  reached separately from reminders recorded so this is visible rather than silent.
 
 ---
 

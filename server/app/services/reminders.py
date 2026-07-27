@@ -43,7 +43,8 @@ async def send_hearing_reminders(session: AsyncSession) -> int:
         )
     ).all()
 
-    sent = 0
+    reminders = 0
+    devices_reached = 0
     for hearing, case in rows:
         for user in await _recipients(session, case):
             if await _already_notified(session, user.id, hearing.id):
@@ -57,7 +58,7 @@ async def send_hearing_reminders(session: AsyncSession) -> int:
                 )
             )
 
-            await fcm.send_to_user(
+            devices_reached += await fcm.send_to_user(
                 session,
                 user_id=user.id,
                 tenant_id=case.tenant_id,
@@ -68,11 +69,27 @@ async def send_hearing_reminders(session: AsyncSession) -> int:
             )
             # Stamped with the hearing id so the idempotence check above can find it.
             await _stamp(session, user.id, case.tenant_id, hearing.id)
-            sent += 1
+            reminders += 1
 
     await session.commit()
-    logger.info("sent %d hearing reminders for %s", sent, target)
-    return sent
+
+    # Both numbers, because they answer different questions. Reminders created is what
+    # shows in-app; devices reached is whether a phone actually buzzed. Reporting only
+    # the first makes "sent 2" look like success when nobody has the app installed —
+    # which is exactly what re-seeding does, since it deletes users and cascades to
+    # their device rows.
+    logger.info(
+        "%s: %d reminders recorded, %d device(s) reached",
+        target,
+        reminders,
+        devices_reached,
+    )
+    if reminders and not devices_reached:
+        logger.warning(
+            "no registered devices — open the app and sign in to register one, "
+            "then re-run to deliver these"
+        )
+    return reminders
 
 
 async def _recipients(session: AsyncSession, case: Case) -> list[User]:
