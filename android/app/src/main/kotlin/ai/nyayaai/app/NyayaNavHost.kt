@@ -80,7 +80,7 @@ fun NyayaNavHost(
         }
 
         composable(Route.INVOICES, enterTransition = { fade() }, exitTransition = { fadeAway() }) {
-            InvoiceListRoute()
+            InvoiceListRoute(firmName = user.name)
         }
 
         composable(

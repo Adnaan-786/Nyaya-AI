@@ -12,7 +12,7 @@ from app.core import envelope, security
 from app.core.config import get_settings
 from app.core.db import get_session, scoped
 from app.core.india import today_in_india
-from app.integrations import razorpay, sms, storage
+from app.integrations import fcm, razorpay, sms, storage
 from app.models import Case, Client, Expense, Invoice, Payment, TimeEntry
 from app.schemas.billing import (
     ExpenseCreate,
@@ -325,6 +325,12 @@ async def verify_payment(
 
     await session.commit()
 
+    if invoice is not None and invoice.status == "paid":
+        # Sent to the firm, not the payer: the lawyer is the one who wants to know
+        # money landed. The client already saw their own payment succeed.
+        await _notify_paid(session, invoice)
+        await session.commit()
+
     return envelope.ok(
         PaymentVerifyOut(
             invoice_id=payment.invoice_id,
@@ -432,3 +438,28 @@ async def create_expense(
     await session.commit()
     await session.refresh(expense)
     return envelope.ok(ExpenseOut.model_validate(expense).model_dump(mode="json"))
+
+
+async def _notify_paid(session: AsyncSession, invoice: Invoice) -> None:
+    """B.8 payment_received, fanned out to every staff member of the firm."""
+    from app.models import User
+
+    staff = (
+        await session.scalars(
+            select(User).where(User.tenant_id == invoice.tenant_id, User.role != "client")
+        )
+    ).all()
+
+    for member in staff:
+        await fcm.send_to_user(
+            session,
+            user_id=member.id,
+            tenant_id=invoice.tenant_id,
+            push_type=fcm.PAYMENT_RECEIVED,
+            title="Payment received",
+            body=(
+                f"Invoice {invoice.number} paid — "
+                f"Rs {invoicing.format_paise(invoice.total_paise)}"
+            ),
+            deep_link=f"nyayaai://invoice/{invoice.id}",
+        )

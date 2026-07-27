@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "ai.nyayaai.feature.billing"
 }
+
+dependencies {
+    implementation(libs.razorpay.checkout)
+}

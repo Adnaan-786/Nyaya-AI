@@ -283,6 +283,14 @@ async def seed() -> None:
                     purpose="Evidence — PW1 examination", courtroom="Court Room 12",
                     source="ecourts",
                 ),
+                # Tomorrow: makes the Today screen's "tomorrow" count real, and gives
+                # the hearing-reminder cron something to actually send tonight.
+                Hearing(
+                    tenant_id=tenant.id, case_id=writ.id,
+                    date=today + dt.timedelta(days=1), time=dt.time(11, 15),
+                    purpose="Mentioning", courtroom="Court Room 3",
+                    source="ecourts",
+                ),
                 Hearing(
                     tenant_id=tenant.id, case_id=matrimonial.id,
                     date=today + dt.timedelta(days=3), time=dt.time(14, 0),

@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import Page, get_scoped_or_404, paginate
 from app.core import envelope, security
 from app.core.db import SessionFactory, get_session, scoped
-from app.integrations import llm
+from app.integrations import fcm, llm
 from app.models import AiJob, Document
 from app.schemas.ai import AiJobOut, JobAcceptedOut, ResearchRequest, SummarizeRequest
 
@@ -187,6 +187,30 @@ async def run_job(job_id: uuid.UUID) -> None:
 
         job.completed_at = dt.datetime.now(dt.UTC)
         await session.commit()
+
+        # B.8: the push is what lets a lawyer background the app during a 45-second
+        # job and still be brought back to the result. Polling is only the fallback.
+        await fcm.send_to_user(
+            session,
+            user_id=job.user_id,
+            tenant_id=job.tenant_id,
+            push_type=fcm.AI_JOB_COMPLETE,
+            title=(
+                "Your summary is ready" if job.type == "summarize" else "Your research is ready"
+            ),
+            body=_push_preview(job),
+            deep_link=f"nyayaai://job/{job.id}",
+        )
+        await session.commit()
+
+
+def _push_preview(job) -> str:
+    """One line of the actual result, so the notification says something."""
+    if job.status == "failed":
+        return job.error or "The job could not be completed."
+    result = job.result or {}
+    text = result.get("summary_markdown") or result.get("answer_markdown") or ""
+    return (text[:120] + "...") if len(text) > 120 else (text or "Tap to open.")
 
 
 def _log_failure(job_id: uuid.UUID, exc: Exception) -> None:

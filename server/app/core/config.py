@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     # signature is the only thing preventing a stranger marking invoices paid.
     razorpay_webhook_secret: str | None = None
 
+    # FCM HTTP v1. The service-account JSON path, not a legacy server key — the
+    # `key=AAAA...` endpoint was decommissioned in 2024.
+    firebase_project_id: str | None = None
+    firebase_credentials_path: str | None = None
+
     # Storage root used when S3 is not configured (local demo).
     local_storage_dir: str = "./storage"
 

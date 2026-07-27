@@ -1,6 +1,7 @@
 package ai.nyayaai.feature.documents
 
 import ai.nyayaai.core.common.UiState
+import ai.nyayaai.core.common.todayInIndia
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.LoadingList
@@ -15,27 +16,40 @@ import ai.nyayaai.core.network.api.isRetryable
 import ai.nyayaai.core.network.api.map
 import ai.nyayaai.core.network.mapper.toDomain
 import ai.nyayaai.core.network.service.DocumentService
+import android.content.Context
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,9 +78,16 @@ class VaultViewModel
     @Inject
     constructor(
         private val repository: DocumentRepository,
+        private val uploader: ScanUploader,
     ) : ViewModel() {
         private val _state = MutableStateFlow<UiState<List<Document>>>(UiState.Loading)
         val state: StateFlow<UiState<List<Document>>> = _state.asStateFlow()
+
+        private val _uploading = MutableStateFlow(false)
+        val uploading: StateFlow<Boolean> = _uploading.asStateFlow()
+
+        private val _message = MutableStateFlow<String?>(null)
+        val message: StateFlow<String?> = _message.asStateFlow()
 
         private val _folder = MutableStateFlow<String?>(null)
         val folder: StateFlow<String?> = _folder.asStateFlow()
@@ -90,6 +111,41 @@ class VaultViewModel
                     }
             }
         }
+
+        /** D.7: a finished scan goes straight into the B.9 upload flow. */
+        fun uploadScan(
+            context: Context,
+            uri: Uri,
+            pageCount: Int,
+        ) {
+            _uploading.value = true
+            viewModelScope.launch {
+                // Named by day and page count so a vault full of scans is still
+                // scannable by eye before OCR has run.
+                val pages = if (pageCount == 1) "1 page" else "$pageCount pages"
+                val name = "Scan ${todayInIndia()} ($pages).pdf"
+                val result =
+                    uploader.upload(
+                        context = context,
+                        uri = uri,
+                        name = name,
+                        caseId = null,
+                        folder = _folder.value,
+                    )
+                _uploading.value = false
+
+                when (result) {
+                    // Reload rather than prepending locally: OCR status is decided
+                    // server-side and the row should show what the server actually has.
+                    is ApiResult.Success -> load()
+                    is ApiResult.Failure -> _message.value = result.error.message
+                }
+            }
+        }
+
+        fun clearMessage() {
+            _message.value = null
+        }
     }
 
 /** D.7 document vault. Upload and the ML Kit scanner arrive with Sprint A5. */
@@ -101,45 +157,79 @@ fun VaultRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val folder by viewModel.folder.collectAsStateWithLifecycle()
+    val uploading by viewModel.uploading.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
-    Column(modifier = modifier.fillMaxSize()) {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = NyayaTheme.spacing.md),
-            horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+    val startScan =
+        rememberDocumentScanner(
+            onScanned = { result ->
+                result.pdf?.let { pdf ->
+                    viewModel.uploadScan(context, pdf.uri, pdf.pageCount)
+                }
+            },
+            // No Play Services, or the module could not download. Saying so beats a
+            // button that silently does nothing.
+            onUnavailable = { Toast.makeText(context, R.string.vault_scan_unavailable, Toast.LENGTH_LONG).show() },
+        )
+
+    Box(modifier = modifier.fillMaxSize()) {
+        FloatingActionButton(
+            onClick = startScan,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(NyayaTheme.spacing.lg)
+                    .zIndex(1f),
         ) {
-            items(FOLDERS) { option ->
-                FilterChip(
-                    selected = option.wire == folder,
-                    onClick = { viewModel.onFolderChanged(option.wire) },
-                    label = { Text(stringResource(option.labelRes)) },
+            if (uploading) {
+                CircularProgressIndicator(modifier = Modifier.size(FAB_SPINNER))
+            } else {
+                Icon(
+                    Icons.Default.DocumentScanner,
+                    contentDescription = stringResource(R.string.vault_scan),
                 )
             }
         }
 
-        when (state) {
-            is UiState.Loading -> LoadingList()
-
-            is UiState.Error -> {
-                val error = state as UiState.Error
-                ErrorState(message = error.message, onRetry = viewModel::load.takeIf { error.retryable })
+        Column(modifier = Modifier.fillMaxSize()) {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = NyayaTheme.spacing.md),
+                horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+            ) {
+                items(FOLDERS) { option ->
+                    FilterChip(
+                        selected = option.wire == folder,
+                        onClick = { viewModel.onFolderChanged(option.wire) },
+                        label = { Text(stringResource(option.labelRes)) },
+                    )
+                }
             }
 
-            is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title)
+            when (state) {
+                is UiState.Loading -> LoadingList()
 
-            is UiState.Content -> {
-                val documents = (state as UiState.Content<List<Document>>).data
-                if (documents.isEmpty()) {
-                    EmptyState(
-                        title = stringResource(R.string.vault_empty),
-                        description = stringResource(R.string.vault_empty_detail),
-                    )
-                } else {
-                    LazyColumn(
-                        contentPadding = PaddingValues(NyayaTheme.spacing.md),
-                        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-                    ) {
-                        items(documents, key = { it.id.value }) { document ->
-                            DocumentCard(document, onClick = { onOpenDocument(document) })
+                is UiState.Error -> {
+                    val error = state as UiState.Error
+                    ErrorState(message = error.message, onRetry = viewModel::load.takeIf { error.retryable })
+                }
+
+                is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title)
+
+                is UiState.Content -> {
+                    val documents = (state as UiState.Content<List<Document>>).data
+                    if (documents.isEmpty()) {
+                        EmptyState(
+                            title = stringResource(R.string.vault_empty),
+                            description = stringResource(R.string.vault_empty_detail),
+                        )
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(NyayaTheme.spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+                        ) {
+                            items(documents, key = { it.id.value }) { document ->
+                                DocumentCard(document, onClick = { onOpenDocument(document) })
+                            }
                         }
                     }
                 }
@@ -147,6 +237,8 @@ fun VaultRoute(
         }
     }
 }
+
+private val FAB_SPINNER = 20.dp
 
 @Composable
 private fun DocumentCard(

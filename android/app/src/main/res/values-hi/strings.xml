@@ -14,4 +14,12 @@
     <string name="title_calendar">कैलेंडर</string>
     <string name="title_tasks">काम</string>
     <string name="title_settings">सेटिंग्स</string>
+    <string name="channel_hearings">सुनवाई की याद</string>
+    <string name="channel_case_updates">केस अपडेट</string>
+    <string name="channel_ai_results">AI नतीजे</string>
+    <string name="channel_billing">भुगतान</string>
+    <string name="notif_permission_title">सुनवाई की याद पाएं</string>
+    <string name="notif_permission_body">हर सुनवाई से एक शाम पहले याद दिलाएंगे, और AI का काम पूरा होने या क्लाइंट के भुगतान पर बताएंगे।</string>
+    <string name="notif_permission_allow">याद दिलाना चालू करें</string>
+    <string name="notif_permission_skip">अभी नहीं</string>
 </resources>

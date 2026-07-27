@@ -11,4 +11,6 @@
     <string name="vault_ocr_done">Searchable</string>
     <string name="vault_ocr_pending">Processing</string>
     <string name="vault_ocr_failed">Not searchable</string>
+    <string name="vault_scan">Scan a document</string>
+    <string name="vault_scan_unavailable">Scanning needs Google Play Services on this device.</string>
 </resources>

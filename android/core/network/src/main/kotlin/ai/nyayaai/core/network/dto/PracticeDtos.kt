@@ -346,3 +346,23 @@ data class PortalInvoiceDto(
     val paymentLink: String? = null,
     val createdAt: String? = null,
 )
+
+/** B.9 step 1: reserve a row and get a signed URL to PUT the bytes to. */
+@Serializable
+data class UploadUrlRequestDto(
+    val name: String,
+    val mimeType: String,
+    val sizeBytes: Long,
+    val caseId: String? = null,
+    val clientId: String? = null,
+    val folder: String? = null,
+)
+
+@Serializable
+data class UploadUrlDto(
+    val uploadUrl: String? = null,
+    val documentId: String? = null,
+    // The window the app has to finish the PUT. A queued upload that sits offline past
+    // this must re-request rather than fail (A5).
+    val expiresInSeconds: Int = 0,
+)

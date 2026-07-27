@@ -73,6 +73,7 @@ class InvoiceListViewModel
     @Inject
     constructor(
         private val repository: BillingRepository,
+        val paymentCoordinator: PaymentCoordinator,
     ) : ViewModel() {
         private val _state = MutableStateFlow<UiState<List<Invoice>>>(UiState.Loading)
         val state: StateFlow<UiState<List<Invoice>>> = _state.asStateFlow()
@@ -108,5 +109,26 @@ class InvoiceListViewModel
 
         fun clearMessage() {
             _message.value = null
+        }
+
+        /**
+         * B.10 steps 2-3: the **server** creates the order, and Checkout is handed that
+         * order id. The app never invents an amount — the one Razorpay charges is the
+         * one the server put on the order.
+         */
+        fun pay(
+            invoice: Invoice,
+            onReady: (PaymentOrder) -> Unit,
+        ) {
+            viewModelScope.launch {
+                when (val order = repository.createOrder(invoice.id)) {
+                    is ApiResult.Success -> {
+                        paymentCoordinator.beginning(invoice.id, order.data.orderId)
+                        onReady(order.data)
+                    }
+
+                    is ApiResult.Failure -> _message.value = order.error.message
+                }
+            }
         }
     }

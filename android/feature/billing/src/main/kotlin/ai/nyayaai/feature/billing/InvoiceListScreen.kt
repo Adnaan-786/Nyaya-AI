@@ -28,19 +28,33 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun InvoiceListRoute(
+    firmName: String,
     modifier: Modifier = Modifier,
     viewModel: InvoiceListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val payment by viewModel.paymentCoordinator.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    // The list refreshes when the server settles a payment, so the status badge shows
+    // what the server decided rather than what Checkout claimed.
+    LaunchedEffect(payment) {
+        if (payment is PaymentState.Settled) {
+            viewModel.load()
+            viewModel.paymentCoordinator.clear()
+        }
+    }
 
     when (state) {
         is UiState.Loading -> LoadingList(modifier = modifier)
@@ -74,6 +88,22 @@ fun InvoiceListRoute(
                         InvoiceCard(
                             invoice = invoice,
                             onSend = { viewModel.send(it) },
+                            onPay = { target ->
+                                val activity = context.findActivity() ?: return@InvoiceCard
+                                viewModel.pay(target) { order ->
+                                    CheckoutLauncher.start(
+                                        activity = activity,
+                                        request =
+                                            CheckoutRequest(
+                                                keyId = order.keyId,
+                                                orderId = order.orderId,
+                                                amountPaise = order.amountPaise,
+                                                invoiceNumber = target.number,
+                                                firmName = firmName,
+                                            ),
+                                    )
+                                }
+                            },
                             modifier = Modifier.animatedListEntry(index),
                         )
                     }
@@ -87,6 +117,7 @@ fun InvoiceListRoute(
 private fun InvoiceCard(
     invoice: Invoice,
     onSend: (InvoiceId) -> Unit,
+    onPay: (Invoice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NyayaCard(modifier = modifier) {
@@ -146,10 +177,20 @@ private fun InvoiceCard(
                 )
             }
 
-            if (invoice.status == InvoiceStatus.DRAFT) {
-                TextButton(onClick = { onSend(invoice.id) }) {
-                    Text(stringResource(R.string.billing_send))
-                }
+            when (invoice.status) {
+                InvoiceStatus.DRAFT ->
+                    TextButton(onClick = { onSend(invoice.id) }) {
+                        Text(stringResource(R.string.billing_send))
+                    }
+
+                // Paid invoices offer nothing: the money is in, and B.10 makes the
+                // server the only thing that can say so.
+                InvoiceStatus.SENT, InvoiceStatus.OVERDUE ->
+                    TextButton(onClick = { onPay(invoice) }) {
+                        Text(stringResource(R.string.billing_pay))
+                    }
+
+                InvoiceStatus.PAID, InvoiceStatus.UNKNOWN -> Unit
             }
         }
     }
@@ -189,3 +230,14 @@ private fun InvoiceStatus.tone(): StatusTone =
         InvoiceStatus.SENT -> StatusTone.NEUTRAL
         InvoiceStatus.DRAFT, InvoiceStatus.UNKNOWN -> StatusTone.NEUTRAL
     }
+
+/** Razorpay Checkout needs the hosting Activity, which a composable only sees through
+ *  its Context chain. */
+private fun android.content.Context.findActivity(): android.app.Activity? {
+    var current = this
+    while (current is android.content.ContextWrapper) {
+        if (current is android.app.Activity) return current
+        current = current.baseContext
+    }
+    return null
+}

@@ -38,6 +38,24 @@
                 <data android:scheme="nyayaai" />
             </intent-filter>
         </activity>
+
+        <!-- B.8. Data-only messages, so this runs foreground, background and cold.
+             Harmless when google-services.json is absent: FirebaseApp never initialises,
+             so nothing is ever delivered here. -->
+        <service
+            android:name=".push.NyayaMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Ships the scanner module with the install rather than downloading it on
+             first use, so a lawyer in a courthouse basement with no signal can still
+             scan an order sheet. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="docscanner" />
     </application>
 
 </manifest>

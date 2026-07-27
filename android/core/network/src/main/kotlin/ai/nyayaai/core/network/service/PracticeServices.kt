@@ -28,12 +28,18 @@ import ai.nyayaai.core.network.dto.TaskDto
 import ai.nyayaai.core.network.dto.TimeEntryCreateDto
 import ai.nyayaai.core.network.dto.TimeEntryDto
 import ai.nyayaai.core.network.dto.TodayDto
+import ai.nyayaai.core.network.dto.UploadUrlDto
+import ai.nyayaai.core.network.dto.UploadUrlRequestDto
+import okhttp3.RequestBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Url
 
 /** B.6 cases, hearings, clients and the timeline. */
 interface CaseService {
@@ -137,6 +143,27 @@ interface CalendarService {
 }
 
 interface DocumentService {
+    @POST("documents/upload-url")
+    suspend fun createUploadUrl(
+        @Body body: UploadUrlRequestDto,
+    ): ApiEnvelope<UploadUrlDto>
+
+    /**
+     * The raw PUT of the bytes. `@Url` because the signed URL is absolute and must not
+     * be resolved against the API base — and it carries its own signature, so the
+     * Authorization header is neither needed nor wanted here.
+     */
+    @PUT
+    suspend fun uploadBytes(
+        @Url url: String,
+        @Body body: RequestBody,
+    ): Response<Unit>
+
+    @POST("documents/{id}/confirm")
+    suspend fun confirmUpload(
+        @Path("id") id: String,
+    ): ApiEnvelope<DocumentDto>
+
     @GET("documents")
     suspend fun documents(
         @Query("folder") folder: String? = null,

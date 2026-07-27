@@ -11,4 +11,6 @@
     <string name="vault_ocr_done">खोजने योग्य</string>
     <string name="vault_ocr_pending">प्रक्रिया में</string>
     <string name="vault_ocr_failed">खोजने योग्य नहीं</string>
+    <string name="vault_scan">दस्तावेज़ स्कैन करें</string>
+    <string name="vault_scan_unavailable">स्कैन करने के लिए इस डिवाइस पर Google Play Services चाहिए।</string>
 </resources>

@@ -4,6 +4,22 @@ plugins {
     alias(libs.plugins.nyayaai.android.hilt)
 }
 
+// The google-services plugin hard-fails the build when google-services.json is absent,
+// which would mean nobody could build or demo this app until a Firebase project existed.
+// Applying it only when the file is present keeps push opt-in: drop the file in and FCM
+// starts working, leave it out and everything else still runs.
+val hasFirebaseConfig = file("google-services.json").exists()
+if (hasFirebaseConfig) {
+    apply(
+        plugin =
+            libs.plugins.google.services
+                .get()
+                .pluginId,
+    )
+} else {
+    logger.lifecycle("google-services.json not found — building without FCM. See docs/INTEGRATIONS.md")
+}
+
 android {
     namespace = "ai.nyayaai.app"
 
@@ -51,6 +67,14 @@ dependencies {
     implementation(projects.feature.tasks)
     implementation(projects.feature.portal)
     implementation(projects.feature.settings)
+
+    // MainActivity implements Razorpay's PaymentResultWithDataListener: the SDK
+    // reports to the Activity, not to the screen that opened Checkout.
+    implementation(libs.razorpay.checkout)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

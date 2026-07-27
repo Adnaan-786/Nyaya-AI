@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "ai.nyayaai.feature.documents"
 }
+
+dependencies {
+    implementation(libs.mlkit.document.scanner)
+}

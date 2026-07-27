@@ -15,4 +15,12 @@
     <string name="title_calendar">Calendar</string>
     <string name="title_tasks">Tasks</string>
     <string name="title_settings">Settings</string>
+    <string name="channel_hearings">Hearing reminders</string>
+    <string name="channel_case_updates">Case updates</string>
+    <string name="channel_ai_results">AI results</string>
+    <string name="channel_billing">Payments</string>
+    <string name="notif_permission_title">Get hearing reminders</string>
+    <string name="notif_permission_body">We will remind you the evening before each hearing, and tell you when an AI job finishes or a client pays.</string>
+    <string name="notif_permission_allow">Turn on reminders</string>
+    <string name="notif_permission_skip">Not now</string>
 </resources>
