@@ -93,3 +93,9 @@ class User(Base, UUIDMixin, TimestampMixin):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    tasks = relationship(
+        "Task", 
+        back_populates="assignee",
+        cascade="all, delete-orphan",
+    )

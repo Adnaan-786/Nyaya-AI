@@ -45,3 +45,10 @@ uv run ruff check .
 | OCR_PROVIDER | OCR provider | No |
 | LLM_PROVIDER | LLM provider | No |
 | FAKE_MODE | Enable mock integrations | No |
+
+Database supports RLS.
+All tenant tables have RLS enabled.
+Policies are created.
+FORCE ROW LEVEL SECURITY is enabled.
+Tests must be run using a non-superuser application role.
+Using postgres (superuser/BYPASSRLS) will bypass tenant isolation and cause the RLS test to fail.

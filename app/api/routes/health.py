@@ -19,3 +19,4 @@ async def health_check() -> ApiResponse[dict]:
             "environment": settings.environment.value,
         },
     )
+

@@ -29,8 +29,4 @@ class CaseAssignee(Base):
         back_populates="assigned_cases",
     )
 
-    tasks = relationship(
-        "Task",
-        back_populates="assignee",
-        cascade="all, delete-orphan",
-    )
+    

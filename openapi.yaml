@@ -15,17 +15,23 @@ tags:
     description: Service health endpoints
 
 paths:
+
   /v1/health:
     get:
       tags:
         - Health
+
       summary: Health Check
+
       description: Returns the health status of the API.
+
       operationId: healthCheck
 
       responses:
+
         "200":
           description: Service is healthy
+
           content:
             application/json:
               schema:
@@ -33,6 +39,7 @@ paths:
 
         "500":
           description: Internal Server Error
+
           content:
             application/json:
               schema:
@@ -40,10 +47,68 @@ paths:
 
 components:
 
+  #################################################################
+  # Security
+  #################################################################
+
+  securitySchemes:
+
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  #################################################################
+  # Reusable Schemas
+  #################################################################
+
   schemas:
 
-    ApiResponseHealth:
+    UUID:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2026-07-27T18:30:00Z"
+
+    PaginationMeta:
+
       type: object
+
+      required:
+        - page
+        - limit
+        - total
+
+      properties:
+
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 20
+
+        total:
+          type: integer
+          minimum: 0
+          example: 250
+
+    #################################################################
+    # Health Response
+    #################################################################
+
+    ApiResponseHealth:
+
+      type: object
+
       required:
         - success
         - data
@@ -55,9 +120,17 @@ components:
           example: true
 
         data:
+
           type: object
 
+          required:
+            - status
+            - service
+            - version
+            - environment
+
           properties:
+
             status:
               type: string
               example: healthy
@@ -79,6 +152,10 @@ components:
 
         meta:
           nullable: true
+
+    #################################################################
+    # Error Responses
+    #################################################################
 
     ErrorEnvelope:
 
@@ -125,33 +202,6 @@ components:
           nullable: true
           additionalProperties: true
 
-    Meta:
-
-      type: object
-
-      required:
-        - page
-        - limit
-        - total
-
-      properties:
-
-        page:
-          type: integer
-          minimum: 1
-          example: 1
-
-        limit:
-          type: integer
-          minimum: 1
-          maximum: 100
-          example: 20
-
-        total:
-          type: integer
-          minimum: 0
-          example: 250
-
     ErrorCode:
 
       type: string
@@ -160,15 +210,95 @@ components:
         - VALIDATION_ERROR
         - UNAUTHENTICATED
         - TOKEN_EXPIRED
-        - QUOTA_EXCEEDED
         - FORBIDDEN_ROLE
+        - QUOTA_EXCEEDED
+        - RATE_LIMITED
         - CASE_NOT_FOUND
         - CLIENT_NOT_FOUND
-        - DOCUMENT_NOT_FOUND
         - USER_NOT_FOUND
+        - DOCUMENT_NOT_FOUND
         - DUPLICATE_RESOURCE
         - CNR_INVALID
         - UPGRADE_REQUIRED
-        - RATE_LIMITED
         - INTERNAL_ERROR
         - UPSTREAM_UNAVAILABLE
+
+    #################################################################
+    # Common Enums (Backend Contracts)
+    #################################################################
+
+    PlanType:
+      type: string
+      enum:
+        - FREE
+        - PRO
+        - ENTERPRISE
+
+    UserRole:
+      type: string
+      enum:
+        - ADMIN
+        - LAWYER
+        - PARALEGAL
+        - STAFF
+
+    OCRStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+
+    TaskStatus:
+      type: string
+      enum:
+        - PENDING
+        - SUCCESS
+
+    AIJobStatus:
+      type: string
+      enum:
+        - PENDING
+        - RUNNING
+        - SUCCESS
+        - FAILED
+
+    AIJobType:
+      type: string
+      enum:
+        - OCR
+        - EMBEDDING
+        - SUMMARY
+        - CHAT
+        - CLASSIFICATION
+
+    InvoiceStatus:
+      type: string
+      enum:
+        - DRAFT
+        - SENT
+        - PAID
+        - OVERDUE
+        - CANCELLED
+
+    PaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - VERIFIED
+        - FAILED
+
+    HearingSource:
+      type: string
+      enum:
+        - MANUAL
+        - ECOURTS
+
+    NotificationType:
+      type: string
+      enum:
+        - INFO
+        - WARNING
+        - SUCCESS
+        - ERROR

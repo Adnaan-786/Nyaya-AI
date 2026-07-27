@@ -53,7 +53,9 @@ class Document(Base, UUIDMixin, TimestampMixin, TenantMixin):
         nullable=False,
     )
 
-    ocr_text: Mapped[str | None]
+    ocr_text: Mapped[str | None] = mapped_column(
+        TSVECTOR, nullable=True,
+    )
 
     uploaded_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id"),
