@@ -87,9 +87,14 @@ interface CaseService {
         @Body body: HearingCreateDto,
     ): ApiEnvelope<HearingDto>
 
-    @GET("cases/{id}/documents")
+    /**
+     * Documents for a case come from the documents collection filtered by `case_id`,
+     * not a `cases/{id}/documents` sub-resource — that route does not exist, and
+     * inventing one client-side is how a tab silently 404s.
+     */
+    @GET("documents")
     suspend fun caseDocuments(
-        @Path("id") id: String,
+        @Query("case_id") caseId: String,
     ): ApiEnvelope<List<DocumentDto>>
 
     @GET("clients")
