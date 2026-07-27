@@ -4,21 +4,25 @@ import ai.nyayaai.core.common.UiState
 import ai.nyayaai.core.common.format12Hour
 import ai.nyayaai.core.common.formatLong
 import ai.nyayaai.core.common.isPast
+import ai.nyayaai.core.common.nextUpBy
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.LoadingList
 import ai.nyayaai.core.designsystem.component.NyayaCard
+import ai.nyayaai.core.designsystem.component.SectionHeader
+import ai.nyayaai.core.designsystem.component.Stat
+import ai.nyayaai.core.designsystem.component.StatStrip
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.TimelineRail
 import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.Task
 import ai.nyayaai.core.network.mapper.TodayHearing
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,8 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -97,7 +99,21 @@ private fun TodayContentList(
         contentPadding = PaddingValues(NyayaTheme.spacing.md),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
     ) {
-        item { Header(board.date.formatLong(), board.hearings.size) }
+        item { Header(board.date.formatLong()) }
+
+        item {
+            StatStrip(
+                stats =
+                    listOf(
+                        Stat(stringResource(R.string.today_stat_today), board.hearings.size.toString()),
+                        Stat(stringResource(R.string.today_stat_tomorrow), board.tomorrowCount.toString()),
+                        Stat(
+                            stringResource(R.string.today_stat_tasks),
+                            content.tasks.count { it.dueDate?.isPast() == true }.toString(),
+                        ),
+                    ),
+            )
+        }
 
         if (board.overdueOutcomes.isNotEmpty()) {
             item {
@@ -121,9 +137,17 @@ private fun TodayContentList(
                 )
             }
         } else {
+            item {
+                SectionHeader(title = stringResource(R.string.today_schedule))
+            }
+
             itemsIndexed(board.hearings, key = { _, item -> item.id.value }) { index, hearing ->
-                HearingCard(
+                TimelineEntry(
                     hearing = hearing,
+                    // The next hearing that has not started yet — what a lawyer glancing
+                    // at the phone between listings actually wants marked.
+                    isNow = hearing.id == board.hearings.nextUpBy { it.time }?.id,
+                    isLast = index == board.hearings.lastIndex,
                     onClick = { onOpenCase(hearing.caseId) },
                     modifier = Modifier.animatedListEntry(index),
                 )
@@ -131,7 +155,7 @@ private fun TodayContentList(
         }
 
         if (content.tasks.isNotEmpty()) {
-            item { SectionHeader(stringResource(R.string.today_tasks)) }
+            item { SectionHeader(title = stringResource(R.string.today_tasks)) }
 
             itemsIndexed(content.tasks, key = { _, item -> item.id.value }) { index, task ->
                 TaskRow(task, modifier = Modifier.animatedListEntry(index))
@@ -143,7 +167,6 @@ private fun TodayContentList(
 @Composable
 private fun Header(
     dateLabel: String,
-    hearingCount: Int,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.padding(bottom = NyayaTheme.spacing.xs)) {
@@ -152,91 +175,69 @@ private fun Header(
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold,
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-        ) {
-            Text(
-                // The server's date-only field, formatted in IST — never derived from a
-                // device clock that may be on another day.
-                text = dateLabel,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (hearingCount > 0) {
-                Text(
-                    text = "·",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = pluralStringResource(R.plurals.today_hearing_count, hearingCount, hearingCount),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        Text(
+            // The server's date-only field, formatted in IST — never derived from a
+            // device clock that may be on another day. The counts live in the stat
+            // strip below rather than being repeated here.
+            text = dateLabel,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
 @Composable
-private fun SectionHeader(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.padding(top = NyayaTheme.spacing.sm),
-    )
-}
-
-@Composable
-private fun HearingCard(
+private fun TimelineEntry(
     hearing: TodayHearing,
+    isNow: Boolean,
+    isLast: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    NyayaCard(modifier = modifier, onClick = onClick) {
-        Row(verticalAlignment = Alignment.Top) {
-            // A saffron rule beside the time turns the list into a schedule you can scan
-            // down, rather than a stack of equally-weighted boxes.
-            Box(
-                modifier =
-                    Modifier
-                        .width(RULE_WIDTH)
-                        .height(RULE_HEIGHT)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(MaterialTheme.colorScheme.secondary),
+    Row(modifier = modifier.height(IntrinsicSize.Min)) {
+        TimelineRail(isNow = isNow, isLast = isLast)
+
+        Column(
+            modifier =
+                Modifier
+                    .width(TIME_COLUMN_WIDTH)
+                    .padding(start = NyayaTheme.spacing.sm, top = NyayaTheme.spacing.xs),
+        ) {
+            Text(
+                text = hearing.time?.format12Hour() ?: stringResource(R.string.today_time_unspecified),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color =
+                    if (isNow) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
+        }
 
-            Column(
-                modifier =
-                    Modifier
-                        .width(TIME_COLUMN_WIDTH)
-                        .padding(start = NyayaTheme.spacing.sm),
-            ) {
-                Text(
-                    text = hearing.time?.format12Hour() ?: stringResource(R.string.today_time_unspecified),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
-            ) {
+        NyayaCard(
+            modifier = Modifier.weight(1f).padding(bottom = NyayaTheme.spacing.sm),
+            onClick = onClick,
+            // The next listing is tinted rather than merely bolder: on a screen read at
+            // arm's length in a corridor, colour carries further than weight.
+            containerColor =
+                if (isNow) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerLowest
+                },
+        ) {
+            // No avatar here, unlike the case list: the dot and the time already anchor
+            // the row on the left, and a third element in that column only steals width
+            // from a case title that needs it.
+            Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
                 Text(
                     text = hearing.caseTitle,
                     style = MaterialTheme.typography.titleSmall,
                 )
                 hearing.purpose?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                    Text(text = it, style = MaterialTheme.typography.bodyMedium)
                 }
                 listOfNotNull(hearing.courtroom, hearing.courtName).firstOrNull()?.let {
                     Text(
@@ -281,5 +282,3 @@ private fun TaskRow(
 }
 
 private val TIME_COLUMN_WIDTH = 84.dp
-private val RULE_WIDTH = 3.dp
-private val RULE_HEIGHT = 40.dp

@@ -4,6 +4,7 @@ import ai.nyayaai.core.common.UiState
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.HearingChip
+import ai.nyayaai.core.designsystem.component.InitialAvatar
 import ai.nyayaai.core.designsystem.component.LoadingList
 import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.StatusBadge
@@ -135,33 +136,40 @@ internal fun CaseCard(
     modifier: Modifier = Modifier,
 ) {
     NyayaCard(modifier = modifier, onClick = onClick) {
-        Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
-            Text(text = case.title, style = MaterialTheme.typography.titleMedium)
+        Row(verticalAlignment = Alignment.Top) {
+            InitialAvatar(name = case.title)
 
-            val subtitle = listOfNotNull(case.caseNumber, case.courtName).joinToString(" · ")
-            if (subtitle.isNotBlank()) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier.padding(start = NyayaTheme.spacing.md),
+                verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
             ) {
-                case.nextHearingDate?.let { HearingChip(date = it) }
+                Text(text = case.title, style = MaterialTheme.typography.titleMedium)
 
-                case.stage?.let { StatusBadge(text = it, tone = StatusTone.NEUTRAL) }
-
-                // A case with no CNR was entered by hand — worth showing, because it is
-                // the one that will never update itself from eCourts.
-                if (case.cnr == null) {
-                    StatusBadge(
-                        text = stringResource(R.string.cases_manual_badge),
-                        tone = StatusTone.WARNING,
+                val subtitle = listOfNotNull(case.caseNumber, case.courtName).joinToString(" · ")
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    case.nextHearingDate?.let { HearingChip(date = it) }
+
+                    case.stage?.let { StatusBadge(text = it, tone = StatusTone.NEUTRAL) }
+
+                    // A case with no CNR was entered by hand — worth showing, because it
+                    // is the one that will never update itself from eCourts.
+                    if (case.cnr == null) {
+                        StatusBadge(
+                            text = stringResource(R.string.cases_manual_badge),
+                            tone = StatusTone.WARNING,
+                        )
+                    }
                 }
             }
         }

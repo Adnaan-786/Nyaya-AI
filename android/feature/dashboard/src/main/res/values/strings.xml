@@ -17,4 +17,8 @@
         <item quantity="one">%1$d hearing</item>
         <item quantity="other">%1$d hearings</item>
     </plurals>
+    <string name="today_schedule">Schedule</string>
+    <string name="today_stat_today">Today</string>
+    <string name="today_stat_tomorrow">Tomorrow</string>
+    <string name="today_stat_tasks">Overdue</string>
 </resources>

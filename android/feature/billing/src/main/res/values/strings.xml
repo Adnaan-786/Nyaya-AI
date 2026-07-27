@@ -14,4 +14,10 @@
     <string name="billing_gst">GST at %1$d%%</string>
     <string name="billing_reverse_charge">GST payable by the recipient under reverse charge</string>
     <string name="billing_total">Total</string>
+    <string name="billing_outstanding">Outstanding</string>
+    <plurals name="billing_awaiting">
+        <item quantity="zero">Nothing overdue</item>
+        <item quantity="one">%1$d overdue</item>
+        <item quantity="other">%1$d overdue</item>
+    </plurals>
 </resources>

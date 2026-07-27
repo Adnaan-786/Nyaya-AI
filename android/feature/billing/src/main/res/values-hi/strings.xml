@@ -14,4 +14,9 @@
     <string name="billing_gst">GST %1$d%%</string>
     <string name="billing_reverse_charge">reverse charge के तहत GST प्राप्तकर्ता को देना है</string>
     <string name="billing_total">कुल</string>
+    <string name="billing_outstanding">बकाया राशि</string>
+    <plurals name="billing_awaiting">
+        <item quantity="one">%1$d बकाया</item>
+        <item quantity="other">%1$d बकाया</item>
+    </plurals>
 </resources>

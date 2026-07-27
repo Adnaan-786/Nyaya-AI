@@ -5,6 +5,7 @@ import ai.nyayaai.core.common.formatRupees
 import ai.nyayaai.core.common.formatShort
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
+import ai.nyayaai.core.designsystem.component.HeroAmount
 import ai.nyayaai.core.designsystem.component.LoadingList
 import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.StatusBadge
@@ -14,6 +15,7 @@ import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Invoice
 import ai.nyayaai.core.model.InvoiceId
 import ai.nyayaai.core.model.InvoiceStatus
+import ai.nyayaai.core.model.sum
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -84,6 +87,8 @@ fun InvoiceListRoute(
                     contentPadding = PaddingValues(NyayaTheme.spacing.md),
                     verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                 ) {
+                    item { OutstandingHeader(invoices) }
+
                     itemsIndexed(invoices, key = { _, item -> item.id.value }) { index, invoice ->
                         InvoiceCard(
                             invoice = invoice,
@@ -240,4 +245,27 @@ private fun android.content.Context.findActivity(): android.app.Activity? {
         current = current.baseContext
     }
     return null
+}
+
+/**
+ * What a lawyer opens billing to find out, answered before they read a single row.
+ *
+ * Outstanding deliberately excludes drafts as well as paid invoices: a draft is money
+ * not yet asked for, and counting it would overstate what is actually owed.
+ */
+@Composable
+private fun OutstandingHeader(
+    invoices: List<Invoice>,
+    modifier: Modifier = Modifier,
+) {
+    val unpaid =
+        invoices.filter { it.status != InvoiceStatus.PAID && it.status != InvoiceStatus.DRAFT }
+    val overdue = invoices.count { it.status == InvoiceStatus.OVERDUE }
+
+    HeroAmount(
+        label = stringResource(R.string.billing_outstanding),
+        value = unpaid.map { it.totalPaise }.sum().formatRupees(),
+        caption = pluralStringResource(R.plurals.billing_awaiting, overdue, overdue),
+        modifier = modifier.padding(vertical = NyayaTheme.spacing.md),
+    )
 }

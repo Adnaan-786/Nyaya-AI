@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 fun NyayaCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    containerColor: Color = Color.Unspecified,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -68,7 +70,15 @@ fun NyayaCard(
                 ),
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                containerColor =
+                    containerColor.takeIf { it != Color.Unspecified }
+                        ?: MaterialTheme.colorScheme.surfaceContainerLowest,
+                // Content colour is pinned to onSurface rather than derived from the
+                // container. Material would pair a saffron tint with saffron text, and
+                // orange body copy on peach both reads as a warning and is harder to
+                // read than it looks in a palette. Every tint here is pale enough that
+                // ordinary dark text is the right answer on all of them.
+                contentColor = MaterialTheme.colorScheme.onSurface,
             ),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),

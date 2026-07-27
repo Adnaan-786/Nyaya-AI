@@ -4,6 +4,7 @@ import ai.nyayaai.core.model.CourtDate
 import ai.nyayaai.core.model.CourtTime
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
@@ -78,3 +79,24 @@ private val MONTH_ABBREVIATIONS =
         "Nov",
         "Dec",
     )
+
+/** The wall-clock time in India right now. */
+fun nowTimeInIndia(clock: Clock = Clock.System): LocalTime = clock.now().toIndiaDateTime().time
+
+/**
+ * The next entry that has not started yet, or the last one once the day is over.
+ *
+ * Lives here rather than in a screen because "which one am I on" is a question about the
+ * clock in India, and answering it from a device clock is the same bug class as parsing
+ * a hearing date as an instant.
+ */
+fun <T> List<T>.nextUpBy(
+    clock: Clock = Clock.System,
+    time: (T) -> CourtTime?,
+): T? {
+    val now = nowTimeInIndia(clock)
+    return firstOrNull { entry ->
+        val at = time(entry)
+        at == null || at.time >= now
+    } ?: lastOrNull()
+}
