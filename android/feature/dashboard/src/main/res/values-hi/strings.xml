@@ -15,4 +15,8 @@
     <string name="today_no_tasks">कोई खुला काम नहीं</string>
     <string name="today_courtroom">%1$s</string>
     <string name="today_time_unspecified">समय दर्ज नहीं</string>
+    <plurals name="today_hearing_count">
+        <item quantity="one">%1$d hearing</item>
+        <item quantity="other">%1$d hearings</item>
+    </plurals>
 </resources>

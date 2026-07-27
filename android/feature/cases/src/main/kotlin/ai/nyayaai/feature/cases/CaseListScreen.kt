@@ -5,12 +5,13 @@ import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.HearingChip
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Case
 import ai.nyayaai.core.model.CaseId
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,9 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -106,8 +106,12 @@ fun CaseListRoute(
                         contentPadding = PaddingValues(NyayaTheme.spacing.md),
                         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                     ) {
-                        items(cases, key = { it.id.value }) { case ->
-                            CaseCard(case, onClick = { onOpenCase(case.id) })
+                        itemsIndexed(cases, key = { _, item -> item.id.value }) { index, case ->
+                            CaseCard(
+                                case = case,
+                                onClick = { onOpenCase(case.id) },
+                                modifier = Modifier.animatedListEntry(index),
+                            )
                         }
                     }
                 }
@@ -130,17 +134,9 @@ internal fun CaseCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
-    ) {
-        Column(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
-        ) {
-            Text(text = case.title, style = MaterialTheme.typography.titleSmall)
+    NyayaCard(modifier = modifier, onClick = onClick) {
+        Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+            Text(text = case.title, style = MaterialTheme.typography.titleMedium)
 
             val subtitle = listOfNotNull(case.caseNumber, case.courtName).joinToString(" · ")
             if (subtitle.isNotBlank()) {

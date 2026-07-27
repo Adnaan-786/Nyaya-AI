@@ -13,4 +13,8 @@
     <string name="today_no_tasks">No open tasks</string>
     <string name="today_courtroom">%1$s</string>
     <string name="today_time_unspecified">Time not listed</string>
+    <plurals name="today_hearing_count">
+        <item quantity="one">%1$d hearing</item>
+        <item quantity="other">%1$d hearings</item>
+    </plurals>
 </resources>

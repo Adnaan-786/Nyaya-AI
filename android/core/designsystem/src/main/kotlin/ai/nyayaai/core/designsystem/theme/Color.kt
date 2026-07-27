@@ -29,11 +29,22 @@ internal object Palette {
     val Saffron100 = Color(0xFFFDEEDA)
 
     // Ivory / paper — surfaces. Warmer than pure white, which is harsh over long sessions.
+    //
+    // The whole warm ramp is spelled out because Material 3 otherwise *derives* its
+    // surfaceContainer tones from the primary seed. With a navy seed that produces cool
+    // lavender cards sitting on a warm ivory background — the two read as different
+    // materials, and the app looks like two designs stapled together. Naming every step
+    // keeps surfaces on one warm ramp.
     val Ivory = Color(0xFFF6F2E8)
     val Paper = Color(0xFFFFFDF7)
     val CardLight = Color(0xFFFFFEFA)
-    val LineLight = Color(0xFFE7E0D0)
-    val MutedLight = Color(0xFF847B69)
+    val SurfaceLowest = Color(0xFFFFFFFF)
+    val SurfaceLow = Color(0xFFFBF7EF)
+    val SurfaceContainer = Color(0xFFF3EEE2)
+    val SurfaceHigh = Color(0xFFEDE7D9)
+    val SurfaceHighest = Color(0xFFE7E0CF)
+    val LineLight = Color(0xFFE0D8C6)
+    val MutedLight = Color(0xFF6E6555)
 
     // Semantic.
     val Green600 = Color(0xFF1E7A4D)
@@ -67,8 +78,18 @@ internal val NyayaLightColors =
         onBackground = Palette.Navy900,
         surface = Palette.CardLight,
         onSurface = Palette.Navy900,
-        surfaceVariant = Palette.Paper,
+        surfaceVariant = Palette.SurfaceHigh,
         onSurfaceVariant = Palette.MutedLight,
+        surfaceContainerLowest = Palette.SurfaceLowest,
+        surfaceContainerLow = Palette.SurfaceLow,
+        surfaceContainer = Palette.Paper,
+        surfaceContainerHigh = Palette.SurfaceHigh,
+        surfaceContainerHighest = Palette.SurfaceHighest,
+        surfaceBright = Palette.Paper,
+        surfaceDim = Palette.SurfaceHighest,
+        // Elevation overlays tint with this; left warm so a raised card stays paper
+        // rather than drifting blue as it rises.
+        surfaceTint = Palette.Saffron500,
         outline = Palette.LineLight,
         outlineVariant = Palette.LineLight,
         error = Palette.Red600,
@@ -93,8 +114,16 @@ internal val NyayaDarkColors =
         onBackground = Palette.OnDark,
         surface = Palette.DarkSurfaceRaised,
         onSurface = Palette.OnDark,
-        surfaceVariant = Palette.DarkSurface,
+        surfaceVariant = Palette.DarkLine,
         onSurfaceVariant = Palette.DarkMuted,
+        surfaceContainerLowest = Color(0xFF0A0E16),
+        surfaceContainerLow = Color(0xFF141A26),
+        surfaceContainer = Palette.DarkSurfaceRaised,
+        surfaceContainerHigh = Color(0xFF1E2735),
+        surfaceContainerHighest = Color(0xFF252F3F),
+        surfaceBright = Color(0xFF252F3F),
+        surfaceDim = Palette.DarkSurface,
+        surfaceTint = Palette.Saffron500,
         outline = Palette.DarkLine,
         outlineVariant = Palette.DarkLine,
         error = Color(0xFFE98A78),

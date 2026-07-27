@@ -6,13 +6,14 @@ import ai.nyayaai.core.common.formatShort
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Invoice
 import ai.nyayaai.core.model.InvoiceId
 import ai.nyayaai.core.model.InvoiceStatus
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,8 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -70,8 +70,12 @@ fun InvoiceListRoute(
                     contentPadding = PaddingValues(NyayaTheme.spacing.md),
                     verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                 ) {
-                    items(invoices, key = { it.id.value }) { invoice ->
-                        InvoiceCard(invoice, onSend = { viewModel.send(it) })
+                    itemsIndexed(invoices, key = { _, item -> item.id.value }) { index, invoice ->
+                        InvoiceCard(
+                            invoice = invoice,
+                            onSend = { viewModel.send(it) },
+                            modifier = Modifier.animatedListEntry(index),
+                        )
                     }
                 }
             }
@@ -85,17 +89,14 @@ private fun InvoiceCard(
     onSend: (InvoiceId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth().clickable {}) {
-        Column(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
-        ) {
+    NyayaCard(modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = invoice.number, style = MaterialTheme.typography.titleSmall)
+                Text(text = invoice.number, style = MaterialTheme.typography.titleMedium)
                 StatusBadge(
                     text = stringResource(invoice.status.labelRes()),
                     tone = invoice.status.tone(),
