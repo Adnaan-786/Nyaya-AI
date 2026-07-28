@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,6 +13,17 @@ class Settings(BaseSettings):
     debug: bool = True
 
     database_url: str = "postgresql+asyncpg://nyaya@/nyayaai?host=/tmp&port=5433"
+
+    @model_validator(mode="after")
+    def _normalise_database_url(self) -> "Settings":
+        # Render and most PaaS providers hand out `postgres://` or `postgresql://`
+        # connection strings. asyncpg needs the `+asyncpg` dialect suffix.
+        url = self.database_url
+        if url.startswith("postgres://"):
+            self.database_url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://") and "+asyncpg" not in url:
+            self.database_url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return self
 
     # B.4.3: 30-minute access token, 30-day refresh with rotation.
     jwt_secret: str = "dev-only-change-in-staging"

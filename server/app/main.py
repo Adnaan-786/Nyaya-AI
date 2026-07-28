@@ -29,11 +29,9 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    if settings.environment == "local":
-        # Local convenience only. Staging and production go through Alembic so schema
-        # changes are reviewable and reversible.
+    if settings.environment in ("local", "staging"):
         await create_all()
-        logger.info("local schema ensured")
+        logger.info("schema ensured (%s)", settings.environment)
     yield
 
 
