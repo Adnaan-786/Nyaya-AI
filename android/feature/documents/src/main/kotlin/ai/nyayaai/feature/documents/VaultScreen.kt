@@ -5,8 +5,10 @@ import ai.nyayaai.core.common.todayInIndia
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Document
 import ai.nyayaai.core.model.OcrStatus
@@ -20,7 +22,6 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,9 +34,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DocumentScanner
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -227,8 +228,12 @@ fun VaultRoute(
                             contentPadding = PaddingValues(NyayaTheme.spacing.md),
                             verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                         ) {
-                            items(documents, key = { it.id.value }) { document ->
-                                DocumentCard(document, onClick = { onOpenDocument(document) })
+                            itemsIndexed(documents, key = { _, d -> d.id.value }) { index, document ->
+                                DocumentCard(
+                                    document = document,
+                                    onClick = { onOpenDocument(document) },
+                                    modifier = Modifier.animatedListEntry(index),
+                                )
                             }
                         }
                     }
@@ -246,15 +251,8 @@ private fun DocumentCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .animateContentSize()
-                .clickable(onClick = onClick),
-    ) {
+    NyayaCard(modifier = modifier.animateContentSize(), onClick = onClick) {
         Row(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
         ) {

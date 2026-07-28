@@ -1,13 +1,13 @@
 package ai.nyayaai.feature.ai
 
 import ai.nyayaai.core.designsystem.component.AiDisclaimerBanner
+import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.ResearchConfidence
 import ai.nyayaai.core.network.mapper.AiContent
 import ai.nyayaai.core.network.mapper.Citation
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -75,17 +74,13 @@ fun AiRoute(
 
             state.upgradeTo?.let { plan ->
                 item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(NyayaTheme.spacing.md)) {
-                            Text(
-                                text = stringResource(R.string.ai_quota_title),
-                                style = MaterialTheme.typography.titleSmall,
-                            )
-                            // B.14: the 402 carries upgrade_to, so the paywall opens with
-                            // the right plan already selected rather than a generic pitch.
-                            TextButton(onClick = { onUpgrade(plan) }) {
-                                Text(stringResource(R.string.ai_upgrade, plan))
-                            }
+                    NyayaCard {
+                        Text(
+                            text = stringResource(R.string.ai_quota_title),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        TextButton(onClick = { onUpgrade(plan) }) {
+                            Text(stringResource(R.string.ai_upgrade, plan))
                         }
                     }
                 }
@@ -113,9 +108,8 @@ private fun ProgressCard(
     estimatedSeconds: Int?,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    NyayaCard(modifier = modifier) {
         Row(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
             horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -125,8 +119,6 @@ private fun ProgressCard(
                     text = stringResource(R.string.ai_working),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                // Showing the server's own estimate rather than an invented one: B.7
-                // returns estimated_seconds precisely so the wait has a shape.
                 estimatedSeconds?.let {
                     Text(
                         text = stringResource(R.string.ai_working_eta, it),
@@ -153,18 +145,16 @@ private fun AnswerCard(
         // answer reads as a bug; this reads as an honest "I could not find authority",
         // which is the only safe thing to tell someone heading into a courtroom.
         if (content.confidence == ResearchConfidence.INSUFFICIENT) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(NyayaTheme.spacing.md)) {
-                    Text(
-                        text = stringResource(R.string.ai_insufficient_title),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    Text(
-                        text = stringResource(R.string.ai_insufficient_detail),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            NyayaCard {
+                Text(
+                    text = stringResource(R.string.ai_insufficient_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = stringResource(R.string.ai_insufficient_detail),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         } else {
             StatusBadge(
@@ -213,20 +203,11 @@ private fun CitationCard(
     onOpen: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                // Tappable only when there is somewhere to go — a citation card that
-                // does nothing on tap is worse than one that is plainly static.
-                .let { base ->
-                    citation.sourceUrl?.let { url -> base.clickable { onOpen(url) } } ?: base
-                },
+    NyayaCard(
+        modifier = modifier,
+        onClick = citation.sourceUrl?.let { url -> { onOpen(url) } },
     ) {
-        Column(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
             Text(text = citation.title, style = MaterialTheme.typography.bodyMedium)
 
             val meta = listOfNotNull(citation.court, citation.year?.toString(), citation.citation)

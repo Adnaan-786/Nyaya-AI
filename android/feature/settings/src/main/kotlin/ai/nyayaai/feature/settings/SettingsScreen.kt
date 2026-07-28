@@ -1,15 +1,18 @@
 package ai.nyayaai.feature.settings
 
+import ai.nyayaai.core.designsystem.component.InitialAvatar
+import ai.nyayaai.core.designsystem.component.NyayaCard
+import ai.nyayaai.core.designsystem.component.SectionHeader
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Language
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -23,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,29 +50,30 @@ fun SettingsRoute(
                 .padding(NyayaTheme.spacing.md),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(NyayaTheme.spacing.md),
-                verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
+        NyayaCard {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
             ) {
-                Text(text = userName, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = userPhone,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = roleLabel,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                InitialAvatar(name = userName)
+
+                Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                    Text(text = userName, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = userPhone,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = roleLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
 
-        Text(
-            text = stringResource(R.string.settings_language),
-            style = MaterialTheme.typography.titleSmall,
-        )
+        SectionHeader(title = stringResource(R.string.settings_language))
 
         SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
             Language.entries.forEachIndexed { index, option ->

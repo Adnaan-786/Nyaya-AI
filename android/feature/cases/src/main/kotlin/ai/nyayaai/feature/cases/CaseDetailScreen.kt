@@ -7,8 +7,13 @@ import ai.nyayaai.core.common.formatShort
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaCard
+import ai.nyayaai.core.designsystem.component.SectionHeader
+import ai.nyayaai.core.designsystem.component.Stat
+import ai.nyayaai.core.designsystem.component.StatStrip
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Document
 import ai.nyayaai.core.model.Hearing
@@ -22,7 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
@@ -117,32 +122,44 @@ private fun OverviewTab(
 
     LazyColumn(
         contentPadding = PaddingValues(NyayaTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
     ) {
         item {
-            DetailRow(stringResource(R.string.case_number), case.caseNumber)
-            DetailRow(stringResource(R.string.case_cnr), case.cnr)
-            DetailRow(stringResource(R.string.case_court), case.courtName)
-            DetailRow(stringResource(R.string.case_judge), case.judgeName)
-            DetailRow(stringResource(R.string.case_type), case.caseType)
-            DetailRow(stringResource(R.string.case_stage), case.stage)
-            DetailRow(
-                stringResource(R.string.case_next_hearing),
-                case.nextHearingDate?.formatLong(),
+            StatStrip(
+                stats =
+                    listOf(
+                        Stat(stringResource(R.string.case_tab_hearings), detail.hearings.size.toString()),
+                        Stat(stringResource(R.string.case_tab_documents), detail.documents.size.toString()),
+                    ),
             )
         }
 
         item {
+            NyayaCard {
+                Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                    DetailRow(stringResource(R.string.case_number), case.caseNumber)
+                    DetailRow(stringResource(R.string.case_cnr), case.cnr)
+                    DetailRow(stringResource(R.string.case_court), case.courtName)
+                    DetailRow(stringResource(R.string.case_judge), case.judgeName)
+                    DetailRow(stringResource(R.string.case_type), case.caseType)
+                    DetailRow(stringResource(R.string.case_stage), case.stage)
+                    DetailRow(
+                        stringResource(R.string.case_next_hearing),
+                        case.nextHearingDate?.formatLong(),
+                    )
+                }
+            }
+        }
+
+        item {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = NyayaTheme.spacing.sm),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
             ) {
                 OutlinedButton(onClick = onSync, enabled = !detail.isSyncing) {
                     Text(stringResource(R.string.case_sync))
                 }
-                // A rate-limited or failed sync is a message beside the button, not a
-                // screen-level error — the case itself is still valid and on screen.
                 detail.syncMessage?.let {
                     Text(
                         text = it,
@@ -166,33 +183,34 @@ private fun HearingsTab(hearings: List<Hearing>) {
         contentPadding = PaddingValues(NyayaTheme.spacing.md),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
     ) {
-        items(hearings, key = { it.id.value }) { hearing ->
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = hearing.date.formatShort(),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    hearing.time?.let {
+        itemsIndexed(hearings, key = { _, h -> h.id.value }) { index, hearing ->
+            NyayaCard(modifier = Modifier.animatedListEntry(index)) {
+                Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
-                            text = it.format12Hour(),
+                            text = hearing.date.formatShort(),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        hearing.time?.let {
+                            Text(
+                                text = it.format12Hour(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    hearing.purpose?.let { Text(text = it, style = MaterialTheme.typography.bodyMedium) }
+                    hearing.outcomeNotes?.let {
+                        Text(
+                            text = "${stringResource(R.string.case_hearing_outcome)}: $it",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
-                hearing.purpose?.let { Text(text = it, style = MaterialTheme.typography.bodyMedium) }
-                hearing.outcomeNotes?.let {
-                    Text(
-                        text = "${stringResource(R.string.case_hearing_outcome)}: $it",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                HorizontalDivider(modifier = Modifier.padding(top = NyayaTheme.spacing.sm))
             }
         }
     }
@@ -209,23 +227,25 @@ private fun DocumentsTab(documents: List<Document>) {
         contentPadding = PaddingValues(NyayaTheme.spacing.md),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
     ) {
-        items(documents, key = { it.id.value }) { document ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = document.name, style = MaterialTheme.typography.bodyMedium)
-                    document.folder?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+        itemsIndexed(documents, key = { _, d -> d.id.value }) { index, document ->
+            NyayaCard(modifier = Modifier.animatedListEntry(index)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = document.name, style = MaterialTheme.typography.bodyMedium)
+                        document.folder?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
+                    StatusBadge(text = document.ocrStatus.name, tone = document.ocrStatus.tone())
                 }
-                StatusBadge(text = document.ocrStatus.name, tone = document.ocrStatus.tone())
             }
         }
     }

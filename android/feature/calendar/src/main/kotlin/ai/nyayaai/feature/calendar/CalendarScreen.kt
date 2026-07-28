@@ -8,6 +8,8 @@ import ai.nyayaai.core.common.todayInIndia
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaCard
+import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.CourtDate
@@ -19,7 +21,6 @@ import ai.nyayaai.core.network.api.map
 import ai.nyayaai.core.network.mapper.toDomain
 import ai.nyayaai.core.network.service.CalendarService
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,8 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -150,8 +150,12 @@ fun CalendarRoute(
                     days.forEach { (date, hearings) ->
                         item(key = date.toString()) { DayHeader(date) }
 
-                        items(hearings, key = { it.id.value }) { hearing ->
-                            AgendaRow(hearing, onClick = { onOpenCase(hearing.caseId) })
+                        itemsIndexed(hearings, key = { _, h -> h.id.value }) { index, hearing ->
+                            AgendaRow(
+                                hearing = hearing,
+                                onClick = { onOpenCase(hearing.caseId) },
+                                modifier = Modifier.animatedListEntry(index),
+                            )
                         }
                     }
                 }
@@ -203,11 +207,8 @@ private fun AgendaRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
-        ) {
+    NyayaCard(modifier = modifier, onClick = onClick) {
+        Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
             Text(
                 text = hearing.time?.format12Hour() ?: stringResource(R.string.calendar_no_time),
                 style = MaterialTheme.typography.titleSmall,

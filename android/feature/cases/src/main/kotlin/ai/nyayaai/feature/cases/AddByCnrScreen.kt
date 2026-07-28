@@ -1,6 +1,7 @@
 package ai.nyayaai.feature.cases
 
 import ai.nyayaai.core.common.formatLong
+import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.network.api.ApiError
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -212,11 +212,8 @@ private fun PreviewCard(
     preview: CnrPreview,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
-        ) {
+    NyayaCard(modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
             Text(text = preview.title, style = MaterialTheme.typography.titleSmall)
 
             listOfNotNull(preview.caseNumber, preview.courtName, preview.judgeName)

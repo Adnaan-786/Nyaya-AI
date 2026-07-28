@@ -6,8 +6,10 @@ import ai.nyayaai.core.common.isPast
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Task
 import ai.nyayaai.core.model.TaskId
@@ -28,8 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -153,8 +154,12 @@ fun TasksRoute(
                     contentPadding = PaddingValues(NyayaTheme.spacing.md),
                     verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                 ) {
-                    items(tasks, key = { it.id.value }) { task ->
-                        TaskCard(task, onToggle = { viewModel.toggle(task) })
+                    itemsIndexed(tasks, key = { _, item -> item.id.value }) { index, task ->
+                        TaskCard(
+                            task = task,
+                            onToggle = { viewModel.toggle(task) },
+                            modifier = Modifier.animatedListEntry(index),
+                        )
                     }
                 }
             }
@@ -171,11 +176,8 @@ private fun TaskCard(
     val done = task.status == TaskStatus.DONE
     val overdue = !done && task.dueDate?.isPast() == true
 
-    Card(modifier = modifier.fillMaxWidth().animateContentSize()) {
-        Row(
-            modifier = Modifier.padding(end = NyayaTheme.spacing.md),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    NyayaCard(modifier = modifier.animateContentSize()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = done, onCheckedChange = { onToggle() })
 
             Column(modifier = Modifier.weight(1f)) {

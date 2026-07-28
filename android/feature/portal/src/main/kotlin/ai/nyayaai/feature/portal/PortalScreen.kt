@@ -6,9 +6,13 @@ import ai.nyayaai.core.common.formatRupees
 import ai.nyayaai.core.common.formatShort
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
+import ai.nyayaai.core.designsystem.component.InitialAvatar
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaCard
+import ai.nyayaai.core.designsystem.component.SectionHeader
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.InvoiceStatus
 import ai.nyayaai.core.network.mapper.PortalCase
@@ -21,8 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -79,12 +82,7 @@ private fun PortalContentList(
         contentPadding = PaddingValues(NyayaTheme.spacing.md),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
     ) {
-        item {
-            Text(
-                text = stringResource(R.string.portal_cases_title),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        }
+        item { SectionHeader(title = stringResource(R.string.portal_cases_title)) }
 
         if (content.cases.isEmpty()) {
             item {
@@ -94,22 +92,18 @@ private fun PortalContentList(
                 )
             }
         } else {
-            items(content.cases, key = { it.id.value }) { case -> PortalCaseCard(case) }
+            itemsIndexed(content.cases, key = { _, c -> c.id.value }) { index, case ->
+                PortalCaseCard(case, modifier = Modifier.animatedListEntry(index))
+            }
         }
 
-        item {
-            Text(
-                text = stringResource(R.string.portal_invoices_title),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(top = NyayaTheme.spacing.sm),
-            )
-        }
+        item { SectionHeader(title = stringResource(R.string.portal_invoices_title)) }
 
         if (content.invoices.isEmpty()) {
             item { EmptyState(title = stringResource(R.string.portal_no_invoices)) }
         } else {
-            items(content.invoices, key = { it.id.value }) { invoice ->
-                PortalInvoiceCard(invoice, onPay)
+            itemsIndexed(content.invoices, key = { _, i -> i.id.value }) { index, invoice ->
+                PortalInvoiceCard(invoice, onPay, modifier = Modifier.animatedListEntry(index))
             }
         }
     }
@@ -120,34 +114,38 @@ private fun PortalCaseCard(
     case: PortalCase,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
+    NyayaCard(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
         ) {
-            Text(text = case.title, style = MaterialTheme.typography.titleSmall)
+            InitialAvatar(name = case.title)
 
-            case.courtName?.let {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
+            ) {
+                Text(text = case.title, style = MaterialTheme.typography.titleSmall)
+
+                case.courtName?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
                 Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text =
+                        case.nextHearingDate
+                            ?.let { stringResource(R.string.portal_next_hearing, it.formatLong()) }
+                            ?: stringResource(R.string.portal_no_next_hearing),
+                    style = MaterialTheme.typography.bodyMedium,
                 )
-            }
 
-            Text(
-                text =
-                    case.nextHearingDate
-                        ?.let { stringResource(R.string.portal_next_hearing, it.formatLong()) }
-                        // "No date fixed yet" is the honest answer and a familiar one to
-                        // any litigant; a blank line would read as missing information.
-                        ?: stringResource(R.string.portal_no_next_hearing),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-
-            // Already plain language from the server ("In progress", not "active").
-            if (case.statusLabel.isNotBlank()) {
-                StatusBadge(text = case.statusLabel, tone = StatusTone.NEUTRAL)
+                if (case.statusLabel.isNotBlank()) {
+                    StatusBadge(text = case.statusLabel, tone = StatusTone.NEUTRAL)
+                }
             }
         }
     }
@@ -159,11 +157,8 @@ private fun PortalInvoiceCard(
     onPay: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(NyayaTheme.spacing.md),
-            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
-        ) {
+    NyayaCard(modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -190,8 +185,6 @@ private fun PortalInvoiceCard(
                     tone = StatusTone.POSITIVE,
                 )
             } else {
-                // Paying is the one action a client-mode user can take. The server still
-                // decides whether the invoice becomes paid — this only opens Checkout.
                 invoice.paymentLink?.let { link ->
                     TextButton(onClick = { onPay(link) }) {
                         Text(stringResource(R.string.portal_pay))
