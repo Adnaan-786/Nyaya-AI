@@ -16,13 +16,14 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _normalise_database_url(self) -> "Settings":
-        # Render and most PaaS providers hand out `postgres://` or `postgresql://`
-        # connection strings. asyncpg needs the `+asyncpg` dialect suffix.
         url = self.database_url
         if url.startswith("postgres://"):
-            self.database_url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://") and "+asyncpg" not in url:
-            self.database_url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        # asyncpg uses `ssl` not `sslmode`
+        url = url.replace("sslmode=", "ssl=")
+        self.database_url = url
         return self
 
     # B.4.3: 30-minute access token, 30-day refresh with rotation.
