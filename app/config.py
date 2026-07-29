@@ -86,6 +86,11 @@ class Settings(BaseSettings):
     sentry_dsn: str = Field(default="")
     log_level: str = Field(default="INFO")
 
+    otp_length: int = 6
+    otp_expire_minutes: int = 5
+    otp_max_per_hour: int = 3
+    otp_max_verify_attempts: int = 5
+
 
 @lru_cache
 def get_settings() -> Settings:

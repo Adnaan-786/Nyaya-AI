@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, List
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -38,7 +38,7 @@ class Repository(Generic[ModelType]):
         *,
         limit: int = 100,
         offset: int = 0,
-    ) -> list[ModelType]:
+    ) -> List[ModelType]:
         stmt = (
             select(self.model)
             .where(self.model.tenant_id == self.tenant.tenant_id)
@@ -110,7 +110,7 @@ class Repository(Generic[ModelType]):
     async def filter(
         self,
         **filters: Any,
-    ) -> list[ModelType]:
+    ) -> List[ModelType]:
         stmt = select(self.model).where(
             self.model.tenant_id == self.tenant.tenant_id
         )

@@ -18,6 +18,7 @@ from .otp_request import OTPRequest
 from .payment import Payment
 from .task import Task
 from .time_entry import TimeEntry
+from .refresh_token import RefreshToken
 
 __all__ = [
     "Tenant",
@@ -38,6 +39,7 @@ __all__ = [
     "Notification",
     "OTPRequest",
     "Payment",
+    "RefreshToken",
     "Task",
     "TimeEntry",
 ]
