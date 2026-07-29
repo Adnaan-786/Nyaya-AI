@@ -14,7 +14,10 @@ from app.models.base import Base
 
 settings = get_settings()
 
-engine = create_async_engine(settings.database_url, echo=False, pool_pre_ping=True)
+_connect_args: dict = {"ssl": True} if settings.database_requires_ssl else {}
+engine = create_async_engine(
+    settings.database_url, echo=False, pool_pre_ping=True, connect_args=_connect_args,
+)
 SessionFactory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
 

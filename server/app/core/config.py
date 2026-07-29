@@ -14,15 +14,20 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://nyaya@/nyayaai?host=/tmp&port=5433"
 
+    database_requires_ssl: bool = False
+
     @model_validator(mode="after")
     def _normalise_database_url(self) -> "Settings":
         url = self.database_url
+        # Remember if SSL was requested before stripping query params.
+        self.database_requires_ssl = "sslmode=" in url or "ssl=" in url
+        # Strip query params — asyncpg rejects libpq-only keys like
+        # sslmode, channel_binding, etc. SSL is passed via connect_args.
+        url = url.split("?")[0]
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://") and "+asyncpg" not in url:
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        # asyncpg uses `ssl` not `sslmode`
-        url = url.replace("sslmode=", "ssl=")
         self.database_url = url
         return self
 
