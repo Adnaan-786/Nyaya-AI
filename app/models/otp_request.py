@@ -30,3 +30,12 @@ class OTPRequest(Base, UUIDMixin, TimestampMixin):
         Integer,
         default=0,
     )
+
+    send_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+    )
+
+    window_start: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )

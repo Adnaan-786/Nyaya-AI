@@ -99,3 +99,9 @@ class User(Base, UUIDMixin, TimestampMixin):
         back_populates="assignee",
         cascade="all, delete-orphan",
     )
+    
+    refresh_tokens = relationship(
+        "RefreshToken",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
