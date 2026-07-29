@@ -65,10 +65,10 @@ class Settings(BaseSettings):
     minio_secret_key: str
     minio_bucket: str
 
-    # s3_endpoint: str
-    # s3_access_key: str
-    # s3_secret_key: str
-    # s3_bucket: str
+    s3_endpoint: str
+    s3_access_key: str
+    s3_secret_key: str
+    s3_bucket: str
 
     # =====================================================
     # External Services
