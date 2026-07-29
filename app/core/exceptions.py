@@ -82,6 +82,14 @@ class CaseNotFoundException(AppException):
             details=details,
         )
 
+class FirmNotFoundException(AppException):
+    def __init__(self, message: str = "Firm not Found", details: dict[str, Any] | None = None):
+        super().__init__(
+            message=message,
+            code=ErrorCode.FIRM_NOT_FOUND,
+            status_code=404,
+            details=details,
+        )
 
 class ClientNotFoundException(AppException):
     def __init__(self, message: str="Client not Found", details: dict[str, Any]|None = None):
