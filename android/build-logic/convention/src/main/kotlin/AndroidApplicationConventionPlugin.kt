@@ -47,9 +47,10 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                         buildConfigField(
                             "String",
                             "BASE_URL",
-                            // Local server during the build sprint; swaps to the deployed staging URL
-                            // the moment it exists. Nothing else about the flavor changes.
-                            "\"http://10.0.2.2:8000/v1/\"",
+                            // The deployed staging server (Render + Neon). HTTPS, so the
+                            // cleartext exception in the staging network-security config
+                            // is now only there for a local 10.0.2.2 server.
+                            "\"https://nyayaai-api.onrender.com/v1/\"",
                         )
                         buildConfigField("boolean", "USE_FIXTURES", "false")
                         buildConfigField("String", "RAZORPAY_KEY_ID", "\"rzp_test_placeholder\"")
