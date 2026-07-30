@@ -67,4 +67,13 @@ async def health():
     return envelope.ok({"status": "ok", "environment": settings.environment})
 
 
+@v1.post("/seed", tags=["ops"])
+async def seed_demo():
+    if settings.environment == "prod":
+        return envelope.fail("forbidden", "seed is disabled in production")
+    from scripts.seed_demo import seed
+    await seed()
+    return envelope.ok({"seeded": True})
+
+
 app.include_router(v1)
