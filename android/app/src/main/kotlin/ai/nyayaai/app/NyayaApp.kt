@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -157,6 +158,12 @@ private fun StaffActions(
                 Icon(
                     Icons.Default.CheckCircle,
                     contentDescription = stringResource(R.string.title_tasks),
+                )
+            }
+            IconButton(onClick = { onNavigate(Route.CLIENTS) }) {
+                Icon(
+                    Icons.Default.Groups,
+                    contentDescription = stringResource(R.string.title_clients),
                 )
             }
             IconButton(onClick = { onNavigate(Route.SETTINGS) }) {

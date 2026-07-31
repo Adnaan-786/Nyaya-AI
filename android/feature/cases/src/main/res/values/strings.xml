@@ -38,4 +38,19 @@
     <string name="case_no_hearings">No hearings recorded</string>
     <string name="case_no_documents">No documents yet</string>
     <string name="case_hearing_outcome">Outcome</string>
+
+    <!-- Manual case creation (D.6) -->
+    <string name="case_add_manual_title">Add case manually</string>
+    <string name="case_add_manual_submit">Create case</string>
+    <string name="case_add_manual_field_title">Case title</string>
+    <string name="case_add_manual_field_court_type">Court type</string>
+
+    <!-- Add hearing (D.6) -->
+    <string name="hearing_add_title">Add hearing</string>
+    <string name="hearing_add_submit">Save hearing</string>
+    <string name="hearing_add_field_date">Hearing date</string>
+    <string name="hearing_add_field_time">Time</string>
+    <string name="hearing_add_field_time_helper">24-hour format, e.g. 14:30</string>
+    <string name="hearing_add_field_purpose">Purpose</string>
+    <string name="hearing_add_field_courtroom">Courtroom</string>
 </resources>

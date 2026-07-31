@@ -4,13 +4,17 @@ import ai.nyayaai.core.model.Case
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.Client
 import ai.nyayaai.core.model.ClientId
+import ai.nyayaai.core.model.CourtDate
+import ai.nyayaai.core.model.CourtTime
 import ai.nyayaai.core.model.Document
 import ai.nyayaai.core.model.Hearing
 import ai.nyayaai.core.network.api.ApiCaller
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.api.map
+import ai.nyayaai.core.network.dto.CaseCreateDto
 import ai.nyayaai.core.network.dto.CaseFromCnrRequestDto
 import ai.nyayaai.core.network.dto.CnrLookupRequestDto
+import ai.nyayaai.core.network.dto.HearingCreateDto
 import ai.nyayaai.core.network.mapper.CnrPreview
 import ai.nyayaai.core.network.mapper.toDomain
 import ai.nyayaai.core.network.service.CaseService
@@ -57,4 +61,52 @@ class CaseRepository
 
         /** Server-side rate limit is 1/hour; the UI shows "Synced N ago" rather than retrying. */
         suspend fun sync(id: CaseId): ApiResult<Case> = caller.call { service.sync(id.value) }.map { it.toDomain() }
+
+        /** Manual intake (D.6): every field but [title] is optional, and blank means absent on the wire. */
+        suspend fun createCase(
+            title: String,
+            caseNumber: String?,
+            courtName: String?,
+            courtType: String?,
+            judgeName: String?,
+            caseType: String?,
+            stage: String?,
+            nextHearingDate: CourtDate?,
+        ): ApiResult<Case> =
+            caller
+                .call {
+                    service.createCase(
+                        CaseCreateDto(
+                            title = title,
+                            caseNumber = caseNumber?.takeIf { it.isNotBlank() },
+                            courtName = courtName?.takeIf { it.isNotBlank() },
+                            courtType = courtType?.takeIf { it.isNotBlank() },
+                            judgeName = judgeName?.takeIf { it.isNotBlank() },
+                            caseType = caseType?.takeIf { it.isNotBlank() },
+                            stage = stage?.takeIf { it.isNotBlank() },
+                            nextHearingDate = nextHearingDate?.toString(),
+                        ),
+                    )
+                }.map { it.toDomain() }
+
+        /** Manual hearing entry from the case detail screen's Hearings tab FAB. */
+        suspend fun addHearing(
+            caseId: CaseId,
+            date: CourtDate,
+            time: CourtTime?,
+            purpose: String?,
+            courtroom: String?,
+        ): ApiResult<Hearing> =
+            caller
+                .call {
+                    service.addHearing(
+                        caseId.value,
+                        HearingCreateDto(
+                            date = date.toString(),
+                            time = time?.toString(),
+                            purpose = purpose?.takeIf { it.isNotBlank() },
+                            courtroom = courtroom?.takeIf { it.isNotBlank() },
+                        ),
+                    )
+                }.map { it.toDomain() }
     }

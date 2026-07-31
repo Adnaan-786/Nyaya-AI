@@ -106,6 +106,10 @@ class NyayaMessagingService : FirebaseMessagingService() {
 
         if (!canPost()) return
 
+        // `canPost()` above is the permission check lint wants — it just can't trace it
+        // through a private boolean-returning function rather than the exact
+        // `checkSelfPermission` call site.
+        @Suppress("MissingPermission")
         NotificationManagerCompat
             .from(this)
             .notify(target.hashCode(), notification)

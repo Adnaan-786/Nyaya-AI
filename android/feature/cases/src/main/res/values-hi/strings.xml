@@ -36,4 +36,17 @@
     <string name="case_no_hearings">कोई सुनवाई दर्ज नहीं</string>
     <string name="case_no_documents">अभी कोई दस्तावेज़ नहीं</string>
     <string name="case_hearing_outcome">परिणाम</string>
+
+    <string name="case_add_manual_title">केस मैन्युअल रूप से जोड़ें</string>
+    <string name="case_add_manual_submit">केस बनाएं</string>
+    <string name="case_add_manual_field_title">केस का शीर्षक</string>
+    <string name="case_add_manual_field_court_type">न्यायालय का प्रकार</string>
+
+    <string name="hearing_add_title">सुनवाई जोड़ें</string>
+    <string name="hearing_add_submit">सुनवाई सहेजें</string>
+    <string name="hearing_add_field_date">सुनवाई की तारीख</string>
+    <string name="hearing_add_field_time">समय</string>
+    <string name="hearing_add_field_time_helper">24 घंटे के प्रारूप में, जैसे 14:30</string>
+    <string name="hearing_add_field_purpose">प्रयोजन</string>
+    <string name="hearing_add_field_courtroom">न्यायालय कक्ष</string>
 </resources>

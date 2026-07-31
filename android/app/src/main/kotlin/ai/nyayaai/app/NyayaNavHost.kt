@@ -1,18 +1,27 @@
 package ai.nyayaai.app
 
+import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.User
 import ai.nyayaai.core.model.UserRole
 import ai.nyayaai.feature.ai.AiRoute
 import ai.nyayaai.feature.billing.InvoiceListRoute
 import ai.nyayaai.feature.calendar.CalendarRoute
 import ai.nyayaai.feature.cases.AddByCnrRoute
+import ai.nyayaai.feature.cases.AddCaseRoute
+import ai.nyayaai.feature.cases.AddHearingRoute
+import ai.nyayaai.feature.cases.AddHearingViewModel
 import ai.nyayaai.feature.cases.CaseDetailRoute
 import ai.nyayaai.feature.cases.CaseDetailViewModel
 import ai.nyayaai.feature.cases.CaseListRoute
+import ai.nyayaai.feature.clients.AddClientRoute
+import ai.nyayaai.feature.clients.ClientDetailRoute
+import ai.nyayaai.feature.clients.ClientDetailViewModel
+import ai.nyayaai.feature.clients.ClientListRoute
 import ai.nyayaai.feature.dashboard.TodayRoute
 import ai.nyayaai.feature.documents.VaultRoute
 import ai.nyayaai.feature.portal.PortalRoute
 import ai.nyayaai.feature.settings.SettingsRoute
+import ai.nyayaai.feature.tasks.AddTaskRoute
 import ai.nyayaai.feature.tasks.TasksRoute
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
@@ -86,8 +95,13 @@ fun NyayaNavHost(
         composable(
             route = Route.CASE_DETAIL,
             arguments = listOf(navArgument(CaseDetailViewModel.ARG_CASE_ID) { type = NavType.StringType }),
-        ) {
-            CaseDetailRoute()
+        ) { backStackEntry ->
+            val caseId = backStackEntry.arguments?.getString(CaseDetailViewModel.ARG_CASE_ID)
+            CaseDetailRoute(
+                onAddHearing = {
+                    caseId?.let { navController.navigate(Route.caseHearingAdd(CaseId(it))) }
+                },
+            )
         }
 
         composable(Route.ADD_CNR) {
@@ -99,8 +113,28 @@ fun NyayaNavHost(
                         popUpTo(Route.ADD_CNR) { inclusive = true }
                     }
                 },
-                onManualEntry = { navController.popBackStack() },
+                onManualEntry = { navController.navigate(Route.CASE_ADD_MANUAL) },
             )
+        }
+
+        composable(Route.CASE_ADD_MANUAL) {
+            AddCaseRoute(
+                onCaseCreated = { id ->
+                    // Clears both CASE_ADD_MANUAL and, if present, the ADD_CNR screen
+                    // underneath it — back from the new case lands on the case list
+                    // either way the form was reached.
+                    navController.navigate(Route.caseDetail(id)) {
+                        popUpTo(Route.CASES) { inclusive = false }
+                    }
+                },
+            )
+        }
+
+        composable(
+            route = Route.CASE_HEARING_ADD,
+            arguments = listOf(navArgument(AddHearingViewModel.ARG_CASE_ID) { type = NavType.StringType }),
+        ) {
+            AddHearingRoute(onHearingAdded = { navController.popBackStack() })
         }
 
         composable(Route.CALENDAR) {
@@ -108,7 +142,11 @@ fun NyayaNavHost(
         }
 
         composable(Route.TASKS) {
-            TasksRoute()
+            TasksRoute(onAddTask = { navController.navigate(Route.TASK_ADD) })
+        }
+
+        composable(Route.TASK_ADD) {
+            AddTaskRoute(onTaskCreated = { navController.popBackStack() })
         }
 
         composable(Route.SETTINGS) {
@@ -122,6 +160,30 @@ fun NyayaNavHost(
 
         composable(Route.PORTAL, enterTransition = { fade() }, exitTransition = { fadeAway() }) {
             PortalRoute(onPay = onOpenUrl)
+        }
+
+        composable(Route.CLIENTS) {
+            ClientListRoute(
+                onOpenClient = { navController.navigate(Route.clientDetail(it)) },
+                onAddClient = { navController.navigate(Route.CLIENT_ADD) },
+            )
+        }
+
+        composable(
+            route = Route.CLIENT_DETAIL,
+            arguments = listOf(navArgument(ClientDetailViewModel.ARG_CLIENT_ID) { type = NavType.StringType }),
+        ) {
+            ClientDetailRoute(onOpenCase = { navController.navigate(Route.caseDetail(it)) })
+        }
+
+        composable(Route.CLIENT_ADD) {
+            AddClientRoute(
+                onClientCreated = { id ->
+                    navController.navigate(Route.clientDetail(id)) {
+                        popUpTo(Route.CLIENT_ADD) { inclusive = true }
+                    }
+                },
+            )
         }
     }
 }

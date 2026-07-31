@@ -12,4 +12,8 @@
     <string name="ds_state_error_title">Something went wrong</string>
     <string name="ds_state_retry">Try again</string>
     <string name="ds_state_empty_title">Nothing here yet</string>
+
+    <string name="ds_form_date_placeholder">Select a date</string>
+    <string name="ds_form_date_confirm">OK</string>
+    <string name="ds_form_date_cancel">Cancel</string>
 </resources>

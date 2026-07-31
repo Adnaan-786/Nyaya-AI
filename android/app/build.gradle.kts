@@ -107,6 +107,7 @@ dependencies {
     implementation(projects.feature.calendar)
     implementation(projects.feature.billing)
     implementation(projects.feature.tasks)
+    implementation(projects.feature.clients)
     implementation(projects.feature.portal)
     implementation(projects.feature.settings)
 

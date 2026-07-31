@@ -1,6 +1,7 @@
 package ai.nyayaai.app
 
 import ai.nyayaai.core.model.CaseId
+import ai.nyayaai.core.model.ClientId
 import ai.nyayaai.core.model.UserRole
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -21,15 +22,27 @@ object Route {
     const val CASES = "cases"
     const val CASE_DETAIL = "case/{caseId}"
     const val ADD_CNR = "case/add"
+
+    /** The manual-entry escape hatch from [ADD_CNR], and (D.5) a destination in its own right. */
+    const val CASE_ADD_MANUAL = "case/new"
+    const val CASE_HEARING_ADD = "case/{caseId}/hearing/new"
     const val VAULT = "vault"
     const val AI = "ai"
     const val INVOICES = "invoices"
     const val CALENDAR = "calendar"
     const val TASKS = "tasks"
+    const val TASK_ADD = "task/new"
     const val SETTINGS = "settings"
     const val PORTAL = "portal"
+    const val CLIENTS = "clients"
+    const val CLIENT_DETAIL = "client/{clientId}"
+    const val CLIENT_ADD = "client/new"
 
     fun caseDetail(id: CaseId) = "case/${id.value}"
+
+    fun caseHearingAdd(id: CaseId) = "case/${id.value}/hearing/new"
+
+    fun clientDetail(id: ClientId) = "client/${id.value}"
 }
 
 /** A top-level tab. */
@@ -51,9 +64,15 @@ val PUSHED_TITLES: Map<String, Int> =
     mapOf(
         Route.CASE_DETAIL to R.string.title_case,
         Route.ADD_CNR to R.string.title_add_case,
+        Route.CASE_ADD_MANUAL to R.string.title_add_case,
+        Route.CASE_HEARING_ADD to R.string.title_add_hearing,
         Route.CALENDAR to R.string.title_calendar,
         Route.TASKS to R.string.title_tasks,
+        Route.TASK_ADD to R.string.title_add_task,
         Route.SETTINGS to R.string.title_settings,
+        Route.CLIENTS to R.string.title_clients,
+        Route.CLIENT_DETAIL to R.string.title_client,
+        Route.CLIENT_ADD to R.string.title_add_client,
     )
 
 private val STAFF_DESTINATIONS =

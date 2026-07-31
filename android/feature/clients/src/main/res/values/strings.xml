@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clients_title">Clients</string>
+    <string name="clients_search_hint">Search clients</string>
+    <string name="clients_empty_title">No clients yet</string>
+    <string name="clients_empty_detail">Add a client to start attaching cases and invoices to them.</string>
+    <string name="clients_empty_search">Nothing matched that search</string>
+    <string name="clients_add">Add client</string>
+
+    <!-- Client detail -->
+    <string name="client_phone">Phone</string>
+    <string name="client_email">Email</string>
+    <string name="client_address">Address</string>
+    <string name="client_notes">Notes</string>
+    <string name="client_invite">Invite to client portal</string>
+    <string name="client_invite_sent">Invite sent</string>
+    <string name="client_cases_header">Cases</string>
+    <string name="client_no_cases">No cases for this client yet</string>
+
+    <!-- Add client -->
+    <string name="add_client_title">Add client</string>
+    <string name="add_client_submit">Save client</string>
+    <string name="add_client_name">Name</string>
+    <string name="add_client_phone">Phone</string>
+    <string name="add_client_phone_helper">10-digit mobile number, without the country code.</string>
+    <string name="add_client_email">Email</string>
+    <string name="add_client_address">Address</string>
+    <string name="add_client_notes">Notes</string>
+</resources>

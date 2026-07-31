@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clients_title">क्लाइंट</string>
+    <string name="clients_search_hint">क्लाइंट खोजें</string>
+    <string name="clients_empty_title">अभी कोई क्लाइंट नहीं</string>
+    <string name="clients_empty_detail">क्लाइंट जोड़ें ताकि आप उनसे केस और इनवॉइस जोड़ सकें।</string>
+    <string name="clients_empty_search">इस खोज से कुछ नहीं मिला</string>
+    <string name="clients_add">क्लाइंट जोड़ें</string>
+
+    <string name="client_phone">फ़ोन</string>
+    <string name="client_email">ईमेल</string>
+    <string name="client_address">पता</string>
+    <string name="client_notes">टिप्पणी</string>
+    <string name="client_invite">क्लाइंट पोर्टल पर आमंत्रित करें</string>
+    <string name="client_invite_sent">आमंत्रण भेज दिया गया</string>
+    <string name="client_cases_header">केस</string>
+    <string name="client_no_cases">इस क्लाइंट का अभी कोई केस नहीं है</string>
+
+    <string name="add_client_title">क्लाइंट जोड़ें</string>
+    <string name="add_client_submit">क्लाइंट सहेजें</string>
+    <string name="add_client_name">नाम</string>
+    <string name="add_client_phone">फ़ोन</string>
+    <string name="add_client_phone_helper">10 अंकों का मोबाइल नंबर, देश कोड के बिना।</string>
+    <string name="add_client_email">ईमेल</string>
+    <string name="add_client_address">पता</string>
+    <string name="add_client_notes">टिप्पणी</string>
+</resources>

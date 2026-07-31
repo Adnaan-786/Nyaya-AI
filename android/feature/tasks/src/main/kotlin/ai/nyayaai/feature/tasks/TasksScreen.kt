@@ -11,6 +11,8 @@ import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
 import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
+import ai.nyayaai.core.model.CaseId
+import ai.nyayaai.core.model.CourtDate
 import ai.nyayaai.core.model.Task
 import ai.nyayaai.core.model.TaskId
 import ai.nyayaai.core.model.TaskStatus
@@ -31,8 +33,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -62,8 +69,17 @@ class TaskRepository
         suspend fun tasks(status: String? = null): ApiResult<List<Task>> =
             caller.call { service.tasks(status) }.map { list -> list.map { it.toDomain() } }
 
-        suspend fun create(title: String): ApiResult<Task> =
-            caller.call { service.createTask(TaskCreateDto(title = title)) }.map { it.toDomain() }
+        suspend fun create(
+            title: String,
+            caseId: CaseId? = null,
+            dueDate: CourtDate? = null,
+        ): ApiResult<Task> =
+            caller
+                .call {
+                    service.createTask(
+                        TaskCreateDto(title = title, caseId = caseId?.value, dueDate = dueDate?.toString()),
+                    )
+                }.map { it.toDomain() }
 
         suspend fun setStatus(
             id: TaskId,
@@ -119,47 +135,68 @@ class TasksViewModel
         }
     }
 
+/**
+ * A lawyer needs to add a task from any state of this list — a blank list, an error banner,
+ * mid-load — not only once tasks already exist. The FAB is a sibling of the `when` inside the
+ * [Scaffold], not nested in the content branch, so it never disappears along with the state it
+ * doesn't depend on.
+ */
 @Composable
 fun TasksRoute(
+    onAddTask: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TasksViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    when (state) {
-        is UiState.Loading -> LoadingList(modifier = modifier)
-
-        is UiState.Error -> {
-            val error = state as UiState.Error
-            ErrorState(
-                message = error.message,
-                onRetry = viewModel::load.takeIf { error.retryable },
-                modifier = modifier,
-            )
-        }
-
-        is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title, modifier = modifier)
-
-        is UiState.Content -> {
-            val tasks = (state as UiState.Content<List<Task>>).data
-            if (tasks.isEmpty()) {
-                EmptyState(
-                    title = stringResource(R.string.tasks_empty),
-                    description = stringResource(R.string.tasks_empty_detail),
-                    modifier = modifier,
+    Scaffold(
+        modifier = modifier,
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddTask) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = stringResource(R.string.tasks_add),
                 )
-            } else {
-                LazyColumn(
-                    modifier = modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(NyayaTheme.spacing.md),
-                    verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-                ) {
-                    itemsIndexed(tasks, key = { _, item -> item.id.value }) { index, task ->
-                        TaskCard(
-                            task = task,
-                            onToggle = { viewModel.toggle(task) },
-                            modifier = Modifier.animatedListEntry(index),
-                        )
+            }
+        },
+    ) { innerPadding ->
+        val contentModifier = Modifier.padding(innerPadding)
+
+        when (state) {
+            is UiState.Loading -> LoadingList(modifier = contentModifier)
+
+            is UiState.Error -> {
+                val error = state as UiState.Error
+                ErrorState(
+                    message = error.message,
+                    onRetry = viewModel::load.takeIf { error.retryable },
+                    modifier = contentModifier,
+                )
+            }
+
+            is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title, modifier = contentModifier)
+
+            is UiState.Content -> {
+                val tasks = (state as UiState.Content<List<Task>>).data
+                if (tasks.isEmpty()) {
+                    EmptyState(
+                        title = stringResource(R.string.tasks_empty),
+                        description = stringResource(R.string.tasks_empty_detail),
+                        modifier = contentModifier,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = contentModifier.fillMaxSize(),
+                        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+                        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+                    ) {
+                        itemsIndexed(tasks, key = { _, item -> item.id.value }) { index, task ->
+                            TaskCard(
+                                task = task,
+                                onToggle = { viewModel.toggle(task) },
+                                modifier = Modifier.animatedListEntry(index),
+                            )
+                        }
                     }
                 }
             }

@@ -5,4 +5,9 @@
     <string name="tasks_empty_detail">अगली तारीख से पहले जो करना है, वह जोड़ें।</string>
     <string name="tasks_due">%1$s तक</string>
     <string name="tasks_overdue">समय बीत चुका</string>
+    <string name="tasks_add">काम जोड़ें</string>
+    <string name="tasks_add_title">नया काम</string>
+    <string name="tasks_add_save">काम सहेजें</string>
+    <string name="tasks_add_title_label">शीर्षक</string>
+    <string name="tasks_add_due_date_label">नियत तारीख (वैकल्पिक)</string>
 </resources>

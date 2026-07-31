@@ -11,6 +11,11 @@
     <string name="action_back">वापस</string>
     <string name="title_case">मुकदमा</string>
     <string name="title_add_case">केस जोड़ें</string>
+    <string name="title_add_hearing">सुनवाई जोड़ें</string>
+    <string name="title_add_task">काम जोड़ें</string>
+    <string name="title_clients">क्लाइंट</string>
+    <string name="title_client">क्लाइंट</string>
+    <string name="title_add_client">क्लाइंट जोड़ें</string>
     <string name="title_calendar">कैलेंडर</string>
     <string name="title_tasks">काम</string>
     <string name="title_settings">सेटिंग्स</string>

@@ -32,6 +32,13 @@ data class ClientCreateDto(
     val tags: List<String> = emptyList(),
 )
 
+/** Response body of `POST /clients/{client_id}/invite` — portal-invite result. */
+@Serializable
+data class ClientInviteResultDto(
+    val ok: Boolean = false,
+    val invitedPhone: String? = null,
+)
+
 @Serializable
 data class CaseDto(
     val id: String? = null,
@@ -61,8 +68,11 @@ data class CaseCreateDto(
     val cnr: String? = null,
     val caseNumber: String? = null,
     val courtName: String? = null,
+    val courtType: String? = null,
+    val judgeName: String? = null,
     val caseType: String? = null,
     val stage: String? = null,
+    val nextHearingDate: String? = null,
 )
 
 @Serializable
@@ -151,6 +161,9 @@ data class TaskCreateDto(
     val title: String,
     val caseId: String? = null,
     val dueDate: String? = null,
+    // Left null: the server assigns the creator as the default assignee when this is
+    // omitted (TaskCreate schema). No assignee picker exists in the app yet.
+    val assigneeId: String? = null,
 )
 
 @Serializable

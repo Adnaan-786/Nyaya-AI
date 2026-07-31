@@ -28,8 +28,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -46,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun CaseDetailRoute(
+    onAddHearing: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CaseDetailViewModel = hiltViewModel(),
 ) {
@@ -69,6 +75,7 @@ fun CaseDetailRoute(
             CaseDetailContent(
                 detail = (state as UiState.Content<CaseDetail>).data,
                 onSync = viewModel::sync,
+                onAddHearing = onAddHearing,
                 modifier = modifier,
             )
     }
@@ -78,37 +85,52 @@ fun CaseDetailRoute(
 private fun CaseDetailContent(
     detail: CaseDetail,
     onSync: () -> Unit,
+    onAddHearing: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     val case = detail.case
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(NyayaTheme.spacing.md)) {
-            Text(text = case.title, style = MaterialTheme.typography.titleLarge)
-            case.courtName?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        floatingActionButton = {
+            if (tab == 1) {
+                FloatingActionButton(onClick = onAddHearing) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.hearing_add_title),
+                    )
+                }
             }
-        }
-
-        TabRow(selectedTabIndex = tab) {
-            TAB_LABELS.forEachIndexed { index, label ->
-                Tab(
-                    selected = tab == index,
-                    onClick = { tab = index },
-                    text = { Text(stringResource(label)) },
-                )
+        },
+    ) { innerPadding ->
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Column(modifier = Modifier.padding(NyayaTheme.spacing.md)) {
+                Text(text = case.title, style = MaterialTheme.typography.titleLarge)
+                case.courtName?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-        }
 
-        when (tab) {
-            0 -> OverviewTab(detail, onSync)
-            1 -> HearingsTab(detail.hearings)
-            else -> DocumentsTab(detail.documents)
+            TabRow(selectedTabIndex = tab) {
+                TAB_LABELS.forEachIndexed { index, label ->
+                    Tab(
+                        selected = tab == index,
+                        onClick = { tab = index },
+                        text = { Text(stringResource(label)) },
+                    )
+                }
+            }
+
+            when (tab) {
+                0 -> OverviewTab(detail, onSync)
+                1 -> HearingsTab(detail.hearings)
+                else -> DocumentsTab(detail.documents)
+            }
         }
     }
 }

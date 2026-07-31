@@ -8,6 +8,7 @@ import ai.nyayaai.core.network.dto.CaseDto
 import ai.nyayaai.core.network.dto.CaseFromCnrRequestDto
 import ai.nyayaai.core.network.dto.ClientCreateDto
 import ai.nyayaai.core.network.dto.ClientDto
+import ai.nyayaai.core.network.dto.ClientInviteResultDto
 import ai.nyayaai.core.network.dto.CnrLookupRequestDto
 import ai.nyayaai.core.network.dto.CnrPreviewDto
 import ai.nyayaai.core.network.dto.DocumentDto
@@ -113,6 +114,24 @@ interface CaseService {
     suspend fun createClient(
         @Body body: ClientCreateDto,
     ): ApiEnvelope<ClientDto>
+
+    @GET("clients/{client_id}")
+    suspend fun client(
+        @Path("client_id") clientId: String,
+    ): ApiEnvelope<ClientDto>
+
+    @GET("clients/{client_id}/cases")
+    suspend fun clientCases(
+        @Path("client_id") clientId: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 50,
+    ): ApiEnvelope<List<CaseDto>>
+
+    /** No request body — the server derives everything it needs from the path and the caller's tenant. */
+    @POST("clients/{client_id}/invite")
+    suspend fun inviteClient(
+        @Path("client_id") clientId: String,
+    ): ApiEnvelope<ClientInviteResultDto>
 }
 
 interface CalendarService {

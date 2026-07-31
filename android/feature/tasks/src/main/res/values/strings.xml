@@ -5,4 +5,9 @@
     <string name="tasks_empty_detail">Add what needs doing before the next date.</string>
     <string name="tasks_due">Due %1$s</string>
     <string name="tasks_overdue">Overdue</string>
+    <string name="tasks_add">Add task</string>
+    <string name="tasks_add_title">New task</string>
+    <string name="tasks_add_save">Save task</string>
+    <string name="tasks_add_title_label">Title</string>
+    <string name="tasks_add_due_date_label">Due date (optional)</string>
 </resources>

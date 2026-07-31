@@ -14,4 +14,8 @@
     <string name="ds_state_error_title">कुछ गड़बड़ हो गई</string>
     <string name="ds_state_retry">फिर कोशिश करें</string>
     <string name="ds_state_empty_title">अभी यहाँ कुछ नहीं है</string>
+
+    <string name="ds_form_date_placeholder">तारीख चुनें</string>
+    <string name="ds_form_date_confirm">ठीक है</string>
+    <string name="ds_form_date_cancel">रद्द करें</string>
 </resources>
