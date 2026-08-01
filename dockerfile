@@ -14,6 +14,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy dependency files first (better Docker cache)
 COPY pyproject.toml uv.lock ./
+
 COPY README.md ./
 
 # copy project source BEFORE uv sync
@@ -21,6 +22,9 @@ COPY app ./app
 
 # Install dependencies
 RUN uv sync --frozen --no-dev
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
 
 # Copy application
 COPY . .
