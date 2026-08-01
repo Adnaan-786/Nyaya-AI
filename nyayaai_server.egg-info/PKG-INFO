@@ -19,6 +19,7 @@ Requires-Dist: alembic>=1.16.5
 Requires-Dist: greenlet>=3.2.4
 Requires-Dist: pgvector>=0.5.0
 Requires-Dist: pyjwt>=2.9.0
+Requires-Dist: celery[redis]>=5.4.0
 Dynamic: license-file
 
 # NyayaAI Server

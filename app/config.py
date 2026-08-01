@@ -41,7 +41,17 @@ class Settings(BaseSettings):
 
     secret_key: str = Field(..., min_length=32)
     jwt_algorithm: str = Field(default="HS256")
-    access_token_expire_minutes: int = Field(default=60)
+    access_token_expire_minutes: int = Field(default=30)
+    refresh_token_expire_days: int = Field(default=30)
+
+    # =====================================================
+    # OTP / Auth
+    # =====================================================
+
+    otp_length: int = Field(default=6)
+    otp_expire_minutes: int = Field(default=5)
+    otp_max_per_hour: int = Field(default=3)
+    otp_max_verify_attempts: int = Field(default=5)
 
     # =====================================================
     # Database
@@ -80,16 +90,26 @@ class Settings(BaseSettings):
     llm_provider: str = Field(default="openai")
 
     # =====================================================
+    # eCourts sync (module M5)
+    # =====================================================
+
+    # "fixture" (recorded responses, safe for local/staging/CI),
+    # "napix" (official NIC API, once approved), or
+    # "commercial" (eCourtsIndia/Surepass fallback).
+    ecourts_provider: str = Field(default="fixture")
+    ecourts_lookup_cache_hours: int = Field(default=24)
+    ecourts_lookup_timeout_seconds: float = Field(default=5.0)
+    ecourts_sync_rate_limit_per_hour: int = Field(default=1)
+    ecourts_max_consecutive_failures: int = Field(default=3)
+    napix_api_key: str = Field(default="")
+    commercial_ecourts_api_key: str = Field(default="")
+
+    # =====================================================
     # Monitoring
     # =====================================================
 
     sentry_dsn: str = Field(default="")
     log_level: str = Field(default="INFO")
-
-    otp_length: int = 6
-    otp_expire_minutes: int = 5
-    otp_max_per_hour: int = 3
-    otp_max_verify_attempts: int = 5
 
 
 @lru_cache

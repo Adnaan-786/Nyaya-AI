@@ -6,9 +6,9 @@
 |--------|--------|
 | M1 — Foundations | Done |
 | M2 — Database Schema & Tenancy | Done |
-| M3 — Auth, RBAC, Devices | Done (this update) |
-| M4 — Core CRUD | Not started |
-| M5 — eCourts Sync Service | Not started |
+| M3 — Auth, RBAC, Devices | Done |
+| M4 — Core CRUD | Done |
+| M5 — eCourts Sync Service | Done (this update) |
 | M6 — Document Pipeline | Not started |
 | M7 — AI Services | Not started |
 | M9 — Notifications | Not started |
@@ -18,26 +18,90 @@
 
 ## 🚀 Module Highlights
 
-### M1 - Foundations (Week 1)
-- FastAPI skeleton with `/v1/health` endpoint.
-- Envelope middleware: all responses wrapped in `{success, data, meta}`; errors mapped to contract codes.
-- Structured JSON logging with request IDs (propagated into Celery tasks).
-- Environment-driven settings (12-factor); all env vars documented.
-- Authoritative `openapi.yaml` created from contract; CI validates generated spec against it.
+### M5 highlights
 
+- **Provider abstraction** (`app/integrations/ecourts/`): `ECourtsProvider`
+  interface with `lookup_cnr`, `case_status`, `cause_list`. Three
+  implementations — `FixtureProvider` (recorded data, default, fully
+  offline), `NapixProvider` and `CommercialProvider` (both real HTTP
+  integration points, correctly left `NotImplementedError` until API
+  keys are provisioned, same pattern as MSG91 in M3). Swapping
+  providers is one env var: `ECOURTS_PROVIDER=fixture|napix|commercial`.
+- **Fixtures**: `app/fixtures/ecourts_fixtures.json` ships 25 seeded
+  CNRs, 3 of which are "mutable" — calling
+  `trigger_fixture_mutation()` flips them to a changed state (new
+  stage, next hearing date, an extra history entry) so the diff
+  detection + notification pipeline can be exercised deterministically,
+  exactly as needed for the plan's IC-1 checkpoint.
+- **Routes**: `POST /cases/lookup-cnr` (24h-cached preview, 503
+  `UPSTREAM_UNAVAILABLE` on provider failure), `POST /cases/from-cnr`
+  (creates a case, stores `raw_ecourts`, marks `ecourts_synced=true`),
+  `POST /cases/{id}/sync` (manual force-refresh, rate-limited
+  1/hour/case).
+- **Diff detection + notify**: `app/services/ecourts_service.py`
+  compares `stage`, `next_hearing_date`, and history length against
+  the case's last known state; on any change it writes an in-app
+  `case_update` notification (`app/services/notification_service.py`)
+  for every assigned user. Full FCM/WhatsApp/SMS delivery is M9's
+  dispatcher — the in-app row is ready for it to wrap.
+- **Scheduled polling** (`app/workers/`): a Celery app + beat schedule
+  matching the plan exactly — daily 06:00 IST baseline for every
+  synced case, plus 14:00 and 19:00 IST re-checks for cases with a
+  hearing today. Paced with a token bucket
+  (`app/core/rate_limiter.py`) to respect (and control the cost of)
+  commercial-provider rate limits; consecutive provider failures per
+  case are counted (`Case.sync_failure_count`) and logged as a warning
+  once they hit the configured threshold, ready for M12's alerting to
+  pick up. `docker-compose.yml` now has `worker` and `beat` services.
+- CNR format validation (16-char alphanumeric, module M4) is reused
+  here rather than duplicated.
 
-### M2 - Database Schema & Tenancy (Week 1-2)
-- Every business table carries `tenant_id` (UUID NOT NULL).
-- Isolation enforced at:
-  - Application layer: queries require tenant context from JWT.
-  - Database layer: PostgreSQL Row-Level Security (RLS) policies.
-- Core tables: tenants, users, clients, cases, hearings, documents, doc_chunks (with embeddings), ai_jobs, invoices, payments, tasks, notifications, devices, audit logs, consents, otp_requests.
-- Indexes: optimized for hearings, cases, documents, embeddings (GIN/HNSW).
-- All tenant tables have RLS enabled.
-- FORCE ROW LEVEL SECURITY is enabled.
-- Tests must be run using a non-superuser   application role.
-- Using postgres (superuser/BYPASSRLS) will bypass tenant isolation and cause the RLS test to fail.
+**Not yet built in M5:** the real NAPIX/commercial HTTP response
+normalization (blocked on API approval/vendor docs per plan C.1 — the
+`NotImplementedError` is intentional, not an oversight), and the
+`GET /cases` `next_hearing_before` filter mentioned in the endpoint
+catalog (straightforward addition to `case_service.list_cases` when
+prioritized).
 
+### M4 highlights
+
+- **Clients**: `GET/POST /clients`, `GET/PATCH/DELETE /clients/{id}`,
+  `POST /clients/{id}/invite` (provisions a `role=client` login via the
+  same OTP flow), `GET /clients/{id}/cases`.
+- **Cases**: `GET/POST /cases` (manual creation only — CNR/eCourts
+  lookup is module M5), `GET/PATCH/DELETE /cases/{id}` (soft delete →
+  `status=archived`), `POST /cases/{id}/hearings`,
+  `GET /cases/{id}/hearings`, `PATCH /hearings/{id}`,
+  `POST /cases/{id}/notes`, `GET /cases/{id}/timeline` (merged,
+  descending read model of hearings + notes — document/status-change
+  events are added once M6/M11 land).
+- **Tasks**: `GET/POST /tasks`, `PATCH /tasks/{id}`.
+- **Time & billing capture**: `GET/POST /time-entries`,
+  `GET/POST /expenses` (invoice/payment endpoints remain M10).
+- **Calendar**: `GET /calendar?from=&to=`, `GET /calendar/today` —
+  hearings grouped by date; `firm_admin` sees the whole firm's
+  calendar, other roles see only hearings for cases they're assigned to.
+- **Firm/team**: `GET/PATCH /firm`, `GET /firm/members`,
+  `POST /firm/members/invite`, `PATCH/DELETE /firm/members/{id}`.
+- CNR format validation (`app/services/case_service.py::validate_cnr`)
+  is ready for module M5 to reuse.
+- Every mutating route runs through the RBAC `require()` dependency
+  from M3; see `app/core/rbac.py` for the updated capability matrix
+  (added `tasks.read`/`tasks.write`).
+
+**Known deviation from the contract prose:** `Case.status` uses
+`open|closed|archived` (as already defined in `app/db/enums.py` during
+M2) rather than the contract's `active|disposed|archived` wording. The
+values are consistent everywhere in code today; reconciling the exact
+wording with the Android team's contract is a one-line enum + migration
+change whenever that's prioritized.
+
+**Not yet built in M4:** the full client-portal `/portal/*` routes
+(scoped case/invoice views for `role=client`) — those are called out
+separately in contract B.6 and fit better alongside M10 (billing),
+since `/portal/invoices` needs the invoice model. The invite flow above
+already provisions the login account so portal routes can be added
+without further auth changes.
 
 
 ### M3 highlights
@@ -59,6 +123,30 @@
   was a no-op and never created any tables. It now delegates to
   `Base.metadata.create_all(...)`, so all ORM models (including new
   ones from later modules) are created consistently.
+
+
+### M2 - Database Schema & Tenancy (Week 1-2)
+- Every business table carries `tenant_id` (UUID NOT NULL).
+- Isolation enforced at:
+  - Application layer: queries require tenant context from JWT.
+  - Database layer: PostgreSQL Row-Level Security (RLS) policies.
+- Core tables: tenants, users, clients, cases, hearings, documents, doc_chunks (with embeddings), ai_jobs, invoices, payments, tasks, notifications, devices, audit logs, consents, otp_requests.
+- Indexes: optimized for hearings, cases, documents, embeddings (GIN/HNSW).
+- All tenant tables have RLS enabled.
+- FORCE ROW LEVEL SECURITY is enabled.
+- Tests must be run using a non-superuser   application role.
+- Using postgres (superuser/BYPASSRLS) will bypass tenant isolation and cause the RLS test to fail.
+
+
+### M1 - Foundations (Week 1)
+- FastAPI skeleton with `/v1/health` endpoint.
+- Envelope middleware: all responses wrapped in `{success, data, meta}`; errors mapped to contract codes.
+- Structured JSON logging with request IDs (propagated into Celery tasks).
+- Environment-driven settings (12-factor); all env vars documented.
+- Authoritative `openapi.yaml` created from contract; CI validates generated spec against it.
+
+
+
 
 ## Requirements
 
@@ -82,7 +170,7 @@ pytest
 
 Note: `tests/test_rls.py` and `tests/test_repository.py` need a live
 Postgres (see docker-compose.yml). `tests/test_security.py` and
-`tests/test_rbac.py` are pure unit tests and need no infrastructure.
+`tests/test_rbac.py` and `tests/test_case_cnr.py` are pure unit tests and need no infrastructure.
 
 ## Lint
 

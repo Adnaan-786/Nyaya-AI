@@ -15,6 +15,8 @@ tests/test_config.py
 tests/test_docs.py
 tests/test_imports.py
 tests/test_openapi.py
+tests/test_rbac.py
 tests/test_repository.py
 tests/test_responses.py
 tests/test_rls.py
+tests/test_security.py

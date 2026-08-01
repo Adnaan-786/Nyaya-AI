@@ -19,6 +19,9 @@ from .payment import Payment
 from .task import Task
 from .time_entry import TimeEntry
 from .refresh_token import RefreshToken
+from .case_note import CaseNote
+from .ecourts_lookup_cache import ECourtsLookupCache
+
 
 __all__ = [
     "Tenant",
@@ -28,11 +31,13 @@ __all__ = [
     "AIJob",
     "AuditLog",
     "CaseAssignee",
+    "CaseNote",
     "Case",
     "Consent",
     "Device",
     "DocChunk",
     "Document",
+    "ECourtsLookupCache",
     "Expense",
     "Hearing",
     "Invoice",

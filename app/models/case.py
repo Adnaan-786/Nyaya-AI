@@ -120,3 +120,9 @@ class Case(Base, UUIDMixin, TimestampMixin, TenantMixin):
         back_populates="case",
         cascade="all, delete-orphan",
     )
+
+    notes = relationship(
+        "CaseNote",
+        back_populates="case",
+        cascade="all, delete-orphan",
+    )

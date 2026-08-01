@@ -1,0 +1,688 @@
+{
+    "cases": {
+      "MH01202210000100": {
+        "cnr": "MH01202210000100",
+        "title": "Petitioner 1 vs. State of Maharashtra",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Consumer Complaint",
+        "stage": "Evidence",
+        "parties": [
+          "Petitioner 1",
+          "Respondent 1"
+        ],
+        "next_hearing_date": "2026-09-11",
+        "history": [
+          {
+            "date": "2026-02-02",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-03-11",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH02202310000200": {
+        "cnr": "MH02202310000200",
+        "title": "State vs. Respondent 2",
+        "court_name": "District Court, Pune",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Criminal Appeal",
+        "stage": "Reserved for Judgment",
+        "parties": [
+          "Petitioner 2",
+          "Respondent 2"
+        ],
+        "next_hearing_date": "2026-10-12",
+        "history": [
+          {
+            "date": "2026-03-03",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-04-12",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH03202410000300": {
+        "cnr": "MH03202410000300",
+        "title": "Petitioner 3 vs. State of Maharashtra",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Writ Petition",
+        "stage": "Framing of Charges",
+        "parties": [
+          "Petitioner 3",
+          "Respondent 3"
+        ],
+        "next_hearing_date": "2026-11-13",
+        "history": [
+          {
+            "date": "2026-04-04",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-05-13",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH04202110000400": {
+        "cnr": "MH04202110000400",
+        "title": "State vs. Respondent 4",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Civil Suit",
+        "stage": "Evidence",
+        "parties": [
+          "Petitioner 4",
+          "Respondent 4"
+        ],
+        "next_hearing_date": "2026-08-14",
+        "history": [
+          {
+            "date": "2026-05-05",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-06-14",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH05202210000500": {
+        "cnr": "MH05202210000500",
+        "title": "Petitioner 5 vs. State of Maharashtra",
+        "court_name": "Consumer Forum, Thane",
+        "court_type": "consumer_forum",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Criminal Appeal",
+        "stage": "Reserved for Judgment",
+        "parties": [
+          "Petitioner 5",
+          "Respondent 5"
+        ],
+        "next_hearing_date": "2026-09-15",
+        "history": [
+          {
+            "date": "2026-06-06",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-07-15",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH06202310000600": {
+        "cnr": "MH06202310000600",
+        "title": "State vs. Respondent 6",
+        "court_name": "District Court, Pune",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Bail Application",
+        "stage": "Final Hearing",
+        "parties": [
+          "Petitioner 6",
+          "Respondent 6"
+        ],
+        "next_hearing_date": "2026-10-16",
+        "history": [
+          {
+            "date": "2026-01-07",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-02-16",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH07202410000700": {
+        "cnr": "MH07202410000700",
+        "title": "Petitioner 7 vs. State of Maharashtra",
+        "court_name": "District Court, Pune",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice R. Kulkarni",
+        "case_type": "Bail Application",
+        "stage": "Arguments",
+        "parties": [
+          "Petitioner 7",
+          "Respondent 7"
+        ],
+        "next_hearing_date": "2026-11-17",
+        "history": [
+          {
+            "date": "2026-02-08",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-03-17",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH08202110000800": {
+        "cnr": "MH08202110000800",
+        "title": "State vs. Respondent 8",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Writ Petition",
+        "stage": "Arguments",
+        "parties": [
+          "Petitioner 8",
+          "Respondent 8"
+        ],
+        "next_hearing_date": "2026-08-18",
+        "history": [
+          {
+            "date": "2026-03-09",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-04-18",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH09202210000900": {
+        "cnr": "MH09202210000900",
+        "title": "Petitioner 9 vs. State of Maharashtra",
+        "court_name": "District Court, Nagpur",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Civil Suit",
+        "stage": "Arguments",
+        "parties": [
+          "Petitioner 9",
+          "Respondent 9"
+        ],
+        "next_hearing_date": "2026-09-19",
+        "history": [
+          {
+            "date": "2026-04-01",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-05-10",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH10202310001000": {
+        "cnr": "MH10202310001000",
+        "title": "State vs. Respondent 10",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Writ Petition",
+        "stage": "Framing of Charges",
+        "parties": [
+          "Petitioner 10",
+          "Respondent 10"
+        ],
+        "next_hearing_date": "2026-10-20",
+        "history": [
+          {
+            "date": "2026-05-02",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-06-11",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH11202410001100": {
+        "cnr": "MH11202410001100",
+        "title": "Petitioner 11 vs. State of Maharashtra",
+        "court_name": "District Court, Nagpur",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice R. Kulkarni",
+        "case_type": "Bail Application",
+        "stage": "Arguments",
+        "parties": [
+          "Petitioner 11",
+          "Respondent 11"
+        ],
+        "next_hearing_date": "2026-11-21",
+        "history": [
+          {
+            "date": "2026-06-03",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-07-12",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH12202110001200": {
+        "cnr": "MH12202110001200",
+        "title": "State vs. Respondent 12",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Writ Petition",
+        "stage": "Reserved for Judgment",
+        "parties": [
+          "Petitioner 12",
+          "Respondent 12"
+        ],
+        "next_hearing_date": "2026-08-22",
+        "history": [
+          {
+            "date": "2026-01-04",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-02-13",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH13202210001300": {
+        "cnr": "MH13202210001300",
+        "title": "Petitioner 13 vs. State of Maharashtra",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice R. Kulkarni",
+        "case_type": "Criminal Appeal",
+        "stage": "Reserved for Judgment",
+        "parties": [
+          "Petitioner 13",
+          "Respondent 13"
+        ],
+        "next_hearing_date": "2026-09-23",
+        "history": [
+          {
+            "date": "2026-02-05",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-03-14",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH14202310001400": {
+        "cnr": "MH14202310001400",
+        "title": "State vs. Respondent 14",
+        "court_name": "District Court, Nagpur",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Bail Application",
+        "stage": "Arguments",
+        "parties": [
+          "Petitioner 14",
+          "Respondent 14"
+        ],
+        "next_hearing_date": "2026-10-24",
+        "history": [
+          {
+            "date": "2026-03-06",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-04-15",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH15202410001500": {
+        "cnr": "MH15202410001500",
+        "title": "Petitioner 15 vs. State of Maharashtra",
+        "court_name": "Consumer Forum, Thane",
+        "court_type": "consumer_forum",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Criminal Appeal",
+        "stage": "Framing of Charges",
+        "parties": [
+          "Petitioner 15",
+          "Respondent 15"
+        ],
+        "next_hearing_date": "2026-11-10",
+        "history": [
+          {
+            "date": "2026-04-07",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-05-16",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH16202110001600": {
+        "cnr": "MH16202110001600",
+        "title": "State vs. Respondent 16",
+        "court_name": "District Court, Pune",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice R. Kulkarni",
+        "case_type": "Criminal Appeal",
+        "stage": "Evidence",
+        "parties": [
+          "Petitioner 16",
+          "Respondent 16"
+        ],
+        "next_hearing_date": "2026-08-11",
+        "history": [
+          {
+            "date": "2026-05-08",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-06-17",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH17202210001700": {
+        "cnr": "MH17202210001700",
+        "title": "Petitioner 17 vs. State of Maharashtra",
+        "court_name": "Bombay High Court",
+        "court_type": "high_court",
+        "judge_name": "Hon'ble Justice R. Kulkarni",
+        "case_type": "Consumer Complaint",
+        "stage": "Final Hearing",
+        "parties": [
+          "Petitioner 17",
+          "Respondent 17"
+        ],
+        "next_hearing_date": "2026-09-12",
+        "history": [
+          {
+            "date": "2026-06-09",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-07-18",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH18202310001800": {
+        "cnr": "MH18202310001800",
+        "title": "State vs. Respondent 18",
+        "court_name": "District Court, Nagpur",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Consumer Complaint",
+        "stage": "Arguments",
+        "parties": [
+          "Petitioner 18",
+          "Respondent 18"
+        ],
+        "next_hearing_date": "2026-10-13",
+        "history": [
+          {
+            "date": "2026-01-01",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-02-10",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH19202410001900": {
+        "cnr": "MH19202410001900",
+        "title": "Petitioner 19 vs. State of Maharashtra",
+        "court_name": "District Court, Pune",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Consumer Complaint",
+        "stage": "Framing of Charges",
+        "parties": [
+          "Petitioner 19",
+          "Respondent 19"
+        ],
+        "next_hearing_date": "2026-11-14",
+        "history": [
+          {
+            "date": "2026-02-02",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-03-11",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH20202110002000": {
+        "cnr": "MH20202110002000",
+        "title": "State vs. Respondent 20",
+        "court_name": "Consumer Forum, Thane",
+        "court_type": "consumer_forum",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Civil Suit",
+        "stage": "Reserved for Judgment",
+        "parties": [
+          "Petitioner 20",
+          "Respondent 20"
+        ],
+        "next_hearing_date": "2026-08-15",
+        "history": [
+          {
+            "date": "2026-03-03",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-04-12",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH21202210002100": {
+        "cnr": "MH21202210002100",
+        "title": "Petitioner 21 vs. State of Maharashtra",
+        "court_name": "District Court, Pune",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Writ Petition",
+        "stage": "Final Hearing",
+        "parties": [
+          "Petitioner 21",
+          "Respondent 21"
+        ],
+        "next_hearing_date": "2026-09-16",
+        "history": [
+          {
+            "date": "2026-04-04",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-05-13",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH22202310002200": {
+        "cnr": "MH22202310002200",
+        "title": "State vs. Respondent 22",
+        "court_name": "District Court, Nagpur",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Bail Application",
+        "stage": "Evidence",
+        "parties": [
+          "Petitioner 22",
+          "Respondent 22"
+        ],
+        "next_hearing_date": "2026-10-17",
+        "history": [
+          {
+            "date": "2026-05-05",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-06-14",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH23202410002300": {
+        "cnr": "MH23202410002300",
+        "title": "Petitioner 23 vs. State of Maharashtra",
+        "court_name": "District Court, Nagpur",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice A. Deshmukh",
+        "case_type": "Civil Suit",
+        "stage": "Framing of Charges",
+        "parties": [
+          "Petitioner 23",
+          "Respondent 23"
+        ],
+        "next_hearing_date": "2026-11-18",
+        "history": [
+          {
+            "date": "2026-06-06",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-07-15",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH24202110002400": {
+        "cnr": "MH24202110002400",
+        "title": "State vs. Respondent 24",
+        "court_name": "District Court, Nagpur",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice R. Kulkarni",
+        "case_type": "Consumer Complaint",
+        "stage": "Framing of Charges",
+        "parties": [
+          "Petitioner 24",
+          "Respondent 24"
+        ],
+        "next_hearing_date": "2026-08-19",
+        "history": [
+          {
+            "date": "2026-01-07",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-02-16",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      },
+      "MH25202210002500": {
+        "cnr": "MH25202210002500",
+        "title": "Petitioner 25 vs. State of Maharashtra",
+        "court_name": "District Court, Pune",
+        "court_type": "district_court",
+        "judge_name": "Hon'ble Justice S. Iyer",
+        "case_type": "Consumer Complaint",
+        "stage": "Evidence",
+        "parties": [
+          "Petitioner 25",
+          "Respondent 25"
+        ],
+        "next_hearing_date": "2026-09-20",
+        "history": [
+          {
+            "date": "2026-02-08",
+            "purpose": "First hearing",
+            "outcome_notes": null
+          },
+          {
+            "date": "2026-03-17",
+            "purpose": "Evidence recording",
+            "outcome_notes": "Adjourned"
+          }
+        ]
+      }
+    },
+    "mutable_cnrs": [
+      "MH03202410000300",
+      "MH11202410001100",
+      "MH19202410001900"
+    ],
+    "mutations": {
+      "MH03202410000300": {
+        "stage": "Judgment Reserved",
+        "next_hearing_date": "2026-09-05",
+        "new_history_entry": {
+          "date": "2026-08-20",
+          "purpose": "Final arguments concluded",
+          "outcome_notes": "Order reserved; next hearing for pronouncement."
+        }
+      },
+      "MH11202410001100": {
+        "stage": "Judgment Reserved",
+        "next_hearing_date": "2026-09-05",
+        "new_history_entry": {
+          "date": "2026-08-20",
+          "purpose": "Final arguments concluded",
+          "outcome_notes": "Order reserved; next hearing for pronouncement."
+        }
+      },
+      "MH19202410001900": {
+        "stage": "Judgment Reserved",
+        "next_hearing_date": "2026-09-05",
+        "new_history_entry": {
+          "date": "2026-08-20",
+          "purpose": "Final arguments concluded",
+          "outcome_notes": "Order reserved; next hearing for pronouncement."
+        }
+      }
+    }
+  }

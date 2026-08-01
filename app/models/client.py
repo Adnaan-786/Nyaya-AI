@@ -34,6 +34,18 @@ class Client(Base, UUIDMixin, TimestampMixin, TenantMixin):
         nullable=True,
     )
 
+    user_id: Mapped[list | None] = mapped_column(
+        ForeignKey("users.id"),
+        onupdate="SET NULL",
+        nullable=True,
+        unique=True,
+    )
+
+    linked_user = relationship(
+        "User",
+        foreign_keys=[user_id],
+    )
+
     tenant = relationship(
         "Tenant",
         back_populates= "clients",

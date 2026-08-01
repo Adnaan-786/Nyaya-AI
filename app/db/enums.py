@@ -60,6 +60,7 @@ class NotificationType(StrEnum):
     PAYMENT = "payment"
     AI = "ai"
     SYSTEM = "system"
+    CASE_UPDATE = "case_update" # M5: eCourts sync detected a change
 
 class TaskStatus(StrEnum):
     PENDING = "pending"

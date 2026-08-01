@@ -34,6 +34,8 @@ PERMISSIONS: dict[str, set[Role]] = {
     "cases.notes.write": {Role.FIRM_ADMIN, Role.LAWYER, Role.INTERN},
     "documents.write": {Role.FIRM_ADMIN, Role.LAWYER, Role.INTERN},
     "documents.delete": {Role.FIRM_ADMIN, Role.LAWYER},
+    "tasks.write": {Role.FIRM_ADMIN, Role.LAWYER, Role.INTERN},
+    "tasks.read": {Role.FIRM_ADMIN, Role.LAWYER, Role.INTERN},
     "ai.use": {Role.FIRM_ADMIN, Role.LAWYER},
     "ai.summarize": {Role.FIRM_ADMIN, Role.LAWYER, Role.INTERN},
     "billing.write": {Role.FIRM_ADMIN, Role.LAWYER},
