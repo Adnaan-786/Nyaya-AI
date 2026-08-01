@@ -18,6 +18,7 @@
 
 ## 🚀 Module Highlights
 
+
 ### M5 highlights
 
 - **Provider abstraction** (`app/integrations/ecourts/`): `ECourtsProvider`
@@ -60,8 +61,11 @@
 normalization (blocked on API approval/vendor docs per plan C.1 — the
 `NotImplementedError` is intentional, not an oversight), and the
 `GET /cases` `next_hearing_before` filter mentioned in the endpoint
-catalog (straightforward addition to `case_service.list_cases` when
+- catalog (straightforward addition to `case_service.list_cases` when
 prioritized).
+Real NAPIX/commercial provider HTTP calls raise NotImplementedError — This is intentional, not incomplete work. Your plan itself says NAPIX approval "can take weeks" and to use the commercial API as fallback until then. I don't have real API credentials or response schemas for either, so writing fake HTTP parsing code now would just be guessing at a shape I'd have to rewrite anyway. The FixtureProvider is fully functional and is literally what your plan says staging should run on. The moment you get NAPIX/Surepass credentials and can show me a sample response, filling in those two files is small.
+next_hearing_before query filter missing — Contract B.6 mentions GET /cases?...&next_hearing_before= as a filter option. I built status, court, assigned_to, and q filters but skipped this one. Genuinely just an oversight/lower priority, not a dependency issue — trivial to add.
+
 
 ### M4 highlights
 
@@ -102,6 +106,8 @@ separately in contract B.6 and fit better alongside M10 (billing),
 since `/portal/invoices` needs the invoice model. The invite flow above
 already provisions the login account so portal routes can be added
 without further auth changes.
+- Client-portal /portal/* routes not built — The contract lists GET /portal/cases, GET /portal/cases/{id}, GET /portal/invoices as a separate section (B.6 "Client mode"). I built the invite flow (so a client can already log in and get role=client), but the portal endpoints themselves — especially /portal/invoices — need the Invoice model, which doesn't exist until M10 (Billing). Building /portal/cases alone now would mean building it twice (once now, once properly wired to invoices later), so I deferred the whole portal surface to land together with M10.
+Case.status wording mismatch — Your contract prose says active|disposed|archived. The actual enum baked into the database back in M2 uses open|closed|archived. This was already decided before I started M4 — I didn't introduce it, I just flagged it since it's a real, if minor, divergence from your Android contract's exact wording. It's cosmetic (a one-line enum rename + migration) but worth you knowing about since the Android team will see whatever the OpenAPI spec says.
 
 
 ### M3 highlights
