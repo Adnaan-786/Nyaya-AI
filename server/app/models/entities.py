@@ -53,6 +53,14 @@ class User(UuidPk, TenantScoped, Timestamped, Base):
     client_id: Mapped[uuid.UUID | None] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("clients.id", ondelete="SET NULL")
     )
+    # Team-management "remove member" (DELETE /users/{id}) sets this False instead of
+    # deleting the row. A hard delete would CASCADE through time_entries, ai_jobs,
+    # ai_conversations, devices and notifications (ondelete="CASCADE" on their
+    # user_id FKs) — wiping a departed lawyer's billing history out from under the
+    # firm's invoices. Deactivating preserves every FK (tasks.assignee_id/created_by,
+    # case_notes.author_id keep resolving; time entries stay attached to their case)
+    # while removing the user from active team listings and (future) login.
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
 class Client(UuidPk, TenantScoped, Timestamped, Base):

@@ -4,7 +4,7 @@ import datetime as dt
 import uuid
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import Page, get_scoped_or_404, paginate
@@ -311,6 +311,37 @@ async def update_hearing(
     await session.commit()
     await session.refresh(hearing)
     return envelope.ok(HearingOut.model_validate(hearing).model_dump(mode="json"))
+
+
+@router.delete("/hearings/{hearing_id}")
+async def delete_hearing(
+    hearing_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    principal: security.Principal = Depends(security.require_staff),
+):
+    hearing = await get_scoped_or_404(
+        session, Hearing, hearing_id, principal.tenant_id, "hearing"
+    )
+    case = await session.get(Case, hearing.case_id)
+    deleted_date = hearing.date
+    await session.delete(hearing)
+    await session.flush()
+
+    # Mirror of add_hearing's denormalisation above: if the deleted hearing WAS the
+    # case's next_hearing_date, that pointer is now stale and would leave the case
+    # list / Today screen sorting on a hearing that no longer exists. Recompute it
+    # from whatever future hearings remain, the same way add_hearing derives it.
+    if case is not None and case.next_hearing_date == deleted_date:
+        case.next_hearing_date = await session.scalar(
+            select(func.min(Hearing.date)).where(
+                Hearing.case_id == case.id,
+                Hearing.tenant_id == principal.tenant_id,
+                Hearing.date >= today_in_india(),
+            )
+        )
+
+    await session.commit()
+    return envelope.ok({"ok": True})
 
 
 @router.post("/cases/{case_id}/notes")

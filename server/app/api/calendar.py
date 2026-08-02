@@ -205,3 +205,15 @@ async def update_task(
     await session.commit()
     await session.refresh(task)
     return envelope.ok(TaskOut.model_validate(task).model_dump(mode="json"))
+
+
+@router.delete("/tasks/{task_id}")
+async def delete_task(
+    task_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    principal: security.Principal = Depends(security.require_staff),
+):
+    task = await get_scoped_or_404(session, Task, task_id, principal.tenant_id, "task")
+    await session.delete(task)
+    await session.commit()
+    return envelope.ok({"ok": True})

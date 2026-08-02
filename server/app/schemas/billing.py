@@ -79,6 +79,13 @@ class TimeEntryCreate(BaseModel):
     rate_paise: int | None = Field(default=None, ge=0)
 
 
+class TimeEntryUpdate(BaseModel):
+    description: str | None = None
+    duration_seconds: int | None = Field(default=None, ge=0)
+    billable: bool | None = None
+    rate_paise: int | None = Field(default=None, ge=0)
+
+
 class TimeEntryOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

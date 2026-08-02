@@ -391,3 +391,80 @@ async def test_pdf_renders_a_devanagari_client_name(client: AsyncClient) -> None
     assert pdf.status_code == 200
     assert pdf.content.startswith(b"%PDF")
     assert len(pdf.content) > 5000, "an embedded font should make this a real document"
+
+
+async def _time_entry(http: AsyncClient, headers: dict, case_id: str, **overrides) -> dict:
+    body = {
+        "case_id": case_id,
+        "started_at": "2026-07-20T10:00:00Z",
+        "duration_seconds": 3600,
+        "description": "Drafting",
+        "rate_paise": 500000,
+        **overrides,
+    }
+    response = await http.post(f"{BASE}/time-entries", headers=headers, json=body)
+    assert response.status_code == 200, response.text
+    return response.json()["data"]
+
+
+async def test_time_entry_can_be_edited_and_deleted_before_invoicing(
+    client: AsyncClient,
+) -> None:
+    headers = await sign_in(client, "Timesheet Firm")
+    client_id = await _client_record(client, headers)
+    case = (
+        await client.post(
+            f"{BASE}/cases",
+            headers=headers,
+            json={"title": "Editable time", "client_id": client_id},
+        )
+    ).json()["data"]
+    entry = await _time_entry(client, headers, case["id"])
+
+    patched = await client.patch(
+        f"{BASE}/time-entries/{entry['id']}",
+        headers=headers,
+        json={"duration_seconds": 7200},
+    )
+    assert patched.json()["data"]["duration_seconds"] == 7200
+
+    deleted = await client.delete(f"{BASE}/time-entries/{entry['id']}", headers=headers)
+    assert deleted.json()["data"]["ok"] is True
+
+    listed = (
+        await client.get(f"{BASE}/time-entries?case_id={case['id']}", headers=headers)
+    ).json()["data"]
+    assert entry["id"] not in [e["id"] for e in listed]
+
+
+async def test_invoiced_time_entry_cannot_be_edited_or_deleted(client: AsyncClient) -> None:
+    """Billed time is history: an invoice already went out quoting this entry, so it
+    must not silently change or vanish underneath that invoice."""
+    headers = await sign_in(client, "Billed Timesheet Firm")
+    client_id = await _client_record(client, headers)
+    case = (
+        await client.post(
+            f"{BASE}/cases",
+            headers=headers,
+            json={"title": "Billed time", "client_id": client_id},
+        )
+    ).json()["data"]
+    entry = await _time_entry(client, headers, case["id"])
+
+    await _invoice(
+        client,
+        headers,
+        client_id=client_id,
+        case_id=case["id"],
+        import_unbilled_time=True,
+    )
+
+    patched = await client.patch(
+        f"{BASE}/time-entries/{entry['id']}",
+        headers=headers,
+        json={"duration_seconds": 100},
+    )
+    assert patched.json()["error"]["code"] == "VALIDATION_ERROR"
+
+    deleted = await client.delete(f"{BASE}/time-entries/{entry['id']}", headers=headers)
+    assert deleted.json()["error"]["code"] == "VALIDATION_ERROR"

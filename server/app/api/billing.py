@@ -26,6 +26,7 @@ from app.schemas.billing import (
     PaymentVerifyRequest,
     TimeEntryCreate,
     TimeEntryOut,
+    TimeEntryUpdate,
 )
 from app.services import invoicing
 
@@ -407,6 +408,52 @@ async def create_time_entry(
     await session.commit()
     await session.refresh(entry)
     return envelope.ok(TimeEntryOut.model_validate(entry).model_dump(mode="json"))
+
+
+@router.patch("/time-entries/{time_entry_id}")
+async def update_time_entry(
+    time_entry_id: uuid.UUID,
+    body: TimeEntryUpdate,
+    session: AsyncSession = Depends(get_session),
+    principal: security.Principal = Depends(security.require_staff),
+):
+    entry = await get_scoped_or_404(
+        session, TimeEntry, time_entry_id, principal.tenant_id, "time_entry"
+    )
+    # Billed time is history now: an invoice already went out quoting this entry's
+    # hours and rate, so editing it after the fact would silently desynchronise the
+    # invoice from the record it was built from (same reasoning as the paid-invoice
+    # guard in update_invoice above).
+    if entry.invoiced_at is not None:
+        raise envelope.validation(
+            "This time entry has already been invoiced and cannot be changed."
+        )
+
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(entry, field, value)
+
+    await session.commit()
+    await session.refresh(entry)
+    return envelope.ok(TimeEntryOut.model_validate(entry).model_dump(mode="json"))
+
+
+@router.delete("/time-entries/{time_entry_id}")
+async def delete_time_entry(
+    time_entry_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+    principal: security.Principal = Depends(security.require_staff),
+):
+    entry = await get_scoped_or_404(
+        session, TimeEntry, time_entry_id, principal.tenant_id, "time_entry"
+    )
+    if entry.invoiced_at is not None:
+        raise envelope.validation(
+            "This time entry has already been invoiced and cannot be changed."
+        )
+
+    await session.delete(entry)
+    await session.commit()
+    return envelope.ok({"ok": True})
 
 
 @router.get("/expenses")

@@ -48,7 +48,9 @@ async def sign_in(http: AsyncClient, firm: str) -> dict[str, str]:
     verified = await http.post(
         f"{BASE}/auth/otp/verify", json={"phone": phone, "otp": "123456"}
     )
-    token = verified.json()["data"]["access_token"]
+    data = verified.json()["data"]
+    token = data["access_token"]
+    refresh_token = data["refresh_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
     await http.post(
@@ -56,4 +58,14 @@ async def sign_in(http: AsyncClient, firm: str) -> dict[str, str]:
         headers=headers,
         json={"name": f"Adv. {firm}", "role_hint": "firm_admin", "firm_name": firm},
     )
-    return headers
+
+    # The access token minted at OTP-verify time carries the pre-onboarding role
+    # (new users default to "lawyer"); onboarding changes the DB row but does not
+    # reissue the token. Refresh once so callers that check role (e.g. require_roles)
+    # see the real post-onboarding role, the same way the app would after its own
+    # onboarding screen calls refresh.
+    refreshed = await http.post(
+        f"{BASE}/auth/refresh", json={"refresh_token": refresh_token}
+    )
+    new_token = refreshed.json()["data"]["access_token"]
+    return {"Authorization": f"Bearer {new_token}"}
