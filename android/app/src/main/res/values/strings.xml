@@ -14,10 +14,13 @@
     <string name="title_case">Case</string>
     <string name="title_add_case">Add case</string>
     <string name="title_add_hearing">Add hearing</string>
+    <string name="title_add_time_entry">Log time</string>
     <string name="title_add_task">Add task</string>
     <string name="title_clients">Clients</string>
     <string name="title_client">Client</string>
     <string name="title_add_client">Add client</string>
+    <string name="title_invoice">Invoice</string>
+    <string name="title_add_invoice">New invoice</string>
     <string name="title_calendar">Calendar</string>
     <string name="title_tasks">Tasks</string>
     <string name="title_settings">Settings</string>

@@ -16,4 +16,15 @@
     <string name="auth_change_number">नंबर बदलें</string>
     <string name="auth_signed_in_as">%1$s के रूप में साइन इन</string>
     <string name="auth_sign_out">साइन आउट</string>
+    <string name="auth_onboard_title">अपनी प्रोफ़ाइल सेट करें</string>
+    <string name="auth_onboard_submit">सेटअप पूरा करें</string>
+    <string name="auth_onboard_name_label">पूरा नाम</string>
+    <string name="auth_onboard_role_label">आप हैं</string>
+    <string name="auth_onboard_role_lawyer">अधिवक्ता</string>
+    <string name="auth_onboard_role_firm_admin">फर्म एडमिन</string>
+    <string name="auth_onboard_firm_name_label">फर्म का नाम (वैकल्पिक)</string>
+    <string name="auth_onboard_bar_council_id_label">बार काउंसिल आईडी (वैकल्पिक)</string>
+    <string name="auth_onboard_language_label">पसंदीदा भाषा</string>
+    <string name="auth_onboard_language_en">English</string>
+    <string name="auth_onboard_language_hi">हिंदी</string>
 </resources>

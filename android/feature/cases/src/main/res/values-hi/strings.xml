@@ -24,6 +24,7 @@
 
     <string name="case_tab_overview">विवरण</string>
     <string name="case_tab_hearings">सुनवाई</string>
+    <string name="case_tab_time">समय</string>
     <string name="case_tab_documents">दस्तावेज़</string>
     <string name="case_court">न्यायालय</string>
     <string name="case_judge">न्यायाधीश</string>
@@ -36,6 +37,9 @@
     <string name="case_no_hearings">कोई सुनवाई दर्ज नहीं</string>
     <string name="case_no_documents">अभी कोई दस्तावेज़ नहीं</string>
     <string name="case_hearing_outcome">परिणाम</string>
+    <string name="case_no_time_entries">अभी तक कोई समय दर्ज नहीं</string>
+    <string name="case_time_entry_billable">बिल योग्य</string>
+    <string name="case_time_entry_non_billable">बिल योग्य नहीं</string>
 
     <string name="case_add_manual_title">केस मैन्युअल रूप से जोड़ें</string>
     <string name="case_add_manual_submit">केस बनाएं</string>
@@ -49,4 +53,12 @@
     <string name="hearing_add_field_time_helper">24 घंटे के प्रारूप में, जैसे 14:30</string>
     <string name="hearing_add_field_purpose">प्रयोजन</string>
     <string name="hearing_add_field_courtroom">न्यायालय कक्ष</string>
+
+    <string name="time_entry_add_title">समय दर्ज करें</string>
+    <string name="time_entry_add_submit">समय प्रविष्टि सहेजें</string>
+    <string name="time_entry_add_field_duration">अवधि (मिनट)</string>
+    <string name="time_entry_add_field_description">विवरण</string>
+    <string name="time_entry_add_field_billable">बिल योग्य</string>
+    <string name="time_entry_add_field_rate">प्रति घंटा दर (वैकल्पिक)</string>
+    <string name="time_entry_add_field_rate_helper">खाली छोड़ने पर केस की डिफ़ॉल्ट बिलिंग दर लागू होगी</string>
 </resources>

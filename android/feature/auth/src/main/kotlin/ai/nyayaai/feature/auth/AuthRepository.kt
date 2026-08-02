@@ -5,6 +5,7 @@ import ai.nyayaai.core.network.api.ApiCaller
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.api.map
 import ai.nyayaai.core.network.auth.TokenStore
+import ai.nyayaai.core.network.dto.OnboardRequestDto
 import ai.nyayaai.core.network.dto.OtpRequestDto
 import ai.nyayaai.core.network.dto.OtpVerifyRequestDto
 import ai.nyayaai.core.network.mapper.toDomain
@@ -51,6 +52,31 @@ class AuthRepository
                 }
 
         suspend fun me(): ApiResult<User> = caller.call { service.me() }.map { it.toDomain() }
+
+        /**
+         * B.6 onboarding. Only reachable for a brand-new user (see [VerifiedLogin.isNewUser]) —
+         * finishes the placeholder profile the server created at OTP verification so the name
+         * and tenant it returns are no longer empty / "Pending setup".
+         */
+        suspend fun onboard(
+            name: String,
+            roleHint: String,
+            firmName: String?,
+            barCouncilId: String?,
+            language: String,
+        ): ApiResult<User> =
+            caller
+                .call {
+                    service.onboard(
+                        OnboardRequestDto(
+                            name = name,
+                            roleHint = roleHint,
+                            firmName = firmName?.takeIf { it.isNotBlank() },
+                            barCouncilId = barCouncilId?.takeIf { it.isNotBlank() },
+                            language = language,
+                        ),
+                    )
+                }.map { it.toDomain() }
 
         fun logout() = tokenStore.clear()
     }

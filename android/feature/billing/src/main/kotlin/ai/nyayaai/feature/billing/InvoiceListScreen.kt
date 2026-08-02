@@ -25,8 +25,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,6 +48,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun InvoiceListRoute(
     firmName: String,
+    onOpenInvoice: (InvoiceId) -> Unit,
+    onAddInvoice: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InvoiceListViewModel = hiltViewModel(),
 ) {
@@ -59,58 +66,75 @@ fun InvoiceListRoute(
         }
     }
 
-    when (state) {
-        is UiState.Loading -> LoadingList(modifier = modifier)
-
-        is UiState.Error -> {
-            val error = state as UiState.Error
-            ErrorState(
-                message = error.message,
-                onRetry = viewModel::load.takeIf { error.retryable },
-                modifier = modifier,
-            )
-        }
-
-        is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title, modifier = modifier)
-
-        is UiState.Content -> {
-            val invoices = (state as UiState.Content<List<Invoice>>).data
-            if (invoices.isEmpty()) {
-                EmptyState(
-                    title = stringResource(R.string.billing_empty_title),
-                    description = stringResource(R.string.billing_empty_detail),
-                    modifier = modifier,
+    // The FAB lives at the Scaffold level, present in every state — a lawyer with zero
+    // invoices, or whose list failed to load, still needs a way to create the first one.
+    Scaffold(
+        modifier = modifier,
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddInvoice) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = stringResource(R.string.billing_add_title),
                 )
-            } else {
-                LazyColumn(
-                    modifier = modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(NyayaTheme.spacing.md),
-                    verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-                ) {
-                    item { OutstandingHeader(invoices) }
+            }
+        },
+    ) { innerPadding ->
+        val contentModifier = Modifier.padding(innerPadding)
 
-                    itemsIndexed(invoices, key = { _, item -> item.id.value }) { index, invoice ->
-                        InvoiceCard(
-                            invoice = invoice,
-                            onSend = { viewModel.send(it) },
-                            onPay = { target ->
-                                val activity = context.findActivity() ?: return@InvoiceCard
-                                viewModel.pay(target) { order ->
-                                    CheckoutLauncher.start(
-                                        activity = activity,
-                                        request =
-                                            CheckoutRequest(
-                                                keyId = order.keyId,
-                                                orderId = order.orderId,
-                                                amountPaise = order.amountPaise,
-                                                invoiceNumber = target.number,
-                                                firmName = firmName,
-                                            ),
-                                    )
-                                }
-                            },
-                            modifier = Modifier.animatedListEntry(index),
-                        )
+        when (state) {
+            is UiState.Loading -> LoadingList(modifier = contentModifier)
+
+            is UiState.Error -> {
+                val error = state as UiState.Error
+                ErrorState(
+                    message = error.message,
+                    onRetry = viewModel::load.takeIf { error.retryable },
+                    modifier = contentModifier,
+                )
+            }
+
+            is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title, modifier = contentModifier)
+
+            is UiState.Content -> {
+                val invoices = (state as UiState.Content<List<Invoice>>).data
+                if (invoices.isEmpty()) {
+                    EmptyState(
+                        title = stringResource(R.string.billing_empty_title),
+                        description = stringResource(R.string.billing_empty_detail),
+                        modifier = contentModifier,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = contentModifier.fillMaxSize(),
+                        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+                        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+                    ) {
+                        item { OutstandingHeader(invoices) }
+
+                        itemsIndexed(invoices, key = { _, item -> item.id.value }) { index, invoice ->
+                            InvoiceCard(
+                                invoice = invoice,
+                                onOpen = onOpenInvoice,
+                                onSend = { viewModel.send(it) },
+                                onPay = { target ->
+                                    val activity = context.findActivity() ?: return@InvoiceCard
+                                    viewModel.pay(target) { order ->
+                                        CheckoutLauncher.start(
+                                            activity = activity,
+                                            request =
+                                                CheckoutRequest(
+                                                    keyId = order.keyId,
+                                                    orderId = order.orderId,
+                                                    amountPaise = order.amountPaise,
+                                                    invoiceNumber = target.number,
+                                                    firmName = firmName,
+                                                ),
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.animatedListEntry(index),
+                            )
+                        }
                     }
                 }
             }
@@ -121,11 +145,12 @@ fun InvoiceListRoute(
 @Composable
 private fun InvoiceCard(
     invoice: Invoice,
+    onOpen: (InvoiceId) -> Unit,
     onSend: (InvoiceId) -> Unit,
     onPay: (Invoice) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    NyayaCard(modifier = modifier) {
+    NyayaCard(modifier = modifier, onClick = { onOpen(invoice.id) }) {
         Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

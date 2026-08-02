@@ -19,4 +19,20 @@
         <item quantity="one">%1$d बकाया</item>
         <item quantity="other">%1$d बकाया</item>
     </plurals>
+    <string name="billing_line_items">लाइन आइटम</string>
+    <string name="billing_line_item_quantity_rate">%1$d x %2$s</string>
+    <string name="billing_view_pdf">PDF देखें</string>
+    <string name="billing_add_title">नया बिल</string>
+    <string name="billing_add_submit">बिल बनाएं</string>
+    <string name="billing_add_client">क्लाइंट</string>
+    <string name="billing_add_case">केस (वैकल्पिक)</string>
+    <string name="billing_add_no_case">कोई केस नहीं</string>
+    <string name="billing_add_gst_rate">GST दर</string>
+    <string name="billing_add_reverse_charge">Reverse charge — GST क्लाइंट द्वारा देय</string>
+    <string name="billing_add_import_unbilled">बिना बिल वाली समय-प्रविष्टियाँ जोड़ें</string>
+    <string name="billing_add_line_item">+ लाइन जोड़ें</string>
+    <string name="billing_add_line_description">विवरण</string>
+    <string name="billing_add_line_quantity">मात्रा</string>
+    <string name="billing_add_line_rate">प्रति इकाई दर</string>
+    <string name="billing_add_line_remove">लाइन हटाएं</string>
 </resources>

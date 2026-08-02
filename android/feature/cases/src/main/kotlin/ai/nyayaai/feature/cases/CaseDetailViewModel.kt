@@ -5,6 +5,7 @@ import ai.nyayaai.core.model.Case
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.Document
 import ai.nyayaai.core.model.Hearing
+import ai.nyayaai.core.model.TimeEntry
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.api.isRetryable
 import androidx.lifecycle.SavedStateHandle
@@ -23,6 +24,7 @@ data class CaseDetail(
     val case: Case,
     val hearings: List<Hearing>,
     val documents: List<Document>,
+    val timeEntries: List<TimeEntry>,
     val isSyncing: Boolean = false,
     /** Surfaced as a transient message; a failed sync must not replace the case on screen. */
     val syncMessage: String? = null,
@@ -33,6 +35,7 @@ class CaseDetailViewModel
     @Inject
     constructor(
         private val repository: CaseRepository,
+        private val timeEntryRepository: TimeEntryRepository,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val caseId = CaseId(checkNotNull(savedStateHandle.get<String>(ARG_CASE_ID)))
@@ -51,6 +54,7 @@ class CaseDetailViewModel
                 val caseCall = async { repository.case(caseId) }
                 val hearingsCall = async { repository.hearings(caseId) }
                 val documentsCall = async { repository.documents(caseId) }
+                val timeEntriesCall = async { timeEntryRepository.timeEntries(caseId) }
 
                 _state.value =
                     when (val case = caseCall.await()) {
@@ -61,10 +65,12 @@ class CaseDetailViewModel
                             UiState.Content(
                                 CaseDetail(
                                     case = case.data,
-                                    // Tabs degrade independently: a documents failure must
-                                    // not hide the hearing history the lawyer opened this for.
+                                    // Tabs degrade independently: a documents (or time
+                                    // entries) failure must not hide the hearing history
+                                    // the lawyer opened this for.
                                     hearings = (hearingsCall.await() as? ApiResult.Success)?.data.orEmpty(),
                                     documents = (documentsCall.await() as? ApiResult.Success)?.data.orEmpty(),
+                                    timeEntries = (timeEntriesCall.await() as? ApiResult.Success)?.data.orEmpty(),
                                 ),
                             )
                     }

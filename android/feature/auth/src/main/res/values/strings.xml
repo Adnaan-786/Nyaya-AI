@@ -12,4 +12,15 @@
     <string name="auth_change_number">Change number</string>
     <string name="auth_signed_in_as">Signed in as %1$s</string>
     <string name="auth_sign_out">Sign out</string>
+    <string name="auth_onboard_title">Set up your profile</string>
+    <string name="auth_onboard_submit">Finish setup</string>
+    <string name="auth_onboard_name_label">Full name</string>
+    <string name="auth_onboard_role_label">You are a</string>
+    <string name="auth_onboard_role_lawyer">Lawyer</string>
+    <string name="auth_onboard_role_firm_admin">Firm admin</string>
+    <string name="auth_onboard_firm_name_label">Firm name (optional)</string>
+    <string name="auth_onboard_bar_council_id_label">Bar council ID (optional)</string>
+    <string name="auth_onboard_language_label">Preferred language</string>
+    <string name="auth_onboard_language_en">English</string>
+    <string name="auth_onboard_language_hi">हिंदी</string>
 </resources>

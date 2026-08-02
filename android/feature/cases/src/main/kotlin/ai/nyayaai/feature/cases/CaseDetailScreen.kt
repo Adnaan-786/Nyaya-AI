@@ -3,6 +3,7 @@ package ai.nyayaai.feature.cases
 import ai.nyayaai.core.common.UiState
 import ai.nyayaai.core.common.format12Hour
 import ai.nyayaai.core.common.formatLong
+import ai.nyayaai.core.common.formatRupees
 import ai.nyayaai.core.common.formatShort
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
@@ -18,6 +19,7 @@ import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Document
 import ai.nyayaai.core.model.Hearing
 import ai.nyayaai.core.model.OcrStatus
+import ai.nyayaai.core.model.TimeEntry
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -52,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun CaseDetailRoute(
     onAddHearing: () -> Unit,
+    onAddTimeEntry: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CaseDetailViewModel = hiltViewModel(),
 ) {
@@ -76,6 +79,7 @@ fun CaseDetailRoute(
                 detail = (state as UiState.Content<CaseDetail>).data,
                 onSync = viewModel::sync,
                 onAddHearing = onAddHearing,
+                onAddTimeEntry = onAddTimeEntry,
                 modifier = modifier,
             )
     }
@@ -86,6 +90,7 @@ private fun CaseDetailContent(
     detail: CaseDetail,
     onSync: () -> Unit,
     onAddHearing: () -> Unit,
+    onAddTimeEntry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var tab by remember { mutableIntStateOf(0) }
@@ -94,13 +99,22 @@ private fun CaseDetailContent(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
-            if (tab == 1) {
-                FloatingActionButton(onClick = onAddHearing) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = stringResource(R.string.hearing_add_title),
-                    )
-                }
+            when (tab) {
+                1 ->
+                    FloatingActionButton(onClick = onAddHearing) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = stringResource(R.string.hearing_add_title),
+                        )
+                    }
+
+                2 ->
+                    FloatingActionButton(onClick = onAddTimeEntry) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = stringResource(R.string.time_entry_add_title),
+                        )
+                    }
             }
         },
     ) { innerPadding ->
@@ -129,6 +143,7 @@ private fun CaseDetailContent(
             when (tab) {
                 0 -> OverviewTab(detail, onSync)
                 1 -> HearingsTab(detail.hearings)
+                2 -> TimeTab(detail.timeEntries)
                 else -> DocumentsTab(detail.documents)
             }
         }
@@ -239,6 +254,67 @@ private fun HearingsTab(hearings: List<Hearing>) {
 }
 
 @Composable
+private fun TimeTab(timeEntries: List<TimeEntry>) {
+    if (timeEntries.isEmpty()) {
+        EmptyState(title = stringResource(R.string.case_no_time_entries))
+        return
+    }
+
+    LazyColumn(
+        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+    ) {
+        itemsIndexed(timeEntries, key = { _, t -> t.id.value }) { index, entry ->
+            NyayaCard(modifier = Modifier.animatedListEntry(index)) {
+                Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = entry.durationSeconds.formatDuration(),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        StatusBadge(
+                            text =
+                                stringResource(
+                                    if (entry.billable) {
+                                        R.string.case_time_entry_billable
+                                    } else {
+                                        R.string.case_time_entry_non_billable
+                                    },
+                                ),
+                            tone = if (entry.billable) StatusTone.POSITIVE else StatusTone.NEUTRAL,
+                        )
+                    }
+                    entry.description?.let { Text(text = it, style = MaterialTheme.typography.bodyMedium) }
+                    entry.ratePaise?.let {
+                        Text(
+                            text = it.formatRupees(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Renders as "1h 30m" rather than raw seconds — how a lawyer actually reads logged time. */
+private fun Long.formatDuration(): String {
+    val totalMinutes = this / 60
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    return when {
+        hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
+        hours > 0 -> "${hours}h"
+        else -> "${minutes}m"
+    }
+}
+
+@Composable
 private fun DocumentsTab(documents: List<Document>) {
     if (documents.isEmpty()) {
         EmptyState(title = stringResource(R.string.case_no_documents))
@@ -306,5 +382,6 @@ private val TAB_LABELS =
     listOf(
         R.string.case_tab_overview,
         R.string.case_tab_hearings,
+        R.string.case_tab_time,
         R.string.case_tab_documents,
     )

@@ -1,16 +1,23 @@
 package ai.nyayaai.feature.billing
 
 import ai.nyayaai.core.common.UiState
+import ai.nyayaai.core.model.Case
+import ai.nyayaai.core.model.CaseId
+import ai.nyayaai.core.model.Client
+import ai.nyayaai.core.model.ClientId
 import ai.nyayaai.core.model.Invoice
 import ai.nyayaai.core.model.InvoiceId
 import ai.nyayaai.core.network.api.ApiCaller
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.api.isRetryable
 import ai.nyayaai.core.network.api.map
+import ai.nyayaai.core.network.dto.InvoiceCreateDto
+import ai.nyayaai.core.network.dto.InvoiceLineItemDto
 import ai.nyayaai.core.network.dto.PaymentOrderRequestDto
 import ai.nyayaai.core.network.dto.PaymentVerifyRequestDto
 import ai.nyayaai.core.network.mapper.toDomain
 import ai.nyayaai.core.network.service.BillingService
+import ai.nyayaai.core.network.service.CaseService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,11 +34,28 @@ data class PaymentOrder(
     val keyId: String,
 )
 
+/**
+ * A line item as the creation form collects it — deliberately not the domain
+ * [ai.nyayaai.core.model.InvoiceLineItem], which carries an `amountPaise` the server
+ * computes and a lawyer never types. Keeping this as its own feature-local shape means
+ * the form never has to invent a fake amount just to satisfy a type built for
+ * *displaying* an already-priced line.
+ */
+data class InvoiceLineItemInput(
+    val description: String = "",
+    val quantity: Int = 1,
+    val ratePaise: Long = 0,
+)
+
 @Singleton
 class BillingRepository
     @Inject
     constructor(
         private val service: BillingService,
+        // Client and case pickers for the creation form live on CaseService, same as
+        // ClientRepository in feature:clients — feature modules never depend on each
+        // other, so each injects its own slice of the shared core:network service.
+        private val caseService: CaseService,
         private val caller: ApiCaller,
     ) {
         suspend fun invoices(status: String? = null): ApiResult<List<Invoice>> =
@@ -42,6 +66,46 @@ class BillingRepository
 
         suspend fun send(id: InvoiceId): ApiResult<Invoice> =
             caller.call { service.sendInvoice(id.value) }.map { it.toDomain() }
+
+        /**
+         * B.5/B.6 pickers for the creation form. The server computes `amount_paise`
+         * itself, so [InvoiceLineItemInput] rows never carry one — leaving the DTO's
+         * `amountPaise` at its default omits it from the request body entirely.
+         */
+        suspend fun createInvoice(
+            clientId: ClientId,
+            caseId: CaseId?,
+            lineItems: List<InvoiceLineItemInput>,
+            gstRate: Int,
+            reverseCharge: Boolean,
+            importUnbilledTime: Boolean,
+        ): ApiResult<Invoice> =
+            caller
+                .call {
+                    service.createInvoice(
+                        InvoiceCreateDto(
+                            clientId = clientId.value,
+                            caseId = caseId?.value,
+                            lineItems =
+                                lineItems.map {
+                                    InvoiceLineItemDto(
+                                        description = it.description,
+                                        quantity = it.quantity,
+                                        ratePaise = it.ratePaise,
+                                    )
+                                },
+                            gstRate = gstRate,
+                            importUnbilledTime = importUnbilledTime,
+                            reverseCharge = reverseCharge,
+                        ),
+                    )
+                }.map { it.toDomain() }
+
+        suspend fun clients(): ApiResult<List<Client>> =
+            caller.call { caseService.clients() }.map { list -> list.map { it.toDomain() } }
+
+        suspend fun cases(): ApiResult<List<Case>> =
+            caller.call { caseService.cases() }.map { list -> list.map { it.toDomain() } }
 
         /** B.10 step 2 — hands the Checkout SDK exactly what it needs and nothing more. */
         suspend fun createOrder(id: InvoiceId): ApiResult<PaymentOrder> =

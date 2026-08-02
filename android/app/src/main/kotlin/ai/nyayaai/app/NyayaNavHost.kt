@@ -1,15 +1,21 @@
 package ai.nyayaai.app
 
 import ai.nyayaai.core.model.CaseId
+import ai.nyayaai.core.model.InvoiceId
 import ai.nyayaai.core.model.User
 import ai.nyayaai.core.model.UserRole
 import ai.nyayaai.feature.ai.AiRoute
+import ai.nyayaai.feature.billing.AddInvoiceRoute
+import ai.nyayaai.feature.billing.InvoiceDetailRoute
+import ai.nyayaai.feature.billing.InvoiceDetailViewModel
 import ai.nyayaai.feature.billing.InvoiceListRoute
 import ai.nyayaai.feature.calendar.CalendarRoute
 import ai.nyayaai.feature.cases.AddByCnrRoute
 import ai.nyayaai.feature.cases.AddCaseRoute
 import ai.nyayaai.feature.cases.AddHearingRoute
 import ai.nyayaai.feature.cases.AddHearingViewModel
+import ai.nyayaai.feature.cases.AddTimeEntryRoute
+import ai.nyayaai.feature.cases.AddTimeEntryViewModel
 import ai.nyayaai.feature.cases.CaseDetailRoute
 import ai.nyayaai.feature.cases.CaseDetailViewModel
 import ai.nyayaai.feature.cases.CaseListRoute
@@ -89,7 +95,28 @@ fun NyayaNavHost(
         }
 
         composable(Route.INVOICES, enterTransition = { fade() }, exitTransition = { fadeAway() }) {
-            InvoiceListRoute(firmName = user.name)
+            InvoiceListRoute(
+                firmName = user.name,
+                onOpenInvoice = { navController.navigate(Route.invoiceDetail(it)) },
+                onAddInvoice = { navController.navigate(Route.INVOICE_ADD) },
+            )
+        }
+
+        composable(
+            route = Route.INVOICE_DETAIL,
+            arguments = listOf(navArgument(InvoiceDetailViewModel.ARG_INVOICE_ID) { type = NavType.StringType }),
+        ) {
+            InvoiceDetailRoute(onOpenPdf = onOpenUrl)
+        }
+
+        composable(Route.INVOICE_ADD) {
+            AddInvoiceRoute(
+                onInvoiceCreated = { id ->
+                    navController.navigate(Route.invoiceDetail(id)) {
+                        popUpTo(Route.INVOICE_ADD) { inclusive = true }
+                    }
+                },
+            )
         }
 
         composable(
@@ -100,6 +127,9 @@ fun NyayaNavHost(
             CaseDetailRoute(
                 onAddHearing = {
                     caseId?.let { navController.navigate(Route.caseHearingAdd(CaseId(it))) }
+                },
+                onAddTimeEntry = {
+                    caseId?.let { navController.navigate(Route.caseTimeAdd(CaseId(it))) }
                 },
             )
         }
@@ -135,6 +165,13 @@ fun NyayaNavHost(
             arguments = listOf(navArgument(AddHearingViewModel.ARG_CASE_ID) { type = NavType.StringType }),
         ) {
             AddHearingRoute(onHearingAdded = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Route.CASE_TIME_ADD,
+            arguments = listOf(navArgument(AddTimeEntryViewModel.ARG_CASE_ID) { type = NavType.StringType }),
+        ) {
+            AddTimeEntryRoute(onTimeEntryAdded = { navController.popBackStack() })
         }
 
         composable(Route.CALENDAR) {

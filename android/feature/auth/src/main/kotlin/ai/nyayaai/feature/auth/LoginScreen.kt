@@ -1,5 +1,9 @@
 package ai.nyayaai.feature.auth
 
+import ai.nyayaai.core.designsystem.component.FormScaffold
+import ai.nyayaai.core.designsystem.component.NyayaDropdownField
+import ai.nyayaai.core.designsystem.component.NyayaTextField
+import ai.nyayaai.core.model.Language
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -49,6 +53,12 @@ fun LoginRoute(
         onVerify = viewModel::verifyOtp,
         onBack = viewModel::back,
         onSignOut = viewModel::logout,
+        onOnboardNameChanged = viewModel::onOnboardNameChanged,
+        onOnboardRoleChanged = viewModel::onOnboardRoleChanged,
+        onOnboardFirmNameChanged = viewModel::onOnboardFirmNameChanged,
+        onOnboardBarCouncilIdChanged = viewModel::onOnboardBarCouncilIdChanged,
+        onOnboardLanguageChanged = viewModel::onOnboardLanguageChanged,
+        onSubmitOnboarding = viewModel::submitOnboarding,
     )
 }
 
@@ -61,7 +71,30 @@ internal fun LoginScreen(
     onVerify: () -> Unit,
     onBack: () -> Unit,
     onSignOut: () -> Unit,
+    onOnboardNameChanged: (String) -> Unit,
+    onOnboardRoleChanged: (OnboardRole) -> Unit,
+    onOnboardFirmNameChanged: (String) -> Unit,
+    onOnboardBarCouncilIdChanged: (String) -> Unit,
+    onOnboardLanguageChanged: (Language) -> Unit,
+    onSubmitOnboarding: () -> Unit,
 ) {
+    if (state.step == LoginUiState.Step.ONBOARDING) {
+        // FormScaffold (core/designsystem) already renders its own title, scrolling content,
+        // error text and submit spinner — wrapping it in the plain steps' centered Column
+        // below would double up the error/spinner the scaffold already shows.
+        OnboardingStep(
+            state = state,
+            onNameChanged = onOnboardNameChanged,
+            onRoleChanged = onOnboardRoleChanged,
+            onFirmNameChanged = onOnboardFirmNameChanged,
+            onBarCouncilIdChanged = onOnboardBarCouncilIdChanged,
+            onLanguageChanged = onOnboardLanguageChanged,
+            onSubmit = onSubmitOnboarding,
+            modifier = Modifier.fillMaxSize(),
+        )
+        return
+    }
+
     Column(
         modifier =
             Modifier
@@ -76,6 +109,8 @@ internal fun LoginScreen(
 
             LoginUiState.Step.OTP ->
                 OtpStep(state, onOtpChanged, onVerify, onBack)
+
+            LoginUiState.Step.ONBOARDING -> Unit // handled above
 
             LoginUiState.Step.SIGNED_IN ->
                 SignedInStep(state, onSignOut)
@@ -177,5 +212,82 @@ private fun SignedInStep(
 
     TextButton(onClick = onSignOut) {
         Text(stringResource(R.string.auth_sign_out))
+    }
+}
+
+/**
+ * B.6: shown once, right after OTP verification, only for a brand-new user
+ * ([VerifiedLogin.isNewUser]) — finishes the placeholder profile the server created so the
+ * name and tenant are no longer empty / "Pending setup" once the app treats them as signed in.
+ *
+ * Built on the shared `core/designsystem` form components (unlike [PhoneStep]/[OtpStep]/
+ * [SignedInStep] above, which predate that design system and are left untouched).
+ */
+@Composable
+private fun OnboardingStep(
+    state: LoginUiState,
+    onNameChanged: (String) -> Unit,
+    onRoleChanged: (OnboardRole) -> Unit,
+    onFirmNameChanged: (String) -> Unit,
+    onBarCouncilIdChanged: (String) -> Unit,
+    onLanguageChanged: (Language) -> Unit,
+    onSubmit: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // optionLabel is a plain (non-@Composable) lambda, so the localized strings for each
+    // enum option are resolved up front, here, rather than inside the lambda itself.
+    val roleLabels =
+        mapOf(
+            OnboardRole.LAWYER to stringResource(R.string.auth_onboard_role_lawyer),
+            OnboardRole.FIRM_ADMIN to stringResource(R.string.auth_onboard_role_firm_admin),
+        )
+    val languageLabels =
+        mapOf(
+            Language.EN to stringResource(R.string.auth_onboard_language_en),
+            Language.HI to stringResource(R.string.auth_onboard_language_hi),
+        )
+
+    FormScaffold(
+        title = stringResource(R.string.auth_onboard_title),
+        submitLabel = stringResource(R.string.auth_onboard_submit),
+        canSubmit = state.isOnboardingValid,
+        isSubmitting = state.isSubmitting,
+        onSubmit = onSubmit,
+        modifier = modifier,
+        error = state.error,
+    ) {
+        NyayaTextField(
+            value = state.onboardName,
+            onValueChange = onNameChanged,
+            label = stringResource(R.string.auth_onboard_name_label),
+        )
+
+        NyayaDropdownField(
+            value = state.onboardRole,
+            options = OnboardRole.entries,
+            onSelect = onRoleChanged,
+            label = stringResource(R.string.auth_onboard_role_label),
+            optionLabel = { role -> roleLabels.getValue(role) },
+        )
+
+        NyayaTextField(
+            value = state.onboardFirmName,
+            onValueChange = onFirmNameChanged,
+            label = stringResource(R.string.auth_onboard_firm_name_label),
+        )
+
+        NyayaTextField(
+            value = state.onboardBarCouncilId,
+            onValueChange = onBarCouncilIdChanged,
+            label = stringResource(R.string.auth_onboard_bar_council_id_label),
+        )
+
+        NyayaDropdownField(
+            value = state.onboardLanguage,
+            options = Language.entries,
+            onSelect = onLanguageChanged,
+            label = stringResource(R.string.auth_onboard_language_label),
+            optionLabel = { language -> languageLabels.getValue(language) },
+        )
     }
 }

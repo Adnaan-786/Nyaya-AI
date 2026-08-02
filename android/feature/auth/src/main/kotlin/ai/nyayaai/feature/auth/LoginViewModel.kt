@@ -1,5 +1,6 @@
 package ai.nyayaai.feature.auth
 
+import ai.nyayaai.core.model.Language
 import ai.nyayaai.core.model.User
 import ai.nyayaai.core.network.api.ApiError
 import ai.nyayaai.core.network.api.ApiResult
@@ -25,19 +26,40 @@ data class LoginUiState(
     val isSubmitting: Boolean = false,
     val error: String? = null,
     val signedInUser: User? = null,
+    val onboardName: String = "",
+    val onboardRole: OnboardRole = OnboardRole.LAWYER,
+    val onboardFirmName: String = "",
+    val onboardBarCouncilId: String = "",
+    val onboardLanguage: Language = Language.EN,
 ) {
-    enum class Step { PHONE, OTP, SIGNED_IN }
+    enum class Step { PHONE, OTP, ONBOARDING, SIGNED_IN }
 
     /** Indian mobile numbers are 10 digits; the +91 prefix is added on submit (D.6). */
     val isPhoneValid: Boolean get() = phone.length == PHONE_LENGTH && phone.all(Char::isDigit)
 
     val isOtpValid: Boolean get() = otp.length == OTP_LENGTH && otp.all(Char::isDigit)
 
+    /**
+     * `role_hint` always carries a valid default from the dropdown, so name is the only
+     * field the server actually requires (`POST /auth/onboard`).
+     */
+    val isOnboardingValid: Boolean get() = onboardName.isNotBlank()
+
     companion object {
         const val PHONE_LENGTH = 10
         const val OTP_LENGTH = 6
         const val COUNTRY_CODE = "+91"
     }
+}
+
+/**
+ * The server's `role_hint` is regex-validated to only `"lawyer"` or `"firm_admin"` — narrower
+ * than [ai.nyayaai.core.model.UserRole], which also covers roles nobody picks at sign-up
+ * (intern, client are assigned later by a firm admin, not chosen by the new user themselves).
+ */
+enum class OnboardRole(val wire: String) {
+    LAWYER("lawyer"),
+    FIRM_ADMIN("firm_admin"),
 }
 
 @HiltViewModel
@@ -96,23 +118,87 @@ class LoginViewModel
                         _state.update { it.copy(isSubmitting = false, error = verified.error.display()) }
 
                     is ApiResult.Success -> {
-                        // Proves the token was stored and the auth interceptor works: this call
-                        // is authenticated, and it is the same round-trip the splash screen makes.
-                        val me = repository.me()
-                        _state.update {
-                            when (me) {
-                                is ApiResult.Success ->
-                                    it.copy(
-                                        isSubmitting = false,
-                                        step = LoginUiState.Step.SIGNED_IN,
-                                        signedInUser = me.data,
-                                    )
+                        if (verified.data.isNewUser) {
+                            // The placeholder user the server created has an empty name — skip
+                            // `me()` until onboarding actually sets one, otherwise the app would
+                            // briefly show a signed-in user with no name.
+                            _state.update {
+                                it.copy(isSubmitting = false, step = LoginUiState.Step.ONBOARDING)
+                            }
+                        } else {
+                            // Proves the token was stored and the auth interceptor works: this
+                            // call is authenticated, and it is the same round-trip the splash
+                            // screen makes.
+                            val me = repository.me()
+                            _state.update {
+                                when (me) {
+                                    is ApiResult.Success ->
+                                        it.copy(
+                                            isSubmitting = false,
+                                            step = LoginUiState.Step.SIGNED_IN,
+                                            signedInUser = me.data,
+                                        )
 
-                                is ApiResult.Failure ->
-                                    it.copy(isSubmitting = false, error = me.error.display())
+                                    is ApiResult.Failure ->
+                                        it.copy(isSubmitting = false, error = me.error.display())
+                                }
                             }
                         }
                     }
+                }
+            }
+        }
+
+        fun onOnboardNameChanged(value: String) {
+            _state.update { it.copy(onboardName = value, error = null) }
+        }
+
+        fun onOnboardRoleChanged(value: OnboardRole) {
+            _state.update { it.copy(onboardRole = value, error = null) }
+        }
+
+        fun onOnboardFirmNameChanged(value: String) {
+            _state.update { it.copy(onboardFirmName = value, error = null) }
+        }
+
+        fun onOnboardBarCouncilIdChanged(value: String) {
+            _state.update { it.copy(onboardBarCouncilId = value, error = null) }
+        }
+
+        fun onOnboardLanguageChanged(value: Language) {
+            _state.update { it.copy(onboardLanguage = value, error = null) }
+        }
+
+        fun submitOnboarding() {
+            val current = _state.value
+            if (!current.isOnboardingValid || current.isSubmitting) return
+
+            _state.update { it.copy(isSubmitting = true, error = null) }
+            viewModelScope.launch {
+                val onboarded =
+                    repository.onboard(
+                        name = current.onboardName,
+                        roleHint = current.onboardRole.wire,
+                        firmName = current.onboardFirmName,
+                        barCouncilId = current.onboardBarCouncilId,
+                        language = current.onboardLanguage.wire,
+                    )
+
+                when (onboarded) {
+                    is ApiResult.Failure ->
+                        _state.update { it.copy(isSubmitting = false, error = onboarded.error.display()) }
+
+                    is ApiResult.Success ->
+                        // Same round-trip verifyOtp makes for an existing user — proves the
+                        // onboarded profile actually persisted before the app treats them as
+                        // signed in.
+                        _state.update {
+                            it.copy(
+                                isSubmitting = false,
+                                step = LoginUiState.Step.SIGNED_IN,
+                                signedInUser = onboarded.data,
+                            )
+                        }
                 }
             }
         }
