@@ -20,6 +20,9 @@
     <string name="title_client">Client</string>
     <string name="title_add_client">Add client</string>
     <string name="title_invoice">Invoice</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="title_team">Team</string>
+    <string name="nav_notifications">Notifications</string>
     <string name="title_add_invoice">New invoice</string>
     <string name="title_calendar">Calendar</string>
     <string name="title_tasks">Tasks</string>
@@ -32,4 +35,9 @@
     <string name="notif_permission_body">We will remind you the evening before each hearing, and tell you when an AI job finishes or a client pays.</string>
     <string name="notif_permission_allow">Turn on reminders</string>
     <string name="notif_permission_skip">Not now</string>
+    <string name="update_required_title">Update required</string>
+    <string name="update_required_body">This version of NyayaAI is no longer supported. Please update the app to continue.</string>
+    <string name="update_required_phone">Phone: %1$s</string>
+    <string name="update_required_email">Email: %1$s</string>
+    <string name="banner_dismiss">Dismiss</string>
 </resources>

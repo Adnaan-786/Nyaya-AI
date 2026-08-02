@@ -78,3 +78,20 @@ data class AppConfigDto(
     val supportPhone: String? = null,
     val supportEmail: String? = null,
 )
+
+@Serializable
+data class NotificationDto(
+    val id: String? = null,
+    val type: String? = null,
+    val title: String? = null,
+    val body: String? = null,
+    val deepLink: String? = null,
+    val readAt: String? = null,
+    val createdAt: String? = null,
+)
+
+/** `PATCH /users/{id}` (B.6 team management) — the only role a firm admin can hand out here. */
+@Serializable
+data class UserRoleUpdateDto(
+    val role: String,
+)

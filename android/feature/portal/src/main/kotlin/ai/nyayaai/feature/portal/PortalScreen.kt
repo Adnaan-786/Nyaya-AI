@@ -14,6 +14,7 @@ import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
 import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
+import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.InvoiceStatus
 import ai.nyayaai.core.network.mapper.PortalCase
 import ai.nyayaai.core.network.mapper.PortalInvoice
@@ -47,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun PortalRoute(
     onPay: (String) -> Unit,
+    onOpenCase: (CaseId) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PortalViewModel = hiltViewModel(),
 ) {
@@ -67,7 +69,12 @@ fun PortalRoute(
         is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title, modifier = modifier)
 
         is UiState.Content ->
-            PortalContentList((state as UiState.Content<PortalContent>).data, onPay, modifier)
+            PortalContentList(
+                (state as UiState.Content<PortalContent>).data,
+                onPay,
+                onOpenCase,
+                modifier,
+            )
     }
 }
 
@@ -75,6 +82,7 @@ fun PortalRoute(
 private fun PortalContentList(
     content: PortalContent,
     onPay: (String) -> Unit,
+    onOpenCase: (CaseId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -93,7 +101,11 @@ private fun PortalContentList(
             }
         } else {
             itemsIndexed(content.cases, key = { _, c -> c.id.value }) { index, case ->
-                PortalCaseCard(case, modifier = Modifier.animatedListEntry(index))
+                PortalCaseCard(
+                    case,
+                    onClick = { onOpenCase(case.id) },
+                    modifier = Modifier.animatedListEntry(index),
+                )
             }
         }
 
@@ -112,9 +124,10 @@ private fun PortalContentList(
 @Composable
 private fun PortalCaseCard(
     case: PortalCase,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    NyayaCard(modifier = modifier) {
+    NyayaCard(modifier = modifier, onClick = onClick) {
         Row(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),

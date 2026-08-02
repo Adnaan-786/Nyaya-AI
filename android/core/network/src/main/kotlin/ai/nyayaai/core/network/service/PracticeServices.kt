@@ -16,6 +16,7 @@ import ai.nyayaai.core.network.dto.HearingCreateDto
 import ai.nyayaai.core.network.dto.HearingDto
 import ai.nyayaai.core.network.dto.InvoiceCreateDto
 import ai.nyayaai.core.network.dto.InvoiceDto
+import ai.nyayaai.core.network.dto.NotificationDto
 import ai.nyayaai.core.network.dto.PaymentOrderDto
 import ai.nyayaai.core.network.dto.PaymentOrderRequestDto
 import ai.nyayaai.core.network.dto.PaymentVerifyDto
@@ -31,9 +32,12 @@ import ai.nyayaai.core.network.dto.TimeEntryDto
 import ai.nyayaai.core.network.dto.TodayDto
 import ai.nyayaai.core.network.dto.UploadUrlDto
 import ai.nyayaai.core.network.dto.UploadUrlRequestDto
+import ai.nyayaai.core.network.dto.UserDto
+import ai.nyayaai.core.network.dto.UserRoleUpdateDto
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
@@ -282,6 +286,44 @@ interface PortalService {
 
     @GET("portal/invoices")
     suspend fun invoices(): ApiEnvelope<List<PortalInvoiceDto>>
+}
+
+/** B.6 notifications — scoped to the signed-in user, never the whole firm. */
+interface NotificationService {
+    @GET("notifications")
+    suspend fun notifications(
+        @Query("unread_only") unreadOnly: Boolean = false,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 20,
+    ): ApiEnvelope<List<NotificationDto>>
+
+    @PATCH("notifications/{id}/read")
+    suspend fun markRead(
+        @Path("id") id: String,
+    ): ApiEnvelope<NotificationDto>
+
+    @POST("notifications/read-all")
+    suspend fun markAllRead(): ApiEnvelope<Map<String, Int>>
+}
+
+/** B.6 team management. `PATCH`/`DELETE` are firm_admin-only server-side (403 otherwise). */
+interface UserService {
+    @GET("users")
+    suspend fun users(
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 50,
+    ): ApiEnvelope<List<UserDto>>
+
+    @PATCH("users/{id}")
+    suspend fun updateRole(
+        @Path("id") id: String,
+        @Body body: UserRoleUpdateDto,
+    ): ApiEnvelope<UserDto>
+
+    @DELETE("users/{id}")
+    suspend fun removeUser(
+        @Path("id") id: String,
+    ): ApiEnvelope<EmptyBody>
 }
 
 /** Kept for symmetry with the auth service's [EmptyBody] responses. */

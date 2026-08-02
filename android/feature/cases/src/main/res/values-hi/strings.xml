@@ -61,4 +61,12 @@
     <string name="time_entry_add_field_billable">बिल योग्य</string>
     <string name="time_entry_add_field_rate">प्रति घंटा दर (वैकल्पिक)</string>
     <string name="time_entry_add_field_rate_helper">खाली छोड़ने पर केस की डिफ़ॉल्ट बिलिंग दर लागू होगी</string>
+
+    <string name="case_summarize">सारांश बनाएँ</string>
+    <string name="case_summarize_title">दस्तावेज़ का सारांश</string>
+    <string name="case_summarize_submitting">सारांश तैयार करना शुरू किया जा रहा है…</string>
+    <string name="case_summarize_progress">दस्तावेज़ का सारांश तैयार किया जा रहा है…</string>
+    <string name="case_summarize_progress_estimate">सारांश तैयार हो रहा है — लगभग %1$d सेकंड…</string>
+    <string name="case_summarize_doc_type">पहचाना गया प्रकार: %1$s</string>
+    <string name="case_summarize_close">बंद करें</string>
 </resources>

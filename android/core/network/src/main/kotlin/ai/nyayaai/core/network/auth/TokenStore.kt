@@ -29,6 +29,13 @@ interface TokenStore {
 
     val refreshToken: String?
 
+    /**
+     * The id `POST /devices` returned for this handset's current registration, if any.
+     * Session-scoped like the tokens: [clear] wipes it too, so a shared handset does not
+     * carry a stale device id into the next person's login.
+     */
+    var deviceId: String?
+
     fun save(
         accessToken: String,
         refreshToken: String,
@@ -70,6 +77,12 @@ class EncryptedTokenStore
 
         override val refreshToken: String? get() = prefs.getString(KEY_REFRESH, null)
 
+        override var deviceId: String?
+            get() = prefs.getString(KEY_DEVICE_ID, null)
+            set(value) {
+                prefs.edit().putString(KEY_DEVICE_ID, value).commit()
+            }
+
         override fun save(
             accessToken: String,
             refreshToken: String,
@@ -93,5 +106,6 @@ class EncryptedTokenStore
             const val FILE_NAME = "nyayaai_session"
             const val KEY_ACCESS = "access_token"
             const val KEY_REFRESH = "refresh_token"
+            const val KEY_DEVICE_ID = "device_id"
         }
     }

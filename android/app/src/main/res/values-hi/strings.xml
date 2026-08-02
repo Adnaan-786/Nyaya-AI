@@ -18,6 +18,9 @@
     <string name="title_client">क्लाइंट</string>
     <string name="title_add_client">क्लाइंट जोड़ें</string>
     <string name="title_invoice">बिल</string>
+    <string name="title_notifications">सूचनाएं</string>
+    <string name="title_team">टीम</string>
+    <string name="nav_notifications">सूचनाएं</string>
     <string name="title_add_invoice">नया बिल</string>
     <string name="title_calendar">कैलेंडर</string>
     <string name="title_tasks">काम</string>
@@ -30,4 +33,9 @@
     <string name="notif_permission_body">हर सुनवाई से एक शाम पहले याद दिलाएंगे, और AI का काम पूरा होने या क्लाइंट के भुगतान पर बताएंगे।</string>
     <string name="notif_permission_allow">याद दिलाना चालू करें</string>
     <string name="notif_permission_skip">अभी नहीं</string>
+    <string name="update_required_title">अपडेट ज़रूरी है</string>
+    <string name="update_required_body">NyayaAI का यह वर्ज़न अब सपोर्ट नहीं करता। जारी रखने के लिए कृपया ऐप अपडेट करें।</string>
+    <string name="update_required_phone">फ़ोन: %1$s</string>
+    <string name="update_required_email">ईमेल: %1$s</string>
+    <string name="banner_dismiss">बंद करें</string>
 </resources>

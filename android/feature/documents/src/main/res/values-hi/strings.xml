@@ -13,4 +13,12 @@
     <string name="vault_ocr_failed">खोजने योग्य नहीं</string>
     <string name="vault_scan">दस्तावेज़ स्कैन करें</string>
     <string name="vault_scan_unavailable">स्कैन करने के लिए इस डिवाइस पर Google Play Services चाहिए।</string>
+
+    <string name="vault_summarize">सारांश बनाएँ</string>
+    <string name="vault_summarize_title">दस्तावेज़ का सारांश</string>
+    <string name="vault_summarize_submitting">सारांश तैयार करना शुरू किया जा रहा है…</string>
+    <string name="vault_summarize_progress">दस्तावेज़ का सारांश तैयार किया जा रहा है…</string>
+    <string name="vault_summarize_progress_estimate">सारांश तैयार हो रहा है — लगभग %1$d सेकंड…</string>
+    <string name="vault_summarize_doc_type">पहचाना गया प्रकार: %1$s</string>
+    <string name="vault_summarize_close">बंद करें</string>
 </resources>

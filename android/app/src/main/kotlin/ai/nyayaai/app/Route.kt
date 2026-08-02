@@ -41,6 +41,11 @@ object Route {
     const val CLIENTS = "clients"
     const val CLIENT_DETAIL = "client/{clientId}"
     const val CLIENT_ADD = "client/new"
+    const val NOTIFICATIONS = "notifications"
+    const val TEAM = "team"
+
+    /** D.10: a leaf screen inside the client shell — distinct arg key from [CASE_DETAIL]. */
+    const val PORTAL_CASE_DETAIL = "portal/case/{portalCaseId}"
 
     fun caseDetail(id: CaseId) = "case/${id.value}"
 
@@ -51,6 +56,8 @@ object Route {
     fun clientDetail(id: ClientId) = "client/${id.value}"
 
     fun invoiceDetail(id: InvoiceId) = "invoice/${id.value}"
+
+    fun portalCaseDetail(id: CaseId) = "portal/case/${id.value}"
 }
 
 /** A top-level tab. */
@@ -84,6 +91,10 @@ val PUSHED_TITLES: Map<String, Int> =
         Route.CLIENT_ADD to R.string.title_add_client,
         Route.INVOICE_DETAIL to R.string.title_invoice,
         Route.INVOICE_ADD to R.string.title_add_invoice,
+        Route.NOTIFICATIONS to R.string.title_notifications,
+        Route.TEAM to R.string.title_team,
+        // Client mode's own case screen — same generic "Case" title staff mode uses.
+        Route.PORTAL_CASE_DETAIL to R.string.title_case,
     )
 
 private val STAFF_DESTINATIONS =

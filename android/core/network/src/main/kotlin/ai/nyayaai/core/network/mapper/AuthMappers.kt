@@ -1,13 +1,18 @@
 package ai.nyayaai.core.network.mapper
 
 import ai.nyayaai.core.model.AppConfig
+import ai.nyayaai.core.model.AppNotification
 import ai.nyayaai.core.model.Language
+import ai.nyayaai.core.model.NotificationId
+import ai.nyayaai.core.model.PushType
 import ai.nyayaai.core.model.Session
+import ai.nyayaai.core.model.TeamMember
 import ai.nyayaai.core.model.TenantId
 import ai.nyayaai.core.model.User
 import ai.nyayaai.core.model.UserId
 import ai.nyayaai.core.model.UserRole
 import ai.nyayaai.core.network.dto.AppConfigDto
+import ai.nyayaai.core.network.dto.NotificationDto
 import ai.nyayaai.core.network.dto.TokenPairDto
 import ai.nyayaai.core.network.dto.UserDto
 
@@ -21,6 +26,29 @@ fun UserDto.toDomain(): User =
         role = UserRole.from(role),
         language = Language.from(language),
         createdAt = createdAt.toInstantOrThrow("user.created_at"),
+    )
+
+/** `GET /users` team roster — see [TeamMember] for why this isn't just [toDomain]. */
+fun UserDto.toTeamMember(): TeamMember =
+    TeamMember(
+        id = UserId(id.requiredString("user.id")),
+        name = name.requiredString("user.name"),
+        phone = phone.requiredString("user.phone"),
+        email = email,
+        role = UserRole.from(role),
+        language = Language.from(language),
+        createdAt = createdAt.toInstantOrThrow("user.created_at"),
+    )
+
+fun NotificationDto.toDomain(): AppNotification =
+    AppNotification(
+        id = NotificationId(id.requiredString("notification.id")),
+        type = PushType.from(type),
+        title = title.requiredString("notification.title"),
+        body = body.requiredString("notification.body"),
+        deepLink = deepLink,
+        readAt = readAt.toInstantOrNull(),
+        createdAt = createdAt.toInstantOrThrow("notification.created_at"),
     )
 
 fun TokenPairDto.toSession(): Session =

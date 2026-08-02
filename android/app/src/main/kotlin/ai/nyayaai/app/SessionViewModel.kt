@@ -1,5 +1,6 @@
 package ai.nyayaai.app
 
+import ai.nyayaai.core.model.AppConfig
 import ai.nyayaai.core.model.User
 import ai.nyayaai.core.network.api.ApiCaller
 import ai.nyayaai.core.network.api.ApiResult
@@ -36,8 +37,15 @@ class SessionViewModel
         private val _state = MutableStateFlow<SessionState>(SessionState.Restoring)
         val state: StateFlow<SessionState> = _state.asStateFlow()
 
+        // Independent of [SessionState] on purpose: the version gate (B.14) must block an
+        // unsupported build even when the user is signed out, so it cannot live inside a
+        // state that only exists once signed in.
+        private val _appConfig = MutableStateFlow<AppConfig?>(null)
+        val appConfig: StateFlow<AppConfig?> = _appConfig.asStateFlow()
+
         init {
             restore()
+            fetchAppConfig()
         }
 
         private fun restore() {
@@ -60,6 +68,21 @@ class SessionViewModel
                         tokenStore.clear()
                         _state.value = SessionState.SignedOut
                     }
+                }
+            }
+        }
+
+        /**
+         * `GET /app/config` is unauthenticated and unrelated to [restore] — it must run
+         * concurrently, never gating or delaying login. On failure [_appConfig] is simply
+         * left `null`, which every reader treats as "unknown, don't block": a bad moment
+         * for this endpoint must never lock a lawyer out of an otherwise-working app.
+         */
+        private fun fetchAppConfig() {
+            viewModelScope.launch {
+                when (val result = caller.call { service.appConfig() }.map { it.toDomain() }) {
+                    is ApiResult.Success -> _appConfig.value = result.data
+                    is ApiResult.Failure -> Unit
                 }
             }
         }

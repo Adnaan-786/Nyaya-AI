@@ -23,12 +23,17 @@ import ai.nyayaai.feature.clients.AddClientRoute
 import ai.nyayaai.feature.clients.ClientDetailRoute
 import ai.nyayaai.feature.clients.ClientDetailViewModel
 import ai.nyayaai.feature.clients.ClientListRoute
+import ai.nyayaai.core.common.DeepLink
 import ai.nyayaai.feature.dashboard.TodayRoute
 import ai.nyayaai.feature.documents.VaultRoute
+import ai.nyayaai.feature.notifications.NotificationsRoute
+import ai.nyayaai.feature.portal.PortalCaseDetailRoute
+import ai.nyayaai.feature.portal.PortalCaseDetailViewModel
 import ai.nyayaai.feature.portal.PortalRoute
 import ai.nyayaai.feature.settings.SettingsRoute
 import ai.nyayaai.feature.tasks.AddTaskRoute
 import ai.nyayaai.feature.tasks.TasksRoute
+import ai.nyayaai.feature.team.TeamRoute
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -192,11 +197,43 @@ fun NyayaNavHost(
                 userPhone = user.phone,
                 roleLabel = stringResource(user.role.labelRes()),
                 onLoggedOut = onLoggedOut,
+                showTeam = !user.role.isClient,
+                onOpenTeam = { navController.navigate(Route.TEAM) },
             )
         }
 
         composable(Route.PORTAL, enterTransition = { fade() }, exitTransition = { fadeAway() }) {
-            PortalRoute(onPay = onOpenUrl)
+            // D.10: PortalCaseDetailRoute, never the staff CaseDetailRoute — a client tap
+            // must never reach a staff screen.
+            PortalRoute(
+                onPay = onOpenUrl,
+                onOpenCase = { navController.navigate(Route.portalCaseDetail(it)) },
+            )
+        }
+
+        composable(
+            route = Route.PORTAL_CASE_DETAIL,
+            arguments = listOf(navArgument(PortalCaseDetailViewModel.ARG_CASE_ID) { type = NavType.StringType }),
+        ) {
+            PortalCaseDetailRoute()
+        }
+
+        composable(Route.NOTIFICATIONS) {
+            NotificationsRoute(
+                onOpenDeepLink = { raw ->
+                    // Same parser and route mapping a system push already goes through
+                    // (NyayaApp's HandleDeepLink/routeFor) — a tap in this inbox must land
+                    // exactly where the equivalent push notification would.
+                    DeepLink.parse(raw)?.let { target -> routeFor(target)?.let(navController::navigate) }
+                },
+            )
+        }
+
+        composable(Route.TEAM) {
+            TeamRoute(
+                currentUserId = user.id,
+                isAdmin = user.role == UserRole.FIRM_ADMIN,
+            )
         }
 
         composable(Route.CLIENTS) {

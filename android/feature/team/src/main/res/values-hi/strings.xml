@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="team_title">टीम</string>
+    <string name="team_empty_title">अभी कोई टीम सदस्य नहीं</string>
+    <string name="team_dismiss_message">संदेश बंद करें</string>
+
+    <string name="team_role_firm_admin">फ़र्म प्रशासक</string>
+    <string name="team_role_lawyer">अधिवक्ता</string>
+    <string name="team_role_intern">इंटर्न</string>
+    <string name="team_role_client">क्लाइंट</string>
+    <string name="team_role_unknown">अज्ञात</string>
+
+    <string name="team_change_role_cd">भूमिका बदलें</string>
+    <string name="team_change_role_title">भूमिका बदलें</string>
+    <string name="team_change_role_label">भूमिका</string>
+    <string name="team_change_role_confirm">सहेजें</string>
+
+    <string name="team_remove_cd">सदस्य हटाएं</string>
+    <string name="team_remove_title">टीम सदस्य हटाएं?</string>
+    <string name="team_remove_body">%1$s की फर्म के केस, क्लाइंट और दस्तावेज़ों तक पहुंच समाप्त हो जाएगी। यह क्रिया पूर्ववत नहीं की जा सकती।</string>
+    <string name="team_remove_confirm">हटाएं</string>
+
+    <string name="team_cancel">रद्द करें</string>
+</resources>

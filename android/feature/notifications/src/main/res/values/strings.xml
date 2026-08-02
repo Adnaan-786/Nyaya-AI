@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_filter_all">All</string>
+    <string name="notifications_filter_unread">Unread</string>
+    <string name="notifications_mark_all_read">Mark all read</string>
+    <string name="notifications_unread_dot">New</string>
+    <string name="notifications_empty_all_title">No notifications yet</string>
+    <string name="notifications_empty_all_detail">Updates on hearings, tasks and payments will show up here.</string>
+    <string name="notifications_empty_unread_title">All caught up</string>
+    <string name="notifications_empty_unread_detail">You have no unread notifications.</string>
+    <string name="notifications_time_just_now">Just now</string>
+    <string name="notifications_time_minutes">%1$d m ago</string>
+    <string name="notifications_time_hours">%1$d h ago</string>
+    <string name="notifications_time_days">%1$d d ago</string>
+</resources>

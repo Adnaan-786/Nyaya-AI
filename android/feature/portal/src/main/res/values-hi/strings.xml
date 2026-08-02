@@ -10,4 +10,7 @@
     <string name="portal_pay">यह बिल भरें</string>
     <string name="portal_due">%1$s तक देय</string>
     <string name="portal_paid">भुगतान हो गया</string>
+    <string name="portal_judge">जज: %1$s</string>
+    <string name="portal_case_history">सुनवाई का इतिहास</string>
+    <string name="portal_no_history">अभी तक कोई सुनवाई दर्ज नहीं</string>
 </resources>

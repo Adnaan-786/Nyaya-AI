@@ -17,6 +17,7 @@ import ai.nyayaai.core.designsystem.component.StatusTone
 import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Document
+import ai.nyayaai.core.model.DocumentId
 import ai.nyayaai.core.model.Hearing
 import ai.nyayaai.core.model.OcrStatus
 import ai.nyayaai.core.model.TimeEntry
@@ -31,9 +32,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -43,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -316,6 +320,10 @@ private fun Long.formatDuration(): String {
 
 @Composable
 private fun DocumentsTab(documents: List<Document>) {
+    // Presentation-only, same reasoning as the vault's own dialog state: which document
+    // (if any) has its summary open is not part of CaseDetail's data, so it lives here.
+    var summarizingDocumentId by remember { mutableStateOf<DocumentId?>(null) }
+
     if (documents.isEmpty()) {
         EmptyState(title = stringResource(R.string.case_no_documents))
         return
@@ -343,9 +351,28 @@ private fun DocumentsTab(documents: List<Document>) {
                         }
                     }
                     StatusBadge(text = document.ocrStatus.name, tone = document.ocrStatus.tone())
+
+                    // Same OCR gate as the vault: the server needs OCR text before it
+                    // can summarize, so the action is disabled rather than hidden.
+                    IconButton(
+                        onClick = { summarizingDocumentId = document.id },
+                        enabled = document.ocrStatus == OcrStatus.DONE,
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Article,
+                            contentDescription = stringResource(R.string.case_summarize),
+                        )
+                    }
                 }
             }
         }
+    }
+
+    summarizingDocumentId?.let { documentId ->
+        SummarizeDialog(
+            documentId = documentId,
+            onDismiss = { summarizingDocumentId = null },
+        )
     }
 }
 

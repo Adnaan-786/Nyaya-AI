@@ -66,4 +66,13 @@
     <string name="time_entry_add_field_billable">Billable</string>
     <string name="time_entry_add_field_rate">Rate override per hour</string>
     <string name="time_entry_add_field_rate_helper">Leave blank to use the case\'s default billing rate</string>
+
+    <!-- Summarize (B.7 client, mirrored from the vault) -->
+    <string name="case_summarize">Summarize</string>
+    <string name="case_summarize_title">Document summary</string>
+    <string name="case_summarize_submitting">Starting summarization…</string>
+    <string name="case_summarize_progress">Summarizing document…</string>
+    <string name="case_summarize_progress_estimate">Summarizing — about %1$d seconds…</string>
+    <string name="case_summarize_doc_type">Detected type: %1$s</string>
+    <string name="case_summarize_close">Close</string>
 </resources>

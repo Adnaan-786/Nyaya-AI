@@ -11,6 +11,7 @@ import ai.nyayaai.core.designsystem.component.StatusTone
 import ai.nyayaai.core.designsystem.component.animatedListEntry
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Document
+import ai.nyayaai.core.model.DocumentId
 import ai.nyayaai.core.model.OcrStatus
 import ai.nyayaai.core.network.api.ApiCaller
 import ai.nyayaai.core.network.api.ApiResult
@@ -36,15 +37,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -161,6 +167,11 @@ fun VaultRoute(
     val uploading by viewModel.uploading.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    // Presentation-only: which document (if any) has its summary dialog open. This is
+    // not list state, so it does not belong in VaultViewModel, which owns the document
+    // list, not a transient modal.
+    var summarizingDocumentId by remember { mutableStateOf<DocumentId?>(null) }
+
     val startScan =
         rememberDocumentScanner(
             onScanned = { result ->
@@ -232,6 +243,7 @@ fun VaultRoute(
                                 DocumentCard(
                                     document = document,
                                     onClick = { onOpenDocument(document) },
+                                    onSummarize = { summarizingDocumentId = document.id },
                                     modifier = Modifier.animatedListEntry(index),
                                 )
                             }
@@ -241,6 +253,13 @@ fun VaultRoute(
             }
         }
     }
+
+    summarizingDocumentId?.let { documentId ->
+        SummarizeDialog(
+            documentId = documentId,
+            onDismiss = { summarizingDocumentId = null },
+        )
+    }
 }
 
 private val FAB_SPINNER = 20.dp
@@ -249,6 +268,7 @@ private val FAB_SPINNER = 20.dp
 private fun DocumentCard(
     document: Document,
     onClick: () -> Unit,
+    onSummarize: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NyayaCard(modifier = modifier.animateContentSize(), onClick = onClick) {
@@ -273,6 +293,16 @@ private fun DocumentCard(
                 text = stringResource(document.ocrStatus.labelRes()),
                 tone = document.ocrStatus.tone(),
             )
+
+            // The server requires OCR text before it can summarize a document, so the
+            // action is disabled rather than hidden — the lawyer sees it exists and why
+            // it isn't available yet.
+            IconButton(onClick = onSummarize, enabled = document.ocrStatus == OcrStatus.DONE) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Article,
+                    contentDescription = stringResource(R.string.vault_summarize),
+                )
+            }
         }
     }
 }

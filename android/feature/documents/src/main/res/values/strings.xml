@@ -13,4 +13,13 @@
     <string name="vault_ocr_failed">Not searchable</string>
     <string name="vault_scan">Scan a document</string>
     <string name="vault_scan_unavailable">Scanning needs Google Play Services on this device.</string>
+
+    <!-- Summarize (B.7 client) -->
+    <string name="vault_summarize">Summarize</string>
+    <string name="vault_summarize_title">Document summary</string>
+    <string name="vault_summarize_submitting">Starting summarization…</string>
+    <string name="vault_summarize_progress">Summarizing document…</string>
+    <string name="vault_summarize_progress_estimate">Summarizing — about %1$d seconds…</string>
+    <string name="vault_summarize_doc_type">Detected type: %1$s</string>
+    <string name="vault_summarize_close">Close</string>
 </resources>

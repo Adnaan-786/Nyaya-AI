@@ -38,6 +38,10 @@ fun SettingsRoute(
     roleLabel: String,
     onLoggedOut: () -> Unit,
     modifier: Modifier = Modifier,
+    // D.10: client-mode logins never see team management — it is a staff-only surface,
+    // so the caller decides whether to offer it rather than this screen guessing from role.
+    showTeam: Boolean = false,
+    onOpenTeam: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     var confirmingLogout by remember { mutableStateOf(false) }
@@ -90,6 +94,17 @@ fun SettingsRoute(
             }
         }
 
+        if (showTeam) {
+            HorizontalDivider()
+
+            OutlinedButton(
+                onClick = onOpenTeam,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.settings_team))
+            }
+        }
+
         HorizontalDivider()
 
         OutlinedButton(
@@ -111,8 +126,7 @@ fun SettingsRoute(
                 TextButton(
                     onClick = {
                         confirmingLogout = false
-                        viewModel.logout()
-                        onLoggedOut()
+                        viewModel.logout(onComplete = onLoggedOut)
                     },
                 ) {
                     Text(stringResource(R.string.settings_logout))

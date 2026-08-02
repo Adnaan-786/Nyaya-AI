@@ -22,6 +22,22 @@ data class User(
     val createdAt: Instant,
 )
 
+/**
+ * A firm's team roster (`GET /users`), deliberately smaller than [User]. The server's
+ * response here carries no `tenant_id` — every row is already implicitly the caller's own
+ * firm, so echoing it back would be a field with no use — and this type follows that shape
+ * exactly rather than forcing every roster row through [User]'s stricter contract.
+ */
+data class TeamMember(
+    val id: UserId,
+    val name: String,
+    val phone: String,
+    val email: String?,
+    val role: UserRole,
+    val language: Language,
+    val createdAt: Instant,
+)
+
 data class Client(
     val id: ClientId,
     val name: String,

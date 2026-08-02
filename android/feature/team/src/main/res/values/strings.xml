@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="team_title">Team</string>
+    <string name="team_empty_title">No team members yet</string>
+    <string name="team_dismiss_message">Dismiss message</string>
+
+    <string name="team_role_firm_admin">Firm admin</string>
+    <string name="team_role_lawyer">Lawyer</string>
+    <string name="team_role_intern">Intern</string>
+    <string name="team_role_client">Client</string>
+    <string name="team_role_unknown">Unknown</string>
+
+    <string name="team_change_role_cd">Change role</string>
+    <string name="team_change_role_title">Change role</string>
+    <string name="team_change_role_label">Role</string>
+    <string name="team_change_role_confirm">Save</string>
+
+    <string name="team_remove_cd">Remove member</string>
+    <string name="team_remove_title">Remove team member?</string>
+    <string name="team_remove_body">%1$s will lose access to the firm\'s cases, clients and documents. This cannot be undone.</string>
+    <string name="team_remove_confirm">Remove</string>
+
+    <string name="team_cancel">Cancel</string>
+</resources>

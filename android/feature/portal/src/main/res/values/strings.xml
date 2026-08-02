@@ -10,4 +10,7 @@
     <string name="portal_pay">Pay this bill</string>
     <string name="portal_due">Due by %1$s</string>
     <string name="portal_paid">Paid</string>
+    <string name="portal_judge">Judge: %1$s</string>
+    <string name="portal_case_history">Hearing history</string>
+    <string name="portal_no_history">No hearings recorded yet</string>
 </resources>

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -148,6 +149,12 @@ private fun StaffActions(
         exit = fadeOut() + scaleOut(),
     ) {
         Row {
+            IconButton(onClick = { onNavigate(Route.NOTIFICATIONS) }) {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = stringResource(R.string.nav_notifications),
+                )
+            }
             IconButton(onClick = { onNavigate(Route.CALENDAR) }) {
                 Icon(
                     Icons.Default.CalendarMonth,
@@ -206,8 +213,11 @@ private fun HandleDeepLink(
  * Job and task links resolve to their nearest existing home rather than being dropped:
  * the AI hub lists recent results, and tasks live on their own screen. A push that
  * opens nothing at all is worse than one that opens the right neighbourhood.
+ *
+ * Not `private`: [NyayaNavHost] reuses this exact mapping for a tap inside the in-app
+ * notification inbox, which must land in the same place a system push does.
  */
-private fun routeFor(link: DeepLink): String? =
+fun routeFor(link: DeepLink): String? =
     when (link) {
         is DeepLink.Case -> Route.caseDetail(CaseId(link.caseId))
         is DeepLink.Job -> Route.AI

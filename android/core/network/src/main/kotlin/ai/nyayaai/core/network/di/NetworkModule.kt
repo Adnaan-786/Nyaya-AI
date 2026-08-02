@@ -16,7 +16,9 @@ import ai.nyayaai.core.network.service.BillingService
 import ai.nyayaai.core.network.service.CalendarService
 import ai.nyayaai.core.network.service.CaseService
 import ai.nyayaai.core.network.service.DocumentService
+import ai.nyayaai.core.network.service.NotificationService
 import ai.nyayaai.core.network.service.PortalService
+import ai.nyayaai.core.network.service.UserService
 import dagger.Binds
 import dagger.BindsOptionalOf
 import dagger.Module
@@ -163,6 +165,15 @@ object NetworkModule {
     @Provides
     @Singleton
     fun providePortalService(retrofit: Retrofit): PortalService = retrofit.create(PortalService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationService(retrofit: Retrofit): NotificationService =
+        retrofit.create(NotificationService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserService(retrofit: Retrofit): UserService = retrofit.create(UserService::class.java)
 
     private fun loggingInterceptor() =
         HttpLoggingInterceptor().apply {

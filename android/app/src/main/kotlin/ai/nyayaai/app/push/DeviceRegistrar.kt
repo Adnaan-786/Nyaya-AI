@@ -48,10 +48,18 @@ class DeviceRegistrar
                     )
                 }
 
-            if (result is ApiResult.Failure) {
-                // Not fatal: the user simply gets no push until the next attempt. Failing
-                // login over a notification token would be the wrong trade.
-                Log.w(TAG, "device registration failed: ${result.error.message}")
+            when (result) {
+                is ApiResult.Success -> {
+                    // Kept so logout can unregister this exact row (`DELETE /devices/{id}`) —
+                    // without it a shared handset keeps paging the previous user forever.
+                    tokenStore.deviceId = result.data.id
+                }
+
+                is ApiResult.Failure -> {
+                    // Not fatal: the user simply gets no push until the next attempt. Failing
+                    // login over a notification token would be the wrong trade.
+                    Log.w(TAG, "device registration failed: ${result.error.message}")
+                }
             }
         }
 

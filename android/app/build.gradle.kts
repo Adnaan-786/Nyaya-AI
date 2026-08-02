@@ -110,6 +110,8 @@ dependencies {
     implementation(projects.feature.clients)
     implementation(projects.feature.portal)
     implementation(projects.feature.settings)
+    implementation(projects.feature.notifications)
+    implementation(projects.feature.team)
 
     // MainActivity implements Razorpay's PaymentResultWithDataListener: the SDK
     // reports to the Activity, not to the screen that opened Checkout.

@@ -1,6 +1,7 @@
 package ai.nyayaai.feature.portal
 
 import ai.nyayaai.core.common.UiState
+import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.network.api.ApiCaller
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.api.isRetryable
@@ -32,6 +33,9 @@ class PortalRepository
 
         suspend fun invoices(): ApiResult<List<PortalInvoice>> =
             caller.call { service.invoices() }.map { list -> list.map { it.toDomain() } }
+
+        suspend fun case(id: CaseId): ApiResult<PortalCase> =
+            caller.call { service.case(id.value) }.map { it.toDomain() }
     }
 
 data class PortalContent(
