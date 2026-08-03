@@ -27,7 +27,9 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def create_all() -> None:
-    """Used for local bring-up and tests; staging goes through Alembic."""
+    """Used for local bring-up and staging (there is no Alembic migration history in
+    this repo despite the dependency being installed — `alembic.ini` and `versions/`
+    were never actually created)."""
     async with engine.begin() as conn:
         # `pg_trgm` backs the trigram index on documents.ocr_text that universal search
         # uses. Creating it here rather than leaving it as a README step: a fresh cluster
@@ -35,6 +37,16 @@ async def create_all() -> None:
         # table creation, which reads like a code bug rather than a missing extension.
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.create_all)
+
+        # `create_all` only creates missing *tables* — it never alters an existing one,
+        # so a column added to a model after the table already exists on a deployed
+        # database (like `users.is_active`, added for B.6 team management) silently
+        # never appears there and every query against the ORM's full column list 500s.
+        # Idempotent, additive-only patches belong here until this repo has real
+        # Alembic migrations.
+        await conn.execute(
+            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true")
+        )
 
 
 def scoped[ModelT](model: type[ModelT], tenant_id: Any) -> Select:
