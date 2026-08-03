@@ -225,6 +225,8 @@ class TokenAuthenticatorTest {
         @Volatile override var refreshToken: String? = refresh
             private set
 
+        override var deviceId: String? = null
+
         override fun save(
             accessToken: String,
             refreshToken: String,
