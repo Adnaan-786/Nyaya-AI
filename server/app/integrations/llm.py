@@ -44,7 +44,13 @@ GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 # Generous relative to the 30s estimate B.7 gives the app — a slow completion should
 # time out and fail the job cleanly rather than hang the worker indefinitely.
 REQUEST_TIMEOUT_SECONDS = 90
-MAX_TOKENS = 16000
+
+# Groq's free/on-demand tier caps llama-3.3-70b-versatile at 12,000 tokens per
+# minute *total* (prompt + completion) — a holdover value from Claude's much higher
+# ceiling (16000, output alone) blew straight through that on the very first live
+# call. A research/summary answer plus citations comfortably fits in a few thousand
+# tokens, so this stays well under the cap with room for the prompt on top.
+MAX_TOKENS = 4000
 
 SUMMARIZE_SYSTEM = """You are assisting an Indian advocate by summarising a legal document.
 
