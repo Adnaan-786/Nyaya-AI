@@ -46,10 +46,16 @@ class Settings(BaseSettings):
     msg91_template_id: str | None = None
     ecourts_api_key: str | None = None
     indiankanoon_api_key: str | None = None
+    # Kept for app/integrations/ocr.py's scanned-document gate, which only checks
+    # whether *some* AI provider looks configured — that path is independently
+    # unimplemented (Document AI was never wired) regardless of which LLM answers
+    # summarize/research, so this staying unset even with Grok configured is fine.
     anthropic_api_key: str | None = None
-    # Claude Opus 5 — the current flagship. Legal analysis is the product's
-    # differentiator, so this is not a place to economise on model choice.
-    llm_model: str = "claude-opus-5"
+
+    grok_api_key: str | None = None
+    # Verify this against xAI's current model catalog (console.x.ai) before relying
+    # on it — override via GROK_MODEL if it's changed since this was written.
+    grok_model: str = "grok-4"
 
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"
