@@ -8,6 +8,13 @@ import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.ResearchConfidence
 import ai.nyayaai.core.network.mapper.AiContent
 import ai.nyayaai.core.network.mapper.Citation
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -59,15 +67,20 @@ fun AiRoute(
             }
 
             item {
-                if (state.isSubmitting) {
-                    ProgressCard(state.estimatedSeconds)
-                } else {
-                    Button(
-                        onClick = { viewModel.ask() },
-                        enabled = state.query.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(stringResource(R.string.ai_ask))
+                AnimatedContent(
+                    targetState = state.isSubmitting,
+                    transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(260)) },
+                ) { isSubmitting ->
+                    if (isSubmitting) {
+                        ProgressCard(state.estimatedSeconds)
+                    } else {
+                        Button(
+                            onClick = { viewModel.ask() },
+                            enabled = state.query.isNotBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.ai_ask))
+                        }
                     }
                 }
             }
@@ -137,61 +150,70 @@ private fun AnswerCard(
     onOpenCitation: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-    ) {
-        // `insufficient` gets its own distinct state, never a blank result. An empty
-        // answer reads as a bug; this reads as an honest "I could not find authority",
-        // which is the only safe thing to tell someone heading into a courtroom.
-        if (content.confidence == ResearchConfidence.INSUFFICIENT) {
-            NyayaCard {
+    // This item is only added to the LazyColumn once a result lands, so there is no
+    // "before" state to animate from the way the button/ProgressCard swap has. A
+    // transition state that starts false and is immediately targeted to true fades the
+    // card in once, on its first composition — the reveal moment this screen's payoff
+    // deserves.
+    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+
+    AnimatedVisibility(visibleState = visibleState, enter = fadeIn(tween(260))) {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+        ) {
+            // `insufficient` gets its own distinct state, never a blank result. An empty
+            // answer reads as a bug; this reads as an honest "I could not find authority",
+            // which is the only safe thing to tell someone heading into a courtroom.
+            if (content.confidence == ResearchConfidence.INSUFFICIENT) {
+                NyayaCard {
+                    Text(
+                        text = stringResource(R.string.ai_insufficient_title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        text = stringResource(R.string.ai_insufficient_detail),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                StatusBadge(
+                    text =
+                        stringResource(
+                            if (content.confidence == ResearchConfidence.HIGH) {
+                                R.string.ai_confidence_high
+                            } else {
+                                R.string.ai_confidence_medium
+                            },
+                        ),
+                    tone =
+                        if (content.confidence == ResearchConfidence.HIGH) {
+                            StatusTone.POSITIVE
+                        } else {
+                            StatusTone.WARNING
+                        },
+                )
+            }
+
+            (content.answerMarkdown ?: content.summaryMarkdown)?.let {
+                Text(text = it, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            if (content.keyPoints.isNotEmpty()) {
+                content.keyPoints.forEach { point ->
+                    Text(text = "• $point", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            if (content.citations.isNotEmpty()) {
                 Text(
-                    text = stringResource(R.string.ai_insufficient_title),
+                    text = stringResource(R.string.ai_citations),
                     style = MaterialTheme.typography.titleSmall,
                 )
-                Text(
-                    text = stringResource(R.string.ai_insufficient_detail),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            StatusBadge(
-                text =
-                    stringResource(
-                        if (content.confidence == ResearchConfidence.HIGH) {
-                            R.string.ai_confidence_high
-                        } else {
-                            R.string.ai_confidence_medium
-                        },
-                    ),
-                tone =
-                    if (content.confidence == ResearchConfidence.HIGH) {
-                        StatusTone.POSITIVE
-                    } else {
-                        StatusTone.WARNING
-                    },
-            )
-        }
-
-        (content.answerMarkdown ?: content.summaryMarkdown)?.let {
-            Text(text = it, style = MaterialTheme.typography.bodyMedium)
-        }
-
-        if (content.keyPoints.isNotEmpty()) {
-            content.keyPoints.forEach { point ->
-                Text(text = "• $point", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-
-        if (content.citations.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.ai_citations),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            content.citations.forEach { citation ->
-                CitationCard(citation, onOpenCitation)
+                content.citations.forEach { citation ->
+                    CitationCard(citation, onOpenCitation)
+                }
             }
         }
     }

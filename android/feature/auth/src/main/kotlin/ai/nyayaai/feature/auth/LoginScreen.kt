@@ -1,20 +1,16 @@
 package ai.nyayaai.feature.auth
 
 import ai.nyayaai.core.designsystem.component.FormScaffold
+import ai.nyayaai.core.designsystem.component.NyayaCard
 import ai.nyayaai.core.designsystem.component.NyayaDropdownField
 import ai.nyayaai.core.designsystem.component.NyayaTextField
+import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Language
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,14 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
- * Sprint A1 login. Deliberately plain Material 3 — the real visual design, components and
- * OTP autofill (SMS Retriever) arrive with the design system in A2/A3. What this screen
- * proves is the A1 contract: a full OTP round-trip through the real OkHttp stack.
+ * D.2 login flow: phone entry, OTP verification, first-run onboarding and the (practically
+ * unreachable — see [SignedInStep]) signed-in step, one [LoginUiState] at a time. Every step
+ * now renders through the shared `core/designsystem` form components ([FormScaffold],
+ * [NyayaTextField]) so this, the very first screen a user sees, matches the rest of the app.
  */
 @Composable
 fun LoginRoute(
@@ -78,51 +74,31 @@ internal fun LoginScreen(
     onOnboardLanguageChanged: (Language) -> Unit,
     onSubmitOnboarding: () -> Unit,
 ) {
-    if (state.step == LoginUiState.Step.ONBOARDING) {
-        // FormScaffold (core/designsystem) already renders its own title, scrolling content,
-        // error text and submit spinner — wrapping it in the plain steps' centered Column
-        // below would double up the error/spinner the scaffold already shows.
-        OnboardingStep(
-            state = state,
-            onNameChanged = onOnboardNameChanged,
-            onRoleChanged = onOnboardRoleChanged,
-            onFirmNameChanged = onOnboardFirmNameChanged,
-            onBarCouncilIdChanged = onOnboardBarCouncilIdChanged,
-            onLanguageChanged = onOnboardLanguageChanged,
-            onSubmit = onSubmitOnboarding,
-            modifier = Modifier.fillMaxSize(),
-        )
-        return
-    }
+    // Every step below is either a FormScaffold (which renders its own title, error text and
+    // submit spinner) or, for SignedInStep, a self-contained full-screen layout — so unlike
+    // the bare-Column version this replaces, nothing here needs a shared centering wrapper or
+    // a second, top-level rendering of state.error/isSubmitting.
+    when (state.step) {
+        LoginUiState.Step.PHONE ->
+            PhoneStep(state, onPhoneChanged, onRequestOtp, modifier = Modifier.fillMaxSize())
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        when (state.step) {
-            LoginUiState.Step.PHONE ->
-                PhoneStep(state, onPhoneChanged, onRequestOtp)
+        LoginUiState.Step.OTP ->
+            OtpStep(state, onOtpChanged, onVerify, onBack, modifier = Modifier.fillMaxSize())
 
-            LoginUiState.Step.OTP ->
-                OtpStep(state, onOtpChanged, onVerify, onBack)
+        LoginUiState.Step.ONBOARDING ->
+            OnboardingStep(
+                state = state,
+                onNameChanged = onOnboardNameChanged,
+                onRoleChanged = onOnboardRoleChanged,
+                onFirmNameChanged = onOnboardFirmNameChanged,
+                onBarCouncilIdChanged = onOnboardBarCouncilIdChanged,
+                onLanguageChanged = onOnboardLanguageChanged,
+                onSubmit = onSubmitOnboarding,
+                modifier = Modifier.fillMaxSize(),
+            )
 
-            LoginUiState.Step.ONBOARDING -> Unit // handled above
-
-            LoginUiState.Step.SIGNED_IN ->
-                SignedInStep(state, onSignOut)
-        }
-
-        state.error?.let { message ->
-            Text(text = message, color = MaterialTheme.colorScheme.error)
-        }
-
-        if (state.isSubmitting) {
-            CircularProgressIndicator(modifier = Modifier.size(24.dp))
-        }
+        LoginUiState.Step.SIGNED_IN ->
+            SignedInStep(state, onSignOut, modifier = Modifier.fillMaxSize())
     }
 }
 
@@ -131,26 +107,25 @@ private fun PhoneStep(
     state: LoginUiState,
     onPhoneChanged: (String) -> Unit,
     onRequestOtp: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Text(text = stringResource(R.string.auth_title), style = MaterialTheme.typography.headlineSmall)
-
-    OutlinedTextField(
-        value = state.phone,
-        onValueChange = onPhoneChanged,
-        label = { Text(stringResource(R.string.auth_phone_label)) },
-        prefix = { Text(stringResource(R.string.auth_phone_prefix)) },
-        supportingText = { Text(stringResource(R.string.auth_phone_helper)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-        modifier = Modifier.fillMaxWidth(),
-    )
-
-    Button(
-        onClick = onRequestOtp,
-        enabled = state.isPhoneValid && !state.isSubmitting,
-        modifier = Modifier.fillMaxWidth(),
+    FormScaffold(
+        title = stringResource(R.string.auth_title),
+        submitLabel = stringResource(R.string.auth_get_otp),
+        canSubmit = state.isPhoneValid,
+        isSubmitting = state.isSubmitting,
+        onSubmit = onRequestOtp,
+        modifier = modifier,
+        error = state.error,
     ) {
-        Text(stringResource(R.string.auth_get_otp))
+        NyayaTextField(
+            value = state.phone,
+            onValueChange = onPhoneChanged,
+            label = stringResource(R.string.auth_phone_label),
+            prefix = stringResource(R.string.auth_phone_prefix),
+            helper = stringResource(R.string.auth_phone_helper),
+            keyboardType = KeyboardType.Phone,
+        )
     }
 }
 
@@ -160,58 +135,70 @@ private fun OtpStep(
     onOtpChanged: (String) -> Unit,
     onVerify: () -> Unit,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Text(
-        text = stringResource(R.string.auth_otp_title),
-        style = MaterialTheme.typography.headlineSmall,
-    )
-    Text(
-        text =
-            stringResource(
-                R.string.auth_otp_sent_to,
-                LoginUiState.COUNTRY_CODE + state.phone,
-            ),
-        style = MaterialTheme.typography.bodyMedium,
-    )
-
-    OutlinedTextField(
-        value = state.otp,
-        onValueChange = onOtpChanged,
-        label = { Text(stringResource(R.string.auth_otp_label)) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        modifier = Modifier.fillMaxWidth(),
-    )
-
-    Button(
-        onClick = onVerify,
-        enabled = state.isOtpValid && !state.isSubmitting,
-        modifier = Modifier.fillMaxWidth(),
+    FormScaffold(
+        title = stringResource(R.string.auth_otp_title),
+        submitLabel = stringResource(R.string.auth_verify),
+        canSubmit = state.isOtpValid,
+        isSubmitting = state.isSubmitting,
+        onSubmit = onVerify,
+        modifier = modifier,
+        error = state.error,
     ) {
-        Text(stringResource(R.string.auth_verify))
-    }
+        Text(
+            text =
+                stringResource(
+                    R.string.auth_otp_sent_to,
+                    LoginUiState.COUNTRY_CODE + state.phone,
+                ),
+            style = MaterialTheme.typography.bodyMedium,
+        )
 
-    TextButton(onClick = onBack) {
-        Text(stringResource(R.string.auth_change_number))
+        NyayaTextField(
+            value = state.otp,
+            onValueChange = onOtpChanged,
+            label = stringResource(R.string.auth_otp_label),
+            keyboardType = KeyboardType.NumberPassword,
+        )
+
+        TextButton(onClick = onBack) {
+            Text(stringResource(R.string.auth_change_number))
+        }
     }
 }
 
+/**
+ * In practice unreachable: [LoginRoute]'s `onSignedIn` fires the moment `state.signedInUser`
+ * is set and the caller navigates away before this would ever compose. Restyled anyway, on
+ * the off chance it is ever visible — no form/submit action here, so [FormScaffold] (built
+ * for exactly that) is not the right fit; a [NyayaCard] keeps it visually consistent instead.
+ */
 @Composable
 private fun SignedInStep(
     state: LoginUiState,
     onSignOut: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Text(
-        text =
-            stringResource(
-                R.string.auth_signed_in_as,
-                state.signedInUser?.name.orEmpty(),
-            ),
-        style = MaterialTheme.typography.headlineSmall,
-    )
+    Column(
+        modifier = modifier.fillMaxSize().padding(NyayaTheme.spacing.lg),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        NyayaCard {
+            Text(
+                text =
+                    stringResource(
+                        R.string.auth_signed_in_as,
+                        state.signedInUser?.name.orEmpty(),
+                    ),
+                style = MaterialTheme.typography.headlineSmall,
+            )
 
-    TextButton(onClick = onSignOut) {
-        Text(stringResource(R.string.auth_sign_out))
+            TextButton(onClick = onSignOut) {
+                Text(stringResource(R.string.auth_sign_out))
+            }
+        }
     }
 }
 
@@ -220,8 +207,7 @@ private fun SignedInStep(
  * ([VerifiedLogin.isNewUser]) — finishes the placeholder profile the server created so the
  * name and tenant are no longer empty / "Pending setup" once the app treats them as signed in.
  *
- * Built on the shared `core/designsystem` form components (unlike [PhoneStep]/[OtpStep]/
- * [SignedInStep] above, which predate that design system and are left untouched).
+ * Built on the shared `core/designsystem` form components, same as [PhoneStep]/[OtpStep] above.
  */
 @Composable
 private fun OnboardingStep(

@@ -16,6 +16,11 @@ import ai.nyayaai.core.model.UserId
 import ai.nyayaai.core.model.UserRole
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.api.isRetryable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -127,21 +132,27 @@ fun TeamRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.fillMaxSize()) {
-        message?.let { text ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(NyayaTheme.spacing.md),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = viewModel::clearMessage) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.team_dismiss_message))
+    Column(modifier = modifier.fillMaxSize().animateContentSize()) {
+        AnimatedVisibility(
+            visible = message != null,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+        ) {
+            message?.let { text ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(NyayaTheme.spacing.md),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = viewModel::clearMessage) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.team_dismiss_message))
+                    }
                 }
             }
         }

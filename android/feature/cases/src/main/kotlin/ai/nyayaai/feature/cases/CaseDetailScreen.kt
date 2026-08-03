@@ -21,6 +21,12 @@ import ai.nyayaai.core.model.DocumentId
 import ai.nyayaai.core.model.Hearing
 import ai.nyayaai.core.model.OcrStatus
 import ai.nyayaai.core.model.TimeEntry
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -103,22 +109,30 @@ private fun CaseDetailContent(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
-            when (tab) {
-                1 ->
-                    FloatingActionButton(onClick = onAddHearing) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = stringResource(R.string.hearing_add_title),
-                        )
-                    }
+            AnimatedVisibility(
+                visible = tab == 1,
+                enter = fadeIn(tween(FAB_FADE_MS)),
+                exit = fadeOut(tween(FAB_FADE_MS)),
+            ) {
+                FloatingActionButton(onClick = onAddHearing) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.hearing_add_title),
+                    )
+                }
+            }
 
-                2 ->
-                    FloatingActionButton(onClick = onAddTimeEntry) {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = stringResource(R.string.time_entry_add_title),
-                        )
-                    }
+            AnimatedVisibility(
+                visible = tab == 2,
+                enter = fadeIn(tween(FAB_FADE_MS)),
+                exit = fadeOut(tween(FAB_FADE_MS)),
+            ) {
+                FloatingActionButton(onClick = onAddTimeEntry) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.time_entry_add_title),
+                    )
+                }
             }
         },
     ) { innerPadding ->
@@ -144,11 +158,17 @@ private fun CaseDetailContent(
                 }
             }
 
-            when (tab) {
-                0 -> OverviewTab(detail, onSync)
-                1 -> HearingsTab(detail.hearings)
-                2 -> TimeTab(detail.timeEntries)
-                else -> DocumentsTab(detail.documents)
+            AnimatedContent(
+                targetState = tab,
+                transitionSpec = { fadeIn(tween(TAB_FADE_MS)) togetherWith fadeOut(tween(TAB_FADE_MS)) },
+                label = "case-detail-tab",
+            ) { targetTab ->
+                when (targetTab) {
+                    0 -> OverviewTab(detail, onSync)
+                    1 -> HearingsTab(detail.hearings)
+                    2 -> TimeTab(detail.timeEntries)
+                    else -> DocumentsTab(detail.documents)
+                }
             }
         }
     }
@@ -412,3 +432,8 @@ private val TAB_LABELS =
         R.string.case_tab_time,
         R.string.case_tab_documents,
     )
+
+// A simple fade, not a slide — these tabs are peers, not a hierarchy, matching
+// NyayaNavHost's own tab cross-fades.
+private const val TAB_FADE_MS = 260
+private const val FAB_FADE_MS = 200

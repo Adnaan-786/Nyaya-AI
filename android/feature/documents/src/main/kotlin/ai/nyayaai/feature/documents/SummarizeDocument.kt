@@ -14,6 +14,9 @@ import ai.nyayaai.core.network.mapper.AiContent
 import ai.nyayaai.core.network.mapper.toContent
 import ai.nyayaai.core.network.mapper.toDomain
 import ai.nyayaai.core.network.service.AiService
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -208,53 +211,58 @@ fun SummarizeDialog(
                 modifier =
                     Modifier
                         .heightIn(max = DIALOG_MAX_HEIGHT)
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(rememberScrollState())
+                        .animateContentSize(),
                 verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
             ) {
-                when (val current = state) {
-                    is SummarizeState.Idle, is SummarizeState.Submitting -> ProgressRow(
-                        text = stringResource(R.string.vault_summarize_submitting),
-                    )
-
-                    is SummarizeState.Polling ->
-                        ProgressRow(
-                            text =
-                                current.estimatedSeconds?.let {
-                                    stringResource(R.string.vault_summarize_progress_estimate, it)
-                                } ?: stringResource(R.string.vault_summarize_progress),
+                Crossfade(targetState = state, animationSpec = tween(260)) { current ->
+                    when (current) {
+                        is SummarizeState.Idle, is SummarizeState.Submitting -> ProgressRow(
+                            text = stringResource(R.string.vault_summarize_submitting),
                         )
 
-                    is SummarizeState.Done -> {
-                        // B.11, mandatory on every AI surface — this dialog renders an
-                        // AI-generated result, so it is not optional here either.
-                        AiDisclaimerBanner()
-
-                        current.content.docTypeDetected?.let {
-                            Text(
-                                text = stringResource(R.string.vault_summarize_doc_type, it),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        is SummarizeState.Polling ->
+                            ProgressRow(
+                                text =
+                                    current.estimatedSeconds?.let {
+                                        stringResource(R.string.vault_summarize_progress_estimate, it)
+                                    } ?: stringResource(R.string.vault_summarize_progress),
                             )
-                        }
 
-                        current.content.summaryMarkdown?.let {
-                            Text(text = it, style = MaterialTheme.typography.bodyMedium)
-                        }
+                        is SummarizeState.Done -> {
+                            Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm)) {
+                                // B.11, mandatory on every AI surface — this dialog renders an
+                                // AI-generated result, so it is not optional here either.
+                                AiDisclaimerBanner()
 
-                        if (current.content.keyPoints.isNotEmpty()) {
-                            Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
-                                current.content.keyPoints.forEach { point ->
-                                    Row(horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
-                                        Text(text = "•", style = MaterialTheme.typography.bodyMedium)
-                                        Text(text = point, style = MaterialTheme.typography.bodyMedium)
+                                current.content.docTypeDetected?.let {
+                                    Text(
+                                        text = stringResource(R.string.vault_summarize_doc_type, it),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+
+                                current.content.summaryMarkdown?.let {
+                                    Text(text = it, style = MaterialTheme.typography.bodyMedium)
+                                }
+
+                                if (current.content.keyPoints.isNotEmpty()) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                                        current.content.keyPoints.forEach { point ->
+                                            Row(horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                                                Text(text = "•", style = MaterialTheme.typography.bodyMedium)
+                                                Text(text = point, style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    is SummarizeState.Failed ->
-                        Text(text = current.message, color = MaterialTheme.colorScheme.error)
+                        is SummarizeState.Failed ->
+                            Text(text = current.message, color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         },

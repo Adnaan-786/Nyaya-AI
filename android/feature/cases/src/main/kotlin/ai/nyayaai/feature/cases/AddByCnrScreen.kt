@@ -1,7 +1,9 @@
 package ai.nyayaai.feature.cases
 
 import ai.nyayaai.core.common.formatLong
+import ai.nyayaai.core.designsystem.component.FormScaffold
 import ai.nyayaai.core.designsystem.component.NyayaCard
+import ai.nyayaai.core.designsystem.component.NyayaTextField
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.network.api.ApiError
@@ -10,11 +12,8 @@ import ai.nyayaai.core.network.mapper.CnrPreview
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -130,70 +128,32 @@ fun AddByCnrRoute(
         state.createdCaseId?.let(onCaseCreated)
     }
 
-    Column(
-        modifier = modifier.fillMaxWidth().padding(NyayaTheme.spacing.md),
-        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
+    FormScaffold(
+        title = stringResource(R.string.cnr_title),
+        submitLabel = stringResource(R.string.cnr_fetch),
+        canSubmit = state.isCnrComplete,
+        isSubmitting = state.isFetching,
+        onSubmit = viewModel::lookup,
+        modifier = modifier,
+        error = state.error,
     ) {
-        Text(
-            text = stringResource(R.string.cnr_title),
-            style = MaterialTheme.typography.headlineSmall,
-        )
-
-        OutlinedTextField(
+        NyayaTextField(
             value = state.cnr,
             onValueChange = viewModel::onCnrChanged,
-            label = { Text(stringResource(R.string.cnr_hint)) },
-            supportingText = {
-                Text(
-                    if (state.cnr.isNotEmpty() && !state.isCnrComplete) {
-                        stringResource(R.string.cnr_length_error)
-                    } else {
-                        stringResource(R.string.cnr_help)
-                    },
-                )
-            },
-            isError = state.cnr.isNotEmpty() && !state.isCnrComplete,
-            singleLine = true,
-            keyboardOptions =
-                androidx.compose.foundation.text.KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters,
-                ),
-            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(R.string.cnr_hint),
+            error =
+                if (state.cnr.isNotEmpty() && !state.isCnrComplete) {
+                    stringResource(R.string.cnr_length_error)
+                } else {
+                    null
+                },
+            helper = stringResource(R.string.cnr_help),
+            capitalization = KeyboardCapitalization.Characters,
         )
 
-        if (state.isFetching) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
-            ) {
-                CircularProgressIndicator()
-                Text(
-                    text = stringResource(R.string.cnr_fetching),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        } else {
-            Button(
-                onClick = viewModel::lookup,
-                enabled = state.isCnrComplete,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.cnr_fetch))
-            }
-        }
-
-        state.error?.let { message ->
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-            if (state.offerManualEntry) {
-                TextButton(onClick = onManualEntry) {
-                    Text(stringResource(R.string.cnr_manual_instead))
-                }
+        if (state.offerManualEntry) {
+            TextButton(onClick = onManualEntry) {
+                Text(stringResource(R.string.cnr_manual_instead))
             }
         }
 

@@ -5,6 +5,12 @@ import ai.nyayaai.core.designsystem.R
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.CourtDate
 import ai.nyayaai.core.model.Paise
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +43,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -323,12 +330,19 @@ fun FormScaffold(
 
         content()
 
-        error?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
+        // Faded, not cut, so an error appearing or clearing doesn't jolt the form.
+        AnimatedVisibility(
+            visible = error != null,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(200)),
+        ) {
+            error?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
         }
 
         Button(
@@ -336,13 +350,21 @@ fun FormScaffold(
             enabled = canSubmit && !isSubmitting,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            if (isSubmitting) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(SUBMIT_SPINNER_SIZE),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            } else {
-                Text(submitLabel)
+            // Faded, not cut, so the label-to-spinner swap reads as one button settling
+            // into a busy state rather than two different buttons trading places.
+            AnimatedContent(
+                targetState = isSubmitting,
+                transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
+                contentAlignment = Alignment.Center,
+            ) { submitting ->
+                if (submitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(SUBMIT_SPINNER_SIZE),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Text(submitLabel)
+                }
             }
         }
     }
