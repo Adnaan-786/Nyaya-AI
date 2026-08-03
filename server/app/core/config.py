@@ -53,6 +53,10 @@ class Settings(BaseSettings):
 
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"
+    # Set for any S3-compatible provider that isn't AWS itself (Cloudflare R2, etc.) —
+    # e.g. https://<account_id>.r2.cloudflarestorage.com. Left unset, boto3 talks to
+    # real AWS S3 exactly as before.
+    s3_endpoint_url: str | None = None
 
     razorpay_key_id: str | None = None
     razorpay_key_secret: str | None = None

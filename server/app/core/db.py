@@ -45,7 +45,10 @@ async def create_all() -> None:
         # Idempotent, additive-only patches belong here until this repo has real
         # Alembic migrations.
         await conn.execute(
-            text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true")
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS "
+                "is_active BOOLEAN NOT NULL DEFAULT true"
+            )
         )
 
 

@@ -85,24 +85,33 @@ def _local_path(key: str) -> Path:
     return path
 
 
+def _s3_client():
+    import boto3  # imported lazily so local runs need no AWS SDK
+
+    # `endpoint_url=None` talks to real AWS exactly as before; set it for any other
+    # S3-compatible provider (Cloudflare R2, etc.) — boto3 treats a custom endpoint
+    # the same way for every other call, which is the whole point of the API being
+    # S3-compatible in the first place.
+    return boto3.client(
+        "s3", region_name=settings.aws_region, endpoint_url=settings.s3_endpoint_url
+    )
+
+
 async def put_object(key: str, data: bytes) -> None:
     if settings.s3_bucket:
-        import boto3  # imported lazily so local runs need no AWS SDK
-
-        boto3.client("s3", region_name=settings.aws_region).put_object(
-            Bucket=settings.s3_bucket, Key=key, Body=data, ServerSideEncryption="aws:kms"
-        )
+        extra: dict = {}
+        # SSE-KMS is an AWS-specific feature; a non-AWS endpoint (R2, etc.) doesn't
+        # implement it and rejects the parameter outright.
+        if not settings.s3_endpoint_url:
+            extra["ServerSideEncryption"] = "aws:kms"
+        _s3_client().put_object(Bucket=settings.s3_bucket, Key=key, Body=data, **extra)
         return
     _local_path(key).write_bytes(data)
 
 
 async def get_object(key: str) -> bytes:
     if settings.s3_bucket:
-        import boto3
-
-        response = boto3.client("s3", region_name=settings.aws_region).get_object(
-            Bucket=settings.s3_bucket, Key=key
-        )
+        response = _s3_client().get_object(Bucket=settings.s3_bucket, Key=key)
         return response["Body"].read()
 
     path = _local_path(key)
@@ -113,11 +122,7 @@ async def get_object(key: str) -> bytes:
 
 async def delete_object(key: str) -> None:
     if settings.s3_bucket:
-        import boto3
-
-        boto3.client("s3", region_name=settings.aws_region).delete_object(
-            Bucket=settings.s3_bucket, Key=key
-        )
+        _s3_client().delete_object(Bucket=settings.s3_bucket, Key=key)
         return
     path = _local_path(key)
     if path.exists():

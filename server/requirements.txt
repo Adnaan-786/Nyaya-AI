@@ -77,3 +77,8 @@ websockets==16.1.1
 # confusing ImportError without it.
 google-auth==2.56.2
 requests==2.32.5
+
+# Object storage (B.9) — imported lazily in app/integrations/storage.py, only once
+# S3_BUCKET is actually set. Also the client for any S3-compatible provider (R2, etc.)
+# via S3_ENDPOINT_URL.
+boto3==1.43.62
