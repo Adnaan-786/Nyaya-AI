@@ -6,10 +6,67 @@ import pytest
 from httpx import AsyncClient
 
 from app.api import ai
+from app.integrations.llm import _drop_unverifiable_citations
+from app.schemas.ai import Citation, ResearchResult
 from tests.conftest import BASE, sign_in
 from tests.test_documents import CHARGESHEET, _upload
 
 pytestmark = pytest.mark.asyncio
+
+
+def _citation(source_url: str) -> Citation:
+    return Citation(
+        case_title="Some vs Body",
+        court="Supreme Court of India",
+        year="2020",
+        source_url=source_url,
+        relevance_note="On point.",
+    )
+
+
+def test_citations_without_a_real_url_are_dropped_and_confidence_downgraded() -> None:
+    """The prompt asks the model not to fabricate a URL, but this is the actual
+    guarantee — a blank source_url is exactly the failure mode a live call
+    produced the first time this integration went live, and it must never reach
+    the app looking like a confident, verifiable answer."""
+    result = ResearchResult(
+        answer_markdown="The limitation period is one month.",
+        citations=[_citation(""), _citation("https://indiankanoon.org/doc/123/")],
+        confidence="high",
+    )
+
+    cleaned = _drop_unverifiable_citations(result)
+
+    assert len(cleaned.citations) == 1
+    assert cleaned.citations[0].source_url == "https://indiankanoon.org/doc/123/"
+    # One real citation survives, so confidence is left as the model reported it —
+    # only a *complete* wipeout forces a downgrade.
+    assert cleaned.confidence == "high"
+
+
+def test_confidence_is_forced_to_insufficient_when_every_citation_is_unverifiable() -> None:
+    result = ResearchResult(
+        answer_markdown="Some confident-sounding claim.",
+        citations=[_citation(""), _citation("not-a-url")],
+        confidence="high",
+    )
+
+    cleaned = _drop_unverifiable_citations(result)
+
+    assert cleaned.citations == []
+    assert cleaned.confidence == "insufficient"
+
+
+def test_already_clean_results_pass_through_unchanged() -> None:
+    result = ResearchResult(
+        answer_markdown="x",
+        citations=[_citation("https://indiankanoon.org/doc/456/")],
+        confidence="medium",
+    )
+
+    cleaned = _drop_unverifiable_citations(result)
+
+    assert cleaned is result
 
 
 async def _await_job(http: AsyncClient, headers: dict, job_id: str) -> dict:

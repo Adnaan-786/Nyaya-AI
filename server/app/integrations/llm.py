@@ -84,13 +84,29 @@ The user may write in Hinglish (Hindi and English mixed, Latin script). Understa
 it naturally and answer in the language they used.
 
 On confidence, be strict, because the cost of the two errors is not symmetric:
-- "high": directly on point, from authority you are confident exists.
-- "medium": analogous or persuasive rather than binding.
-- "insufficient": you cannot recall reliable authority. Say so plainly in
-  answer_markdown and return an empty citations list.
+- "high": directly on point, from authority you are confident exists AND for which
+  you can give a real, correct source_url.
+- "medium": analogous or persuasive rather than binding, same source_url requirement.
+- "insufficient": you cannot recall reliable authority, or you can recall a case but
+  are not certain enough of its citation to give a real URL for it. Say so plainly
+  in answer_markdown and return an empty citations list.
 
 Never invent a case name, citation, court, year, or URL. A fabricated authority
-that a lawyer carries into court is far worse than admitting you do not know.
+that a lawyer carries into court is far worse than admitting you do not know. This
+is not a soft preference — it is the single most dangerous mistake you can make
+in this role. Concretely:
+- Every citation's source_url MUST be a real, specific URL you are confident
+  resolves to that actual judgment (e.g. an indiankanoon.org/doc/ link, or the
+  court's own site). An empty string, a placeholder, a guessed URL pattern, or a
+  search-results link is not acceptable — if you cannot give one, drop that
+  citation entirely rather than include it with a blank or invented URL.
+- If dropping unverifiable citations leaves you with none, the confidence for
+  this answer is "insufficient", even if you are otherwise sure of the legal
+  proposition itself. A correct rule of law with a fabricated case behind it is
+  still a fabrication problem, not a citation-formatting one.
+- Prefer well-known, landmark judgments you have genuinely seen cited many times
+  over obscure-sounding cases your training data is thin on — thin recall is
+  exactly where fabrication happens.
 
 Respond with a single JSON object and nothing else — no prose before or after it,
 no markdown code fence around it. The object must have exactly these keys:
@@ -174,12 +190,39 @@ async def research_case_law(query: str, language: str) -> ResearchResult:
 
     try:
         parsed = await _complete(RESEARCH_SYSTEM, query)
-        return ResearchResult.model_validate(parsed)
+        result = ResearchResult.model_validate(parsed)
     except httpx.HTTPStatusError:
         logger.exception("research failed")
         raise
     except ValidationError as exc:
         raise LlmRefusal("The assistant's response did not match the expected shape.") from exc
+
+    return _drop_unverifiable_citations(result)
+
+
+def _drop_unverifiable_citations(result: ResearchResult) -> ResearchResult:
+    """The system prompt tells the model to omit a citation it can't back with a
+    real URL, but a prompt is a request, not a guarantee — this is the actual
+    guarantee. A citation without something that at least looks like a real URL is
+    treated exactly as if the model had reported no reliable authority at all,
+    because that's what it functionally is: unverifiable, and unverifiable is not
+    a state this feature is allowed to present as "high" or "medium" confidence.
+    """
+    verifiable = [c for c in result.citations if c.source_url.strip().lower().startswith("http")]
+
+    if len(verifiable) == len(result.citations):
+        return result
+
+    logger.warning(
+        "dropped %d unverifiable citation(s) from a research answer",
+        len(result.citations) - len(verifiable),
+    )
+    return result.model_copy(
+        update={
+            "citations": verifiable,
+            "confidence": "insufficient" if not verifiable else result.confidence,
+        }
+    )
 
 
 class LlmRefusal(Exception):
