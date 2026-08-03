@@ -1,6 +1,10 @@
-"""Grok (xAI) client for the AI services (C.1 "the differentiator").
+"""Groq client for the AI services (C.1 "the differentiator").
 
-xAI's API is OpenAI-compatible chat completions, reached over plain HTTP with
+Groq (groq.com) hosts open models (Llama 3.3, etc.) behind a fast inference API —
+not to be confused with Grok, x.ai's unrelated model of a near-identical name; a
+`gsk_`-prefixed key is Groq's.
+
+Groq's API is OpenAI-compatible chat completions, reached over plain HTTP with
 `httpx` — the same way every other outbound integration in this server talks to a
 third party (see `ecourts.py`), rather than adding a second HTTP-client dependency
 for one integration.
@@ -14,10 +18,10 @@ Two things are non-negotiable in a legal product, and neither is provider-specif
    fields.
 2. **A response that doesn't validate is a refusal, not a crash.** If the model
    declines, wanders off-schema, or the API call itself fails, that surfaces as a
-   failed job with a message, exactly like `LlmRefusal` did under Claude — nothing
-   here should ever take the background worker down with it (the worker's own
-   broad `except Exception` in `app/api/ai.py` is the second line of defence, but
-   this module still validates explicitly rather than leaning on that alone).
+   failed job with a message — nothing here should ever take the background worker
+   down with it (the worker's own broad `except Exception` in `app/api/ai.py` is the
+   second line of defence, but this module still validates explicitly rather than
+   leaning on that alone).
 
 FAKE_MODE returns realistic canned results so the whole AI surface is demonstrable
 without an API key or spend.
@@ -35,7 +39,7 @@ from app.schemas.ai import Citation, ResearchResult, SummarizeResult
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-GROK_API_URL = "https://api.x.ai/v1/chat/completions"
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 # Generous relative to the 30s estimate B.7 gives the app — a slow completion should
 # time out and fail the job cleanly rather than hang the worker indefinitely.
@@ -92,7 +96,7 @@ no markdown code fence around it. The object must have exactly these keys:
 
 
 def _is_live() -> bool:
-    return not settings.fake_mode and bool(settings.grok_api_key)
+    return not settings.fake_mode and bool(settings.groq_api_key)
 
 
 async def _complete(system: str, user_content: str) -> dict:
@@ -101,10 +105,10 @@ async def _complete(system: str, user_content: str) -> dict:
     known."""
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT_SECONDS) as client:
         response = await client.post(
-            GROK_API_URL,
-            headers={"Authorization": f"Bearer {settings.grok_api_key}"},
+            GROQ_API_URL,
+            headers={"Authorization": f"Bearer {settings.groq_api_key}"},
             json={
-                "model": settings.grok_model,
+                "model": settings.groq_model,
                 "max_tokens": MAX_TOKENS,
                 "response_format": {"type": "json_object"},
                 "messages": [
@@ -192,7 +196,7 @@ def _fake_summary(text: str, doc_type_hint: str | None) -> SummarizeResult:
             f"{snippet}…"
         ),
         key_points=[
-            "Configure GROK_API_KEY and set FAKE_MODE=false for real analysis.",
+            "Configure GROQ_API_KEY and set FAKE_MODE=false for real analysis.",
             "Extraction and search are fully functional in this mode.",
         ],
         parties=[],

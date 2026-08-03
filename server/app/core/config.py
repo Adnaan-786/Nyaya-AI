@@ -52,10 +52,12 @@ class Settings(BaseSettings):
     # summarize/research, so this staying unset even with Grok configured is fine.
     anthropic_api_key: str | None = None
 
-    grok_api_key: str | None = None
-    # Verify this against xAI's current model catalog (console.x.ai) before relying
-    # on it — override via GROK_MODEL if it's changed since this was written.
-    grok_model: str = "grok-4"
+    # Groq (groq.com) — fast inference hosting for open models, and easily confused
+    # with Grok (x.ai)'s unrelated model of a near-identical name. A key that starts
+    # `gsk_` is Groq; xAI's start `xai-`. Check console.groq.com if this default
+    # model has been retired before relying on it.
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
 
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"
