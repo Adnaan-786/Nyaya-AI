@@ -198,10 +198,11 @@ async def send_invoice(
     await session.refresh(invoice)
 
     if client:
-        await sms.send_text(
+        await sms.send_invoice_link(
             client.phone,
-            f"Invoice {invoice.number} for Rs {invoicing.format_paise(invoice.total_paise)} "
-            f"is ready. Pay here: {invoice.payment_link}",
+            invoice.number,
+            invoicing.format_paise(invoice.total_paise),
+            invoice.payment_link,
         )
 
     return envelope.ok(_to_out(invoice))

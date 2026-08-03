@@ -43,7 +43,17 @@ class Settings(BaseSettings):
     fake_mode: bool = True
 
     msg91_auth_key: str | None = None
-    msg91_template_id: str | None = None
+    # One template ID per message the product sends, because India's DLT regime binds
+    # each approved body to its own ID — there is no "send arbitrary text" call to
+    # share. See app/integrations/sms.py for the exact bodies these must be registered
+    # with; a mismatch is rejected by the operator, not delivered with a warning.
+    msg91_template_id: str | None = None  # OTP
+    msg91_template_client_invite: str | None = None
+    msg91_template_invoice: str | None = None
+    # Optional: the DLT-approved 6-character header (sender ID). MSG91 falls back to the
+    # one attached to the template on its panel when this is unset, which is the common
+    # case — set it only if the account requires it explicitly.
+    msg91_sender_id: str | None = None
     ecourts_api_key: str | None = None
     indiankanoon_api_key: str | None = None
     # Kept for app/integrations/ocr.py's scanned-document gate, which only checks

@@ -153,9 +153,5 @@ async def invite_client(
     await session.commit()
 
     code = secrets.token_hex(3).upper()
-    await sms.send_text(
-        login_phone,
-        f"{client.name}, you can now follow your case with NyayaAI. "
-        f"Sign in with this number. Reference: {code}",
-    )
+    await sms.send_client_invite(login_phone, client.name, code)
     return envelope.ok({"ok": True, "invited_phone": login_phone})

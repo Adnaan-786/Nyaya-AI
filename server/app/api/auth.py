@@ -1,9 +1,11 @@
 """B.4 authentication: phone OTP + JWT, and B.14 app config."""
 
+import logging
 import random
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import httpx
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +27,7 @@ from app.schemas.auth import (
     UserOut,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["auth"])
 settings = get_settings()
 
@@ -52,15 +55,30 @@ async def request_otp(body: OtpRequest, session: AsyncSession = Depends(get_sess
     # secure than the fixed one — it just makes the app unusable for anyone who turned
     # FAKE_MODE off to enable some unrelated integration like push.
     code = f"{random.randint(0, 999999):06d}" if sms.is_live() else sms.FAKE_OTP
-    session.add(
-        OtpCode(
-            phone=body.phone,
-            code_hash=security.hash_otp(body.phone, code),
-            expires_at=now + timedelta(minutes=OTP_TTL_MINUTES),
-        )
+    record = OtpCode(
+        phone=body.phone,
+        code_hash=security.hash_otp(body.phone, code),
+        expires_at=now + timedelta(minutes=OTP_TTL_MINUTES),
     )
+    session.add(record)
+    # Committed before the send, so a code can never reach a phone that this server is
+    # then unable to verify.
     await session.commit()
-    await sms.send_otp(body.phone, code)
+
+    try:
+        await sms.send_otp(body.phone, code)
+    except (sms.SmsDeliveryError, httpx.HTTPError):
+        # That row already counts against OTP_MAX_PER_HOUR. Left in place, an MSG91
+        # outage or an exhausted SMS balance would lock someone out of their own
+        # account for an hour over three codes they never received — so a failed
+        # attempt is rolled back instead of held against them.
+        logger.exception("could not deliver an OTP")
+        await session.delete(record)
+        await session.commit()
+        raise envelope.upstream_unavailable(
+            "We could not send your code. Please try again."
+        ) from None
+
     return envelope.ok({"ok": True})
 
 
