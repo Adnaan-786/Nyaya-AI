@@ -113,6 +113,12 @@ async def _complete(system: str, user_content: str) -> dict:
                 ],
             },
         )
+        if response.is_error:
+            # httpx's own exception message drops the response body, which is
+            # exactly where xAI explains *why* — an invalid model name, a rejected
+            # parameter, an auth failure. Logging it here is the difference between
+            # a one-line guess and actually knowing what to fix.
+            logger.error("xAI returned %s: %s", response.status_code, response.text)
         response.raise_for_status()
         body = response.json()
 
