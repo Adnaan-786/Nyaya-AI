@@ -15,7 +15,11 @@ data class User(
     val id: UserId,
     val tenantId: TenantId,
     val name: String,
-    val phone: String,
+    // Nullable since the email OTP channel landed: an account created by email has no
+    // phone until its owner adds one. Treating it as required here is not a stricter
+    // contract, it is a wrong one — the mapper would reject the very accounts that
+    // channel creates.
+    val phone: String?,
     val email: String?,
     val role: UserRole,
     val language: Language,
@@ -31,7 +35,8 @@ data class User(
 data class TeamMember(
     val id: UserId,
     val name: String,
-    val phone: String,
+    /** Null for a colleague who signed up by email — see [User.phone]. */
+    val phone: String?,
     val email: String?,
     val role: UserRole,
     val language: Language,

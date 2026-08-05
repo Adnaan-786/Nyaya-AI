@@ -12,7 +12,10 @@ class UserOut(BaseModel):
 
     id: uuid.UUID
     name: str
-    phone: str
+    # Optional for the same reason as the auth schema's UserOut: a colleague who signed
+    # up through the email OTP channel has no phone, and requiring one here 500s the
+    # whole team roster the moment one such member joins the firm.
+    phone: str | None = None
     email: str | None = None
     role: str
     language: str

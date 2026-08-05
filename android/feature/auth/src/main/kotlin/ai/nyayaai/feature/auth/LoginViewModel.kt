@@ -21,7 +21,9 @@ import javax.inject.Inject
  */
 data class LoginUiState(
     val step: Step = Step.PHONE,
+    val channel: Channel = Channel.EMAIL,
     val phone: String = "",
+    val email: String = "",
     val otp: String = "",
     val isSubmitting: Boolean = false,
     val error: String? = null,
@@ -34,8 +36,29 @@ data class LoginUiState(
 ) {
     enum class Step { PHONE, OTP, ONBOARDING, SIGNED_IN }
 
+    /**
+     * Which identifier the code is sent to. Email is the default because it is the
+     * channel that can actually deliver today — transactional SMS to an Indian number
+     * requires DLT registration (a registered business plus weeks of template
+     * approvals), while email requires none of it. Phone stays available and becomes
+     * the better default the moment that registration clears.
+     */
+    enum class Channel { EMAIL, PHONE }
+
     /** Indian mobile numbers are 10 digits; the +91 prefix is added on submit (D.6). */
     val isPhoneValid: Boolean get() = phone.length == PHONE_LENGTH && phone.all(Char::isDigit)
+
+    /**
+     * Deliberately permissive — the address only has to be plausible enough to be worth
+     * a round trip. The server re-validates, and the real proof of ownership is that the
+     * code has to arrive.
+     */
+    val isEmailValid: Boolean
+        get() = EMAIL_PATTERN.matches(email.trim())
+
+    /** Whichever identifier the chosen channel needs. */
+    val isIdentifierValid: Boolean
+        get() = if (channel == Channel.EMAIL) isEmailValid else isPhoneValid
 
     val isOtpValid: Boolean get() = otp.length == OTP_LENGTH && otp.all(Char::isDigit)
 
@@ -49,6 +72,7 @@ data class LoginUiState(
         const val PHONE_LENGTH = 10
         const val OTP_LENGTH = 6
         const val COUNTRY_CODE = "+91"
+        private val EMAIL_PATTERN = Regex("""[^@\s]+@[^@\s]+\.[^@\s]+""")
     }
 }
 
@@ -77,6 +101,16 @@ class LoginViewModel
             }
         }
 
+        fun onEmailChanged(value: String) {
+            // Not lowercased here — that would fight the user mid-keystroke. The server
+            // normalises, and it is the only place that can guarantee it anyway.
+            _state.update { it.copy(email = value.trim(), error = null) }
+        }
+
+        fun onChannelChanged(value: LoginUiState.Channel) {
+            _state.update { it.copy(channel = value, error = null) }
+        }
+
         fun onOtpChanged(value: String) {
             _state.update {
                 it.copy(otp = value.filter(Char::isDigit).take(LoginUiState.OTP_LENGTH), error = null)
@@ -85,11 +119,18 @@ class LoginViewModel
 
         fun requestOtp() {
             val current = _state.value
-            if (!current.isPhoneValid || current.isSubmitting) return
+            if (!current.isIdentifierValid || current.isSubmitting) return
 
             _state.update { it.copy(isSubmitting = true, error = null) }
             viewModelScope.launch {
-                when (val result = repository.requestOtp(LoginUiState.COUNTRY_CODE + current.phone)) {
+                val result =
+                    when (current.channel) {
+                        LoginUiState.Channel.EMAIL -> repository.requestEmailOtp(current.email)
+                        LoginUiState.Channel.PHONE ->
+                            repository.requestOtp(LoginUiState.COUNTRY_CODE + current.phone)
+                    }
+
+                when (result) {
                     is ApiResult.Success ->
                         _state.update {
                             it.copy(isSubmitting = false, step = LoginUiState.Step.OTP)
@@ -108,10 +149,16 @@ class LoginViewModel
             _state.update { it.copy(isSubmitting = true, error = null) }
             viewModelScope.launch {
                 val verified =
-                    repository.verifyOtp(
-                        phone = LoginUiState.COUNTRY_CODE + current.phone,
-                        otp = current.otp,
-                    )
+                    when (current.channel) {
+                        LoginUiState.Channel.EMAIL ->
+                            repository.verifyEmailOtp(email = current.email, otp = current.otp)
+
+                        LoginUiState.Channel.PHONE ->
+                            repository.verifyOtp(
+                                phone = LoginUiState.COUNTRY_CODE + current.phone,
+                                otp = current.otp,
+                            )
+                    }
 
                 when (verified) {
                     is ApiResult.Failure ->
@@ -204,6 +251,8 @@ class LoginViewModel
         }
 
         fun back() {
+            // Keeps the chosen channel and the identifier already typed — going back to
+            // correct a typo should not also reset which channel was picked.
             _state.update { it.copy(step = LoginUiState.Step.PHONE, otp = "", error = null) }
         }
 

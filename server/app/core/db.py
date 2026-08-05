@@ -51,6 +51,21 @@ async def create_all() -> None:
             )
         )
 
+        # Email OTP login. All three are safe to re-run and safe on a populated table:
+        # dropping NOT NULL and widening a varchar never rewrite or reject existing
+        # rows, and the email index is partial so the many users who have no email
+        # yet do not collide with each other on NULL.
+        await conn.execute(text("ALTER TABLE users ALTER COLUMN phone DROP NOT NULL"))
+        await conn.execute(
+            text("ALTER TABLE otp_codes ALTER COLUMN phone TYPE VARCHAR(255)")
+        )
+        await conn.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email "
+                "ON users (email) WHERE email IS NOT NULL"
+            )
+        )
+
 
 def scoped[ModelT](model: type[ModelT], tenant_id: Any) -> Select:
     """Every read of a tenant table must start here.

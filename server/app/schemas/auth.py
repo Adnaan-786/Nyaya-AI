@@ -26,6 +26,22 @@ class OtpVerifyRequest(OtpRequest):
     otp: str = Field(min_length=6, max_length=6)
 
 
+class EmailOtpRequest(BaseModel):
+    # EmailStr would need the email-validator package on the critical path of signing
+    # in; pydantic's own constraint plus the relay's rejection is enough here, and the
+    # address is lowercased so "A@b.com" and "a@b.com" cannot become two accounts.
+    email: str = Field(min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+    @field_validator("email")
+    @classmethod
+    def normalise_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+
+class EmailOtpVerifyRequest(EmailOtpRequest):
+    otp: str = Field(min_length=6, max_length=6)
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str
 
@@ -44,7 +60,10 @@ class UserOut(BaseModel):
     id: uuid.UUID
     tenant_id: uuid.UUID
     name: str
-    phone: str
+    # Optional since the email OTP channel landed — an account created by email has no
+    # phone until its owner adds one, and serialising it as required would 500 on
+    # exactly the accounts that channel creates.
+    phone: str | None = None
     email: str | None = None
     role: str
     language: str

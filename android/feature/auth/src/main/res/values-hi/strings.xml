@@ -14,6 +14,11 @@
     <string name="auth_otp_label">6 अंकों का कोड</string>
     <string name="auth_verify">वेरिफाई करें</string>
     <string name="auth_change_number">नंबर बदलें</string>
+    <string name="auth_email_label">ईमेल पता</string>
+    <string name="auth_email_helper">हम आपको 6 अंकों का कोड भेजेंगे</string>
+    <string name="auth_channel_email">ईमेल</string>
+    <string name="auth_channel_phone">मोबाइल</string>
+    <string name="auth_change_email">ईमेल बदलें</string>
     <string name="auth_signed_in_as">%1$s के रूप में साइन इन</string>
     <string name="auth_sign_out">साइन आउट</string>
     <string name="auth_onboard_title">अपनी प्रोफ़ाइल सेट करें</string>

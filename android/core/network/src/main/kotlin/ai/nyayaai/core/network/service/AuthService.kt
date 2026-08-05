@@ -5,6 +5,8 @@ import ai.nyayaai.core.network.api.EmptyBody
 import ai.nyayaai.core.network.dto.AppConfigDto
 import ai.nyayaai.core.network.dto.DeviceDto
 import ai.nyayaai.core.network.dto.DeviceRegistrationDto
+import ai.nyayaai.core.network.dto.EmailOtpRequestDto
+import ai.nyayaai.core.network.dto.EmailOtpVerifyRequestDto
 import ai.nyayaai.core.network.dto.OnboardRequestDto
 import ai.nyayaai.core.network.dto.OtpRequestDto
 import ai.nyayaai.core.network.dto.OtpVerifyRequestDto
@@ -27,6 +29,16 @@ interface AuthService {
     @POST("auth/otp/verify")
     suspend fun verifyOtp(
         @Body body: OtpVerifyRequestDto,
+    ): ApiEnvelope<TokenPairDto>
+
+    @POST("auth/email/request")
+    suspend fun requestEmailOtp(
+        @Body body: EmailOtpRequestDto,
+    ): ApiEnvelope<EmptyBody>
+
+    @POST("auth/email/verify")
+    suspend fun verifyEmailOtp(
+        @Body body: EmailOtpVerifyRequestDto,
     ): ApiEnvelope<TokenPairDto>
 
     @POST("auth/onboard")

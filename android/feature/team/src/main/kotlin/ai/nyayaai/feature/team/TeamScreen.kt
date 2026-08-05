@@ -222,11 +222,16 @@ internal fun TeamMemberCard(
                 verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs),
             ) {
                 Text(text = member.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = member.phone,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                // Whichever identifier this colleague actually signed up with — a member
+                // who joined by email has no phone, and a blank line under their name
+                // would read as missing data rather than a different sign-up route.
+                (member.phone ?: member.email)?.let { contact ->
+                    Text(
+                        text = contact,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 StatusBadge(text = stringResource(member.role.labelRes()), tone = member.role.tone())
             }
 

@@ -6,11 +6,20 @@ import ai.nyayaai.core.designsystem.component.NyayaDropdownField
 import ai.nyayaai.core.designsystem.component.NyayaTextField
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.Language
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,6 +54,8 @@ fun LoginRoute(
     LoginScreen(
         state = state,
         onPhoneChanged = viewModel::onPhoneChanged,
+        onEmailChanged = viewModel::onEmailChanged,
+        onChannelChanged = viewModel::onChannelChanged,
         onOtpChanged = viewModel::onOtpChanged,
         onRequestOtp = viewModel::requestOtp,
         onVerify = viewModel::verifyOtp,
@@ -62,6 +74,8 @@ fun LoginRoute(
 internal fun LoginScreen(
     state: LoginUiState,
     onPhoneChanged: (String) -> Unit,
+    onEmailChanged: (String) -> Unit,
+    onChannelChanged: (LoginUiState.Channel) -> Unit,
     onOtpChanged: (String) -> Unit,
     onRequestOtp: () -> Unit,
     onVerify: () -> Unit,
@@ -80,7 +94,14 @@ internal fun LoginScreen(
     // a second, top-level rendering of state.error/isSubmitting.
     when (state.step) {
         LoginUiState.Step.PHONE ->
-            PhoneStep(state, onPhoneChanged, onRequestOtp, modifier = Modifier.fillMaxSize())
+            PhoneStep(
+                state = state,
+                onPhoneChanged = onPhoneChanged,
+                onEmailChanged = onEmailChanged,
+                onChannelChanged = onChannelChanged,
+                onRequestOtp = onRequestOtp,
+                modifier = Modifier.fillMaxSize(),
+            )
 
         LoginUiState.Step.OTP ->
             OtpStep(state, onOtpChanged, onVerify, onBack, modifier = Modifier.fillMaxSize())
@@ -106,28 +127,79 @@ internal fun LoginScreen(
 private fun PhoneStep(
     state: LoginUiState,
     onPhoneChanged: (String) -> Unit,
+    onEmailChanged: (String) -> Unit,
+    onChannelChanged: (LoginUiState.Channel) -> Unit,
     onRequestOtp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     FormScaffold(
         title = stringResource(R.string.auth_title),
         submitLabel = stringResource(R.string.auth_get_otp),
-        canSubmit = state.isPhoneValid,
+        canSubmit = state.isIdentifierValid,
         isSubmitting = state.isSubmitting,
         onSubmit = onRequestOtp,
         modifier = modifier,
         error = state.error,
     ) {
-        NyayaTextField(
-            value = state.phone,
-            onValueChange = onPhoneChanged,
-            label = stringResource(R.string.auth_phone_label),
-            prefix = stringResource(R.string.auth_phone_prefix),
-            helper = stringResource(R.string.auth_phone_helper),
-            keyboardType = KeyboardType.Phone,
-        )
+        // Two channels, so the choice is a segmented button rather than a hidden default —
+        // a lawyer whose firm runs on WhatsApp and a lawyer who lives in their inbox should
+        // both find their way in without reading anything.
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            LoginUiState.Channel.entries.forEachIndexed { index, channel ->
+                SegmentedButton(
+                    selected = state.channel == channel,
+                    onClick = { onChannelChanged(channel) },
+                    shape =
+                        SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = LoginUiState.Channel.entries.size,
+                        ),
+                ) {
+                    Text(
+                        stringResource(
+                            when (channel) {
+                                LoginUiState.Channel.EMAIL -> R.string.auth_channel_email
+                                LoginUiState.Channel.PHONE -> R.string.auth_channel_phone
+                            },
+                        ),
+                    )
+                }
+            }
+        }
+
+        // Animated so switching channels reads as one field changing rather than the form
+        // rebuilding under the user; 260ms matches the app's content-swap timing.
+        AnimatedContent(
+            targetState = state.channel,
+            transitionSpec = { fadeIn(tween(CHANNEL_SWAP_MS)) togetherWith fadeOut(tween(CHANNEL_SWAP_MS)) },
+            label = "login-channel",
+        ) { channel ->
+            when (channel) {
+                LoginUiState.Channel.EMAIL ->
+                    NyayaTextField(
+                        value = state.email,
+                        onValueChange = onEmailChanged,
+                        label = stringResource(R.string.auth_email_label),
+                        helper = stringResource(R.string.auth_email_helper),
+                        keyboardType = KeyboardType.Email,
+                        capitalization = KeyboardCapitalization.None,
+                    )
+
+                LoginUiState.Channel.PHONE ->
+                    NyayaTextField(
+                        value = state.phone,
+                        onValueChange = onPhoneChanged,
+                        label = stringResource(R.string.auth_phone_label),
+                        prefix = stringResource(R.string.auth_phone_prefix),
+                        helper = stringResource(R.string.auth_phone_helper),
+                        keyboardType = KeyboardType.Phone,
+                    )
+            }
+        }
     }
 }
+
+private const val CHANNEL_SWAP_MS = 260
 
 @Composable
 private fun OtpStep(
@@ -150,7 +222,10 @@ private fun OtpStep(
             text =
                 stringResource(
                     R.string.auth_otp_sent_to,
-                    LoginUiState.COUNTRY_CODE + state.phone,
+                    when (state.channel) {
+                        LoginUiState.Channel.EMAIL -> state.email
+                        LoginUiState.Channel.PHONE -> LoginUiState.COUNTRY_CODE + state.phone
+                    },
                 ),
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -163,7 +238,14 @@ private fun OtpStep(
         )
 
         TextButton(onClick = onBack) {
-            Text(stringResource(R.string.auth_change_number))
+            Text(
+                stringResource(
+                    when (state.channel) {
+                        LoginUiState.Channel.EMAIL -> R.string.auth_change_email
+                        LoginUiState.Channel.PHONE -> R.string.auth_change_number
+                    },
+                ),
+            )
         }
     }
 }

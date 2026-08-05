@@ -21,7 +21,7 @@ fun UserDto.toDomain(): User =
         id = UserId(id.requiredString("user.id")),
         tenantId = TenantId(tenantId.requiredString("user.tenant_id")),
         name = name.requiredString("user.name"),
-        phone = phone.requiredString("user.phone"),
+        phone = phone,
         email = email,
         role = UserRole.from(role),
         language = Language.from(language),
@@ -33,7 +33,7 @@ fun UserDto.toTeamMember(): TeamMember =
     TeamMember(
         id = UserId(id.requiredString("user.id")),
         name = name.requiredString("user.name"),
-        phone = phone.requiredString("user.phone"),
+        phone = phone,
         email = email,
         role = UserRole.from(role),
         language = Language.from(language),

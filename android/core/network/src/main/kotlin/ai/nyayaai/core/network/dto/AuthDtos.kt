@@ -23,6 +23,23 @@ data class OtpVerifyRequestDto(
     val otp: String,
 )
 
+/**
+ * The email login channel. It exists because transactional SMS to an Indian number
+ * needs DLT registration — a registered business and weeks of template approvals —
+ * while email needs none of it. Same 6-digit code and same server-side limits as the
+ * phone channel; only the delivery differs.
+ */
+@Serializable
+data class EmailOtpRequestDto(
+    val email: String,
+)
+
+@Serializable
+data class EmailOtpVerifyRequestDto(
+    val email: String,
+    val otp: String,
+)
+
 @Serializable
 data class RefreshRequestDto(
     val refreshToken: String,

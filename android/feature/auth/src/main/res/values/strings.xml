@@ -5,6 +5,11 @@
     <string name="auth_phone_prefix">+91</string>
     <string name="auth_phone_helper">We will send you a 6-digit code</string>
     <string name="auth_get_otp">Get OTP</string>
+    <string name="auth_email_label">Email address</string>
+    <string name="auth_email_helper">We will send you a 6-digit code</string>
+    <string name="auth_channel_email">Email</string>
+    <string name="auth_channel_phone">Mobile</string>
+    <string name="auth_change_email">Change email</string>
     <string name="auth_otp_title">Enter the code</string>
     <string name="auth_otp_sent_to">Sent to %1$s</string>
     <string name="auth_otp_label">6-digit code</string>

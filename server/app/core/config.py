@@ -69,6 +69,17 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"
 
+    # Transactional email (OTP login). Any SMTP provider works — Brevo, Gmail,
+    # SendGrid, Mailgun, Resend — which is the point of using SMTP over a vendor API.
+    # Port 465 is treated as implicit TLS and anything else as STARTTLS.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    # Must be an address the provider has verified, or the relay will accept the
+    # login and then reject the message.
+    smtp_from: str | None = None
+
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"
     # Set for any S3-compatible provider that isn't AWS itself (Cloudflare R2, etc.) —

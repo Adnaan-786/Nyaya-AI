@@ -5,6 +5,8 @@ import ai.nyayaai.core.network.api.ApiCaller
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.api.map
 import ai.nyayaai.core.network.auth.TokenStore
+import ai.nyayaai.core.network.dto.EmailOtpRequestDto
+import ai.nyayaai.core.network.dto.EmailOtpVerifyRequestDto
 import ai.nyayaai.core.network.dto.OnboardRequestDto
 import ai.nyayaai.core.network.dto.OtpRequestDto
 import ai.nyayaai.core.network.dto.OtpVerifyRequestDto
@@ -42,6 +44,25 @@ class AuthRepository
         ): ApiResult<VerifiedLogin> =
             caller
                 .call { service.verifyOtp(OtpVerifyRequestDto(phone, otp)) }
+                .map { dto ->
+                    val session = dto.toSession()
+                    tokenStore.save(session.accessToken, session.refreshToken)
+                    VerifiedLogin(
+                        isNewUser = session.isNewUser,
+                        user = dto.user?.toDomain(),
+                    )
+                }
+
+        /** The email channel's half of B.4.1 — same limits, different delivery. */
+        suspend fun requestEmailOtp(email: String): ApiResult<Unit> =
+            caller.call { service.requestEmailOtp(EmailOtpRequestDto(email)) }.map { }
+
+        suspend fun verifyEmailOtp(
+            email: String,
+            otp: String,
+        ): ApiResult<VerifiedLogin> =
+            caller
+                .call { service.verifyEmailOtp(EmailOtpVerifyRequestDto(email, otp)) }
                 .map { dto ->
                     val session = dto.toSession()
                     tokenStore.save(session.accessToken, session.refreshToken)

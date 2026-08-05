@@ -43,7 +43,12 @@ class User(UuidPk, TenantScoped, Timestamped, Base):
     __table_args__ = (UniqueConstraint("phone", name="uq_users_phone"),)
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Nullable since the email OTP channel landed: an account created by email has no
+    # phone until its owner adds one. Phone stays the primary identity wherever it
+    # exists — client portal invites are still keyed on it — but it is no longer the
+    # only way to own an account. Postgres permits many NULLs under a UNIQUE
+    # constraint, so uq_users_phone keeps working unchanged.
+    phone: Mapped[str | None] = mapped_column(String(20))
     email: Mapped[str | None] = mapped_column(String(255))
     # firm_admin | lawyer | intern | client (B.4)
     role: Mapped[str] = mapped_column(String(30), nullable=False, default="lawyer")
@@ -312,7 +317,12 @@ class OtpCode(UuidPk, Timestamped, Base):
 
     __tablename__ = "otp_codes"
 
-    phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    # Holds whatever the code was sent to — a phone number or an email address. The
+    # column keeps its original name so no live table has to be renamed; 255 is the
+    # email cap, widened from the 20 that only ever had to fit a phone.
+    identifier: Mapped[str] = mapped_column(
+        "phone", String(255), nullable=False, index=True
+    )
     code_hash: Mapped[str] = mapped_column(String(200), nullable=False)
     expires_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     consumed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))

@@ -3,6 +3,7 @@
 import logging
 import random
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -13,12 +14,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import envelope, security
 from app.core.config import get_settings
 from app.core.db import get_session
+from app.integrations import email as mailer
 from app.integrations import sms
 from app.models import Device, OtpCode, RefreshToken, Tenant, User
 from app.schemas.auth import (
     AppConfigOut,
     DeviceOut,
     DeviceRegistration,
+    EmailOtpRequest,
+    EmailOtpVerifyRequest,
     OnboardRequest,
     OtpRequest,
     OtpVerifyRequest,
@@ -36,42 +40,54 @@ OTP_MAX_PER_HOUR = 3
 OTP_MAX_ATTEMPTS = 5
 
 
-@router.post("/auth/otp/request")
-async def request_otp(body: OtpRequest, session: AsyncSession = Depends(get_session)):
-    """B.4.1: 6 digits, 5-minute validity, max 3/hour per phone."""
+async def _issue_otp(
+    session: AsyncSession,
+    identifier: str,
+    live: bool,
+    deliver: Callable[[str, str], Awaitable[None]],
+) -> None:
+    """The half of B.4.1 both channels share: 6 digits, 5-minute validity, 3/hour.
+
+    `identifier` is a phone number or an email address; `deliver` is the channel that
+    carries the code. Keeping this in one place is deliberate — the rate limit, the
+    hashing and the rollback below are the security properties of signing in, and a
+    second channel that reimplemented them would drift from this one.
+    """
     now = datetime.now(UTC)
     window_start = now - timedelta(hours=1)
 
     recent = await session.scalars(
-        select(OtpCode).where(OtpCode.phone == body.phone, OtpCode.created_at >= window_start)
+        select(OtpCode).where(
+            OtpCode.identifier == identifier, OtpCode.created_at >= window_start
+        )
     )
     if len(recent.all()) >= OTP_MAX_PER_HOUR:
         # Rate limiting an OTP endpoint is not optional: without it this is a free
-        # SMS-bombing service pointed at any Indian mobile number.
+        # SMS-bombing (or mail-bombing) service pointed at anyone's address.
         raise envelope.rate_limited("Too many attempts. Try again in an hour.", 3600)
 
-    # Gated on whether SMS can actually be *delivered*, not on the global flag. With no
-    # MSG91 key the code only ever reaches a server log, so a random one is no more
-    # secure than the fixed one — it just makes the app unusable for anyone who turned
-    # FAKE_MODE off to enable some unrelated integration like push.
-    code = f"{random.randint(0, 999999):06d}" if sms.is_live() else sms.FAKE_OTP
+    # Gated on whether this channel can actually *deliver*, not on the global flag.
+    # With nothing configured the code only ever reaches a server log, so a random one
+    # is no more secure than the fixed one — it just makes the app unusable for anyone
+    # who turned FAKE_MODE off to enable some unrelated integration like push.
+    code = f"{random.randint(0, 999999):06d}" if live else sms.FAKE_OTP
     record = OtpCode(
-        phone=body.phone,
-        code_hash=security.hash_otp(body.phone, code),
+        identifier=identifier,
+        code_hash=security.hash_otp(identifier, code),
         expires_at=now + timedelta(minutes=OTP_TTL_MINUTES),
     )
     session.add(record)
-    # Committed before the send, so a code can never reach a phone that this server is
+    # Committed before the send, so a code can never reach someone that this server is
     # then unable to verify.
     await session.commit()
 
     try:
-        await sms.send_otp(body.phone, code)
-    except (sms.SmsDeliveryError, httpx.HTTPError):
-        # That row already counts against OTP_MAX_PER_HOUR. Left in place, an MSG91
-        # outage or an exhausted SMS balance would lock someone out of their own
-        # account for an hour over three codes they never received — so a failed
-        # attempt is rolled back instead of held against them.
+        await deliver(identifier, code)
+    except (sms.SmsDeliveryError, mailer.EmailDeliveryError, httpx.HTTPError, OSError):
+        # That row already counts against OTP_MAX_PER_HOUR. Left in place, a provider
+        # outage or an exhausted balance would lock someone out of their own account
+        # for an hour over three codes they never received — so a failed attempt is
+        # rolled back instead of held against them.
         logger.exception("could not deliver an OTP")
         await session.delete(record)
         await session.commit()
@@ -79,17 +95,15 @@ async def request_otp(body: OtpRequest, session: AsyncSession = Depends(get_sess
             "We could not send your code. Please try again."
         ) from None
 
-    return envelope.ok({"ok": True})
 
-
-@router.post("/auth/otp/verify")
-async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get_session)):
+async def _consume_otp(session: AsyncSession, identifier: str, otp: str) -> None:
+    """Verifies and burns the newest live code for `identifier`, or raises."""
     now = datetime.now(UTC)
     record = (
         await session.scalars(
             select(OtpCode)
             .where(
-                OtpCode.phone == body.phone,
+                OtpCode.identifier == identifier,
                 OtpCode.consumed_at.is_(None),
                 OtpCode.expires_at > now,
             )
@@ -106,7 +120,7 @@ async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get
     if record.attempts >= OTP_MAX_ATTEMPTS:
         raise envelope.rate_limited("Too many incorrect attempts.", 3600)
 
-    if record.code_hash != security.hash_otp(body.phone, body.otp):
+    if record.code_hash != security.hash_otp(identifier, otp):
         record.attempts += 1
         await session.commit()
         raise envelope.validation(
@@ -114,7 +128,10 @@ async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get
         )
 
     record.consumed_at = now
-    user = (await session.scalars(select(User).where(User.phone == body.phone))).first()
+
+
+async def _sign_in(session: AsyncSession, user: User | None, make_user: Callable[[], User]):
+    """Issues the token pair, creating the account on first sight."""
     is_new_user = user is None
 
     if user is None:
@@ -124,7 +141,8 @@ async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get
         tenant = Tenant(name="Pending setup")
         session.add(tenant)
         await session.flush()
-        user = User(tenant_id=tenant.id, name="", phone=body.phone, role="lawyer")
+        user = make_user()
+        user.tenant_id = tenant.id
         session.add(user)
         await session.flush()
 
@@ -139,6 +157,46 @@ async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get
             is_new_user=is_new_user,
             user=UserOut.model_validate(user),
         ).model_dump(mode="json")
+    )
+
+
+@router.post("/auth/otp/request")
+async def request_otp(body: OtpRequest, session: AsyncSession = Depends(get_session)):
+    await _issue_otp(session, body.phone, sms.is_live(), sms.send_otp)
+    return envelope.ok({"ok": True})
+
+
+@router.post("/auth/otp/verify")
+async def verify_otp(body: OtpVerifyRequest, session: AsyncSession = Depends(get_session)):
+    await _consume_otp(session, body.phone, body.otp)
+    user = (await session.scalars(select(User).where(User.phone == body.phone))).first()
+    return await _sign_in(
+        session, user, lambda: User(name="", phone=body.phone, role="lawyer")
+    )
+
+
+@router.post("/auth/email/request")
+async def request_email_otp(
+    body: EmailOtpRequest, session: AsyncSession = Depends(get_session)
+):
+    """The same OTP contract as the phone channel, over SMTP.
+
+    This exists because transactional SMS to an Indian number requires DLT
+    registration — a registered business entity and weeks of template approvals —
+    while email requires none of it. See app/integrations/email.py.
+    """
+    await _issue_otp(session, body.email, mailer.is_live(), mailer.send_otp)
+    return envelope.ok({"ok": True})
+
+
+@router.post("/auth/email/verify")
+async def verify_email_otp(
+    body: EmailOtpVerifyRequest, session: AsyncSession = Depends(get_session)
+):
+    await _consume_otp(session, body.email, body.otp)
+    user = (await session.scalars(select(User).where(User.email == body.email))).first()
+    return await _sign_in(
+        session, user, lambda: User(name="", email=body.email, role="lawyer")
     )
 
 
