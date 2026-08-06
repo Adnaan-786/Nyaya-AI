@@ -69,9 +69,15 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"
 
-    # Transactional email (OTP login). Any SMTP provider works — Brevo, Gmail,
-    # SendGrid, Mailgun, Resend — which is the point of using SMTP over a vendor API.
-    # Port 465 is treated as implicit TLS and anything else as STARTTLS.
+    # Transactional email (OTP login). Two delivery paths:
+    #
+    #  1. BREVO_API_KEY — uses Brevo's HTTP API over port 443. Required on hosts
+    #     like Render that block outbound SMTP ports (25/465/587).
+    #  2. SMTP_* — standard SMTP, works with any provider. Use on hosts that
+    #     allow outbound SMTP (a VPS, Railway, Fly, etc.).
+    #
+    # If both are set, the HTTP path wins (faster, no port issues).
+    brevo_api_key: str | None = None
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_username: str | None = None

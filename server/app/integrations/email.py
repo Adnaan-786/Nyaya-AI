@@ -1,19 +1,18 @@
-"""Transactional email over SMTP, with the FAKE_MODE switch every integration honours.
+"""Transactional email — Brevo HTTP API (preferred) or SMTP (fallback).
 
-**Why SMTP and not a vendor API.** Every other outbound integration here speaks HTTP
-because that is all its provider offers. Email has an actual protocol, and using it
-means the free tier this runs on (Brevo, Gmail, SendGrid, Mailgun, Resend — all of them
-expose SMTP) is a matter of environment variables rather than a code change. That
-matters more than usual here: this is the login channel, and the free tier it depends
-on is the sort of thing that gets repriced.
+**Two delivery paths, one interface.**
 
-**Why `smtplib` and not `aiosmtplib`.** It is in the standard library, so it cannot go
-missing from `requirements.txt` — a failure this project has already shipped twice
-(`fpdf2`, `boto3`). It is blocking, so the send runs in a worker thread; at OTP volume
-that is cheaper than owning another dependency on the critical path of signing in.
+1. Brevo HTTP API (``BREVO_API_KEY``) — a single POST over port 443. Required on
+   hosts like Render that block outbound SMTP ports (25/465/587).
+2. SMTP (``SMTP_HOST`` + friends) — the stdlib ``smtplib``, provider-agnostic.
+   Works on any host that allows outbound SMTP.
 
-Unlike SMS, this needs no DLT registration, no template pre-approval, and no registered
-business entity — which is the entire reason the login channel moved here.
+If both are configured the HTTP path wins: it is faster (no TLS handshake, no
+multi-step SMTP conversation) and immune to port-blocking.
+
+Unlike SMS, email needs no DLT registration, no template pre-approval, and no
+registered business entity — which is the entire reason the login channel moved
+here.
 """
 
 import asyncio
@@ -22,25 +21,26 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
+import httpx
+
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 SMTP_TIMEOUT_SECONDS = 15
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 class EmailDeliveryError(Exception):
     """A message the caller's request depends on could not be handed to the relay."""
 
 
-def is_live() -> bool:
-    """True only when a real email can actually be delivered.
+def _has_brevo() -> bool:
+    return bool(not settings.fake_mode and settings.brevo_api_key and settings.smtp_from)
 
-    Asks about *this* integration's own credentials rather than the global FAKE_MODE
-    flag, so turning on one live integration cannot silently change another's
-    behaviour.
-    """
+
+def _has_smtp() -> bool:
     return bool(
         not settings.fake_mode
         and settings.smtp_host
@@ -49,6 +49,41 @@ def is_live() -> bool:
         and settings.smtp_from
     )
 
+
+def is_live() -> bool:
+    """True only when a real email can actually be delivered."""
+    return _has_brevo() or _has_smtp()
+
+
+# ---------------------------------------------------------------------------
+# Brevo HTTP path
+# ---------------------------------------------------------------------------
+
+async def _send_brevo(to: str, subject: str, body: str) -> None:
+    payload = {
+        "sender": {"email": settings.smtp_from, "name": "NyayaAI"},
+        "to": [{"email": to}],
+        "subject": subject,
+        "textContent": body,
+    }
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(
+            BREVO_API_URL,
+            json=payload,
+            headers={
+                "api-key": settings.brevo_api_key,
+                "Content-Type": "application/json",
+            },
+        )
+    if resp.status_code >= 400:
+        detail = resp.text[:200]
+        logger.error("Brevo API %s for %s: %s", resp.status_code, to, detail)
+        raise EmailDeliveryError(f"Brevo {resp.status_code}: {detail}")
+
+
+# ---------------------------------------------------------------------------
+# SMTP path (fallback for hosts that allow outbound SMTP)
+# ---------------------------------------------------------------------------
 
 def _build(to: str, subject: str, body: str) -> EmailMessage:
     message = EmailMessage()
@@ -60,13 +95,6 @@ def _build(to: str, subject: str, body: str) -> EmailMessage:
 
 
 def _send_blocking(message: EmailMessage) -> None:
-    """Runs on a worker thread — see the module docstring.
-
-    Port 465 is implicit TLS (SMTP_SSL); everything else is assumed to be STARTTLS,
-    which is what 587 means and what every provider below defaults to. Getting this
-    backwards is the classic "hangs then times out" SMTP misconfiguration, so it is
-    decided from the port rather than left as one more thing to set correctly.
-    """
     context = ssl.create_default_context()
     if settings.smtp_port == 465:
         with smtplib.SMTP_SSL(
@@ -84,22 +112,27 @@ def _send_blocking(message: EmailMessage) -> None:
         server.send_message(message)
 
 
-async def send(to: str, subject: str, body: str) -> None:
-    """Sends one email, raising [EmailDeliveryError] if the relay would not take it.
+# ---------------------------------------------------------------------------
+# Public interface
+# ---------------------------------------------------------------------------
 
-    Raises rather than returning a bool because the only caller so far is the OTP
-    request, where this message *is* the request's purpose — reporting success on a
-    failed send would leave someone waiting on a code that is never coming.
-    """
+async def send(to: str, subject: str, body: str) -> None:
+    """Sends one email, raising [EmailDeliveryError] if the relay would not take it."""
     if not is_live():
         logger.info("FAKE EMAIL -> %s | %s | %s", to, subject, body)
+        return
+
+    if _has_brevo():
+        try:
+            await _send_brevo(to, subject, body)
+        except httpx.HTTPError as exc:
+            logger.error("Brevo HTTP error for %s: %s", to, exc)
+            raise EmailDeliveryError(str(exc)) from exc
         return
 
     try:
         await asyncio.to_thread(_send_blocking, _build(to, subject, body))
     except (smtplib.SMTPException, OSError) as exc:
-        # OSError covers the connection-level failures (DNS, refused, timeout) that
-        # smtplib lets through unwrapped.
         logger.error("SMTP refused a message to %s: %s", to, exc)
         raise EmailDeliveryError(str(exc)) from exc
 
