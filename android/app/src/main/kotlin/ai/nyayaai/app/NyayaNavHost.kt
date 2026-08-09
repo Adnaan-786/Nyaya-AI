@@ -194,7 +194,7 @@ fun NyayaNavHost(
         composable(Route.SETTINGS) {
             SettingsRoute(
                 userName = user.name,
-                userPhone = user.phone,
+                userContact = user.phone ?: user.email,
                 roleLabel = stringResource(user.role.labelRes()),
                 onLoggedOut = onLoggedOut,
                 showTeam = !user.role.isClient,

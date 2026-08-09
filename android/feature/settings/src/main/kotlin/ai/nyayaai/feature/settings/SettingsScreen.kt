@@ -34,7 +34,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun SettingsRoute(
     userName: String,
-    userPhone: String,
+    // Whichever identifier this account actually has: an email signup has no phone at
+    // all, so a non-null String here would be a contract the email channel cannot meet.
+    userContact: String?,
     roleLabel: String,
     onLoggedOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -63,11 +65,13 @@ fun SettingsRoute(
 
                 Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
                     Text(text = userName, style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        text = userPhone,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    userContact?.let { contact ->
+                        Text(
+                            text = contact,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Text(
                         text = roleLabel,
                         style = MaterialTheme.typography.bodySmall,
