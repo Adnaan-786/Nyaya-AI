@@ -26,7 +26,7 @@ import uuid
 from sqlalchemy import delete, select
 
 from app.core.config import get_settings
-from app.core.db import SessionFactory, create_all
+from app.core.db import SessionFactory, ensure_schema
 from app.core.india import INDIA, today_in_india
 from app.models import (
     AiJob,
@@ -110,7 +110,7 @@ async def seed() -> None:
         # This script deletes rows. It exists for local and staging demos only.
         raise SystemExit("refusing to seed demo data into a prod environment")
 
-    await create_all()
+    await ensure_schema()
     today = today_in_india()
 
     async with SessionFactory() as session:

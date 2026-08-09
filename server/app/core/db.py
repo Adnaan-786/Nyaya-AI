@@ -1,17 +1,24 @@
-"""Async engine, session factory, and the tenant-scoping helper."""
+"""Async engine, session factory, schema bring-up, and the tenant-scoping helper."""
 
+import asyncio
+import logging
 from collections.abc import AsyncGenerator
+from pathlib import Path
 from typing import Any
 
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import Select, select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-# Import the package, not just the base module: this is what registers every
-# table on the metadata before create_all / Alembic autogenerate runs.
+# Import the package, not just the base module: this is what registers every table on
+# the metadata. `migrations/env.py` imports it for the same reason, but importing it
+# here too keeps `scoped()` and any ad-hoc session use working without depending on
+# whether Alembic happened to run first.
 import app.models  # noqa: F401
 from app.core.config import get_settings
-from app.models.base import Base
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 _connect_args: dict = {"ssl": True} if settings.database_requires_ssl else {}
@@ -26,45 +33,69 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def create_all() -> None:
-    """Used for local bring-up and staging (there is no Alembic migration history in
-    this repo despite the dependency being installed — `alembic.ini` and `versions/`
-    were never actually created)."""
-    async with engine.begin() as conn:
-        # `pg_trgm` backs the trigram index on documents.ocr_text that universal search
-        # uses. Creating it here rather than leaving it as a README step: a fresh cluster
-        # otherwise fails on "operator class gin_trgm_ops does not exist" halfway through
-        # table creation, which reads like a code bug rather than a missing extension.
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
-        await conn.run_sync(Base.metadata.create_all)
+ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
-        # `create_all` only creates missing *tables* — it never alters an existing one,
-        # so a column added to a model after the table already exists on a deployed
-        # database (like `users.is_active`, added for B.6 team management) silently
-        # never appears there and every query against the ORM's full column list 500s.
-        # Idempotent, additive-only patches belong here until this repo has real
-        # Alembic migrations.
-        await conn.execute(
-            text(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS "
-                "is_active BOOLEAN NOT NULL DEFAULT true"
-            )
-        )
+# The first migration, which reproduces the schema as it stood when this database was
+# still being built by `create_all()` plus hand-written ALTERs. A database that predates
+# migrations is stamped with *this* revision rather than `head`, so that anything added
+# after the baseline still runs against it.
+BASELINE_REVISION = "aff0fc9b19b9"
 
-        # Email OTP login. All three are safe to re-run and safe on a populated table:
-        # dropping NOT NULL and widening a varchar never rewrite or reject existing
-        # rows, and the email index is partial so the many users who have no email
-        # yet do not collide with each other on NULL.
-        await conn.execute(text("ALTER TABLE users ALTER COLUMN phone DROP NOT NULL"))
-        await conn.execute(
-            text("ALTER TABLE otp_codes ALTER COLUMN phone TYPE VARCHAR(255)")
-        )
-        await conn.execute(
-            text(
-                "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email "
-                "ON users (email) WHERE email IS NOT NULL"
-            )
-        )
+
+def _alembic_config() -> Config:
+    config = Config(str(ALEMBIC_INI))
+    # env.py reads the URL from app settings, so nothing needs setting here — but the
+    # script location in alembic.ini is relative, and the process may be started from
+    # anywhere (Render runs uvicorn from the repo's `server/` dir, pytest from wherever
+    # the developer happens to be).
+    config.set_main_option("script_location", str(ALEMBIC_INI.parent / "migrations"))
+    return config
+
+
+def _run_alembic(action: str, revision: str) -> None:
+    """Alembic's command API is synchronous and `migrations/env.py` calls `asyncio.run`.
+
+    Both facts mean this cannot be awaited from the app's event loop — it has to happen
+    on a thread with no loop of its own, which is what the callers below arrange.
+    """
+    config = _alembic_config()
+    if action == "stamp":
+        command.stamp(config, revision)
+    else:
+        command.upgrade(config, revision)
+
+
+async def _predates_migrations() -> bool:
+    """True for a database that has this app's tables but no Alembic history.
+
+    That is exactly the deployed database as it stands today: every table on it was
+    created by the old `create_all()` path, so running the baseline migration against it
+    would fail on the first `CREATE TABLE`. It needs stamping, not running.
+    """
+    async with engine.connect() as conn:
+        has_history = await conn.scalar(text("SELECT to_regclass('public.alembic_version')"))
+        has_tables = await conn.scalar(text("SELECT to_regclass('public.users')"))
+    return has_history is None and has_tables is not None
+
+
+async def ensure_schema() -> None:
+    """Bring the database to the latest migration, whatever state it starts in.
+
+    Three cases, all of which have to work unattended because this runs at startup:
+
+    - **Empty database** (a fresh clone, CI, a new Render instance): every migration
+      runs, baseline first.
+    - **Database that predates Alembic** (production, right now): stamped at the
+      baseline so its existing tables are left untouched, then any later migration runs.
+    - **Database already under Alembic**: the normal upgrade path, a no-op when it is
+      already at head.
+    """
+    if await _predates_migrations():
+        logger.info("database predates alembic; stamping baseline %s", BASELINE_REVISION)
+        await asyncio.to_thread(_run_alembic, "stamp", BASELINE_REVISION)
+
+    await asyncio.to_thread(_run_alembic, "upgrade", "head")
+    logger.info("schema is at head")
 
 
 def scoped[ModelT](model: type[ModelT], tenant_id: Any) -> Select:

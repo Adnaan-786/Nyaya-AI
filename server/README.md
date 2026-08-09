@@ -14,6 +14,50 @@ Postgres is expected on `/tmp` port 5433 (see `app/core/config.py`); override wi
 `DATABASE_URL`. Interactive docs at `/docs`, and the generated contract at
 `/openapi.json`.
 
+## Migrations
+
+The schema is owned by Alembic (`migrations/`). Startup calls `ensure_schema()`, which
+brings any database to head unattended, so a fresh clone needs no migration step — just
+run it.
+
+To change the schema, edit the models and generate a migration:
+
+```bash
+./.venv/bin/python -m alembic revision --autogenerate -m "what changed"
+```
+
+Then **read the generated file before committing it.** Autogenerate is a good first
+draft, not an authority: it cannot see a column rename (it emits a drop plus an add,
+which silently discards the data), and it does not know which changes need a backfill or
+will lock a large table. Format it with `ruff format migrations/` — there is deliberately
+no post-write hook, because one that resolves `ruff` from `PATH` fails on a fresh
+checkout where ruff lives in `.venv/bin`.
+
+Useful checks:
+
+```bash
+./.venv/bin/python -m alembic check              # models vs database: any drift?
+./.venv/bin/python -m alembic upgrade head --sql # print the SQL instead of running it
+```
+
+`alembic check` is the one worth running before you push — it fails when the models and
+the migrations have drifted apart, which is the failure this whole directory exists to
+prevent.
+
+### The baseline, and why the deployed database is stamped
+
+`ensure_schema()` handles three cases. An empty database gets every migration. A database
+already under Alembic gets the normal upgrade. And a database that has this app's tables
+but no `alembic_version` — which is exactly what was deployed before this landed, built
+by the old `create_all()` plus hand-written `ALTER`s — is **stamped** at the baseline
+revision rather than migrated, because running `CREATE TABLE` against it would fail.
+
+The baseline was verified by diffing `pg_dump --schema-only` of a database built the old
+way against one built by the migration: identical but for the ordinal position of
+`users.is_active`, which sits last in the deployed database because it arrived through
+`ADD COLUMN`. Postgres cannot reorder columns and SQLAlchemy always names them
+explicitly, so that difference is cosmetic and permanent.
+
 ## The contract
 
 Now that both halves of the product are ours, **the OpenAPI document FastAPI generates

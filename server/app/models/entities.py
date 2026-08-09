@@ -30,6 +30,7 @@ from sqlalchemy import (
     Text,
     Time,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
@@ -65,7 +66,14 @@ class User(UuidPk, TenantScoped, Timestamped, Base):
     # firm's invoices. Deactivating preserves every FK (tasks.assignee_id/created_by,
     # case_notes.author_id keep resolving; time entries stay attached to their case)
     # while removing the user from active team listings and (future) login.
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # `server_default` as well as `default`: the deployed database already has DEFAULT
+    # true, because this column reached it through an ADD COLUMN ... DEFAULT true patch
+    # rather than through the model. Declaring only the Python-side default would leave
+    # the model quietly disagreeing with production, and every future autogenerate would
+    # try to "fix" the difference in whichever direction it was run.
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("true"), nullable=False
+    )
 
 
 class Client(UuidPk, TenantScoped, Timestamped, Base):
@@ -350,3 +358,16 @@ Index(
 )
 Index("ix_cases_next_hearing", Case.tenant_id, Case.next_hearing_date)
 Index("ix_hearings_tenant_date", Hearing.tenant_id, Hearing.date)
+
+# One account per address, but only over rows that actually have one. A plain UNIQUE
+# would be wrong here rather than merely stricter: every phone-only account carries a
+# NULL email, and Postgres treats each NULL as distinct, so the constraint would still
+# admit them — while a partial index states the real rule and lets the planner use it
+# for the email-login lookup. Declared here rather than as a raw ALTER so Alembic's
+# autogenerate can see it and the model stays the single source of schema truth.
+Index(
+    "uq_users_email",
+    User.email,
+    unique=True,
+    postgresql_where=User.email.isnot(None),
+)

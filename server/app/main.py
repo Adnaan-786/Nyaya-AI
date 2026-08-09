@@ -29,7 +29,7 @@ from app.api import (
 )
 from app.core import envelope
 from app.core.config import get_settings
-from app.core.db import create_all
+from app.core.db import ensure_schema
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,9 +41,11 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    if settings.environment in ("local", "staging"):
-        await create_all()
-        logger.info("schema ensured (%s)", settings.environment)
+    # Runs in every environment, unlike the `create_all()` it replaces. That gate existed
+    # because `create_all()` could only ever add tables — it was never safe to point at a
+    # database whose schema had moved on. Migrations are the opposite: skipping them in
+    # production is what leaves the code and the schema disagreeing.
+    await ensure_schema()
     yield
 
 

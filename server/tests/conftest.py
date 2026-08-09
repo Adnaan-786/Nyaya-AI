@@ -6,7 +6,7 @@ from collections.abc import AsyncGenerator
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
-from app.core.db import create_all, engine
+from app.core.db import engine, ensure_schema
 from app.main import app
 
 BASE = "http://test/v1"
@@ -23,7 +23,7 @@ async def _isolated_engine() -> AsyncGenerator[None, None]:
     per test.
     """
     await engine.dispose()
-    await create_all()
+    await ensure_schema()
     yield
     await engine.dispose()
 
