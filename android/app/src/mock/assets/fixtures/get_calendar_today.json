@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "data": {
+    "date": "2026-08-10",
+    "tomorrow_count": 3,
+    "unread_notifications": 4,
+    "hearings": [
+      {
+        "id": "b1c2d3e4-1111-4a2b-8c3d-000000000101",
+        "case_id": "c0000000-0000-4000-8000-000000000001",
+        "case_title": "Sharma v. Nirmal Builders Pvt. Ltd.",
+        "court_name": "Delhi High Court",
+        "date": "2026-08-10",
+        "time": "10:30",
+        "purpose": "Arguments on interim injunction",
+        "courtroom": "Court No. 12",
+        "outcome_notes": null
+      },
+      {
+        "id": "b1c2d3e4-1111-4a2b-8c3d-000000000102",
+        "case_id": "c0000000-0000-4000-8000-000000000002",
+        "case_title": "State v. Ramesh Kumar",
+        "court_name": "Saket District Court",
+        "date": "2026-08-10",
+        "time": "14:00",
+        "purpose": "Framing of charges",
+        "courtroom": "Court No. 4",
+        "outcome_notes": null
+      }
+    ],
+    "overdue_outcomes": [
+      {
+        "id": "b1c2d3e4-1111-4a2b-8c3d-000000000099",
+        "case_id": "c0000000-0000-4000-8000-000000000003",
+        "case_title": "Kaur v. Oriental Insurance Co.",
+        "court_name": "Tis Hazari Court",
+        "date": "2026-08-06",
+        "time": "11:15",
+        "purpose": "Evidence of the complainant",
+        "courtroom": "Court No. 21",
+        "outcome_notes": null
+      }
+    ]
+  },
+  "error": null
+}

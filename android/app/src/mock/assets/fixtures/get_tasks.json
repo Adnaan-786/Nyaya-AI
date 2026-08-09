@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "data": [
+    { "id": "d0000000-0000-4000-8000-000000000001", "case_id": "c0000000-0000-4000-8000-000000000001", "title": "File rejoinder to written statement", "assignee_id": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "due_date": "2026-08-12", "status": "open", "created_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e" },
+    { "id": "d0000000-0000-4000-8000-000000000002", "case_id": "c0000000-0000-4000-8000-000000000002", "title": "Collect certified copy of FIR", "assignee_id": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "due_date": "2026-08-09", "status": "open", "created_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e" },
+    { "id": "d0000000-0000-4000-8000-000000000003", "case_id": "c0000000-0000-4000-8000-000000000003", "title": "Brief senior counsel before evidence", "assignee_id": null, "due_date": "2026-08-17", "status": "open", "created_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e" },
+    { "id": "d0000000-0000-4000-8000-000000000004", "case_id": "c0000000-0000-4000-8000-000000000001", "title": "Pay court fee for interim application", "assignee_id": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "due_date": "2026-08-05", "status": "done", "created_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e" }
+  ],
+  "error": null,
+  "meta": { "page": 1, "limit": 20, "total": 4 }
+}

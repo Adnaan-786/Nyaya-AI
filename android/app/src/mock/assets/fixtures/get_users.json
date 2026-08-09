@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "data": [
+    { "id": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "name": "Adv. Meera Raghavan", "phone": null, "email": "meera@raghavanlaw.in", "role": "firm_admin", "language": "en", "created_at": "2026-02-11T05:20:00Z" },
+    { "id": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d90", "name": "Adv. Kabir Nair", "phone": "+919812345010", "email": "kabir@raghavanlaw.in", "role": "lawyer", "language": "en", "created_at": "2026-03-04T05:20:00Z" },
+    { "id": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d91", "name": "Sneha Patil", "phone": "+919812345011", "email": null, "role": "intern", "language": "hi", "created_at": "2026-06-18T05:20:00Z" }
+  ],
+  "error": null,
+  "meta": { "page": 1, "limit": 20, "total": 3 }
+}

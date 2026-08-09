@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "data": [
+    { "id": "f0000000-0000-4000-8000-000000000001", "case_id": "c0000000-0000-4000-8000-000000000001", "client_id": null, "name": "Written statement — Nirmal Builders.pdf", "folder": "Pleadings", "mime_type": "application/pdf", "size_bytes": 2148372, "ocr_status": "done", "download_url": null, "uploaded_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "created_at": "2026-08-08T16:40:00Z" },
+    { "id": "f0000000-0000-4000-8000-000000000002", "case_id": "c0000000-0000-4000-8000-000000000001", "client_id": null, "name": "Agreement to sell (scanned).pdf", "folder": "Evidence", "mime_type": "application/pdf", "size_bytes": 8412990, "ocr_status": "pending", "download_url": null, "uploaded_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "created_at": "2026-08-07T11:05:00Z" },
+    { "id": "f0000000-0000-4000-8000-000000000003", "case_id": "c0000000-0000-4000-8000-000000000002", "client_id": null, "name": "FIR 214-2026 certified copy.pdf", "folder": "Court filings", "mime_type": "application/pdf", "size_bytes": 640221, "ocr_status": "done", "download_url": null, "uploaded_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "created_at": "2026-08-04T09:12:00Z" },
+    { "id": "f0000000-0000-4000-8000-000000000004", "case_id": "c0000000-0000-4000-8000-000000000003", "client_id": null, "name": "Medical bills bundle.jpg", "folder": "Evidence", "mime_type": "image/jpeg", "size_bytes": 3311204, "ocr_status": "failed", "download_url": null, "uploaded_by": "0b7f6c1e-3c2a-4a1e-9c3d-1f2a5b6c7d8e", "created_at": "2026-08-02T13:55:00Z" }
+  ],
+  "error": null,
+  "meta": { "page": 1, "limit": 20, "total": 4 }
+}
