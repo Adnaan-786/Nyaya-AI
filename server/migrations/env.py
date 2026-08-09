@@ -29,8 +29,13 @@ from app.models.base import Base
 
 config = context.config
 
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+# `fileConfig` reconfigures logging process-wide from the [loggers] section, which is
+# what you want from the `alembic` CLI and emphatically not what you want when the app
+# calls this at startup: it would replace main.py's JSON formatter with alembic.ini's
+# plain one and silence every app logger for the rest of the process. `ensure_schema()`
+# sets configure_logger=False for exactly that reason; the CLI leaves it unset.
+if config.config_file_name is not None and config.attributes.get("configure_logger", True):
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 
