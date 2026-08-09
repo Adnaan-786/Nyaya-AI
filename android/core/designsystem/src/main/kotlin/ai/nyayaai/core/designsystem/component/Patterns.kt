@@ -112,7 +112,15 @@ fun InitialAvatar(
  * in the firm is worse than no avatar.
  */
 private fun String.initials(): String {
-    val skip = setOf("adv", "adv.", "mr", "mr.", "mrs", "mrs.", "ms", "ms.", "dr", "dr.", "m/s")
+    // "v"/"vs" belong here for the same reason the honorifics do: they are not part of
+    // anyone's name. Without them almost every case in the app reduced to "?V" — the
+    // split above breaks "Sharma v. Nirmal Builders" into [Sharma, v, Nirmal, ...], so
+    // the second letter was the separator rather than the other party. Since the avatar
+    // tint is picked from the initials' hash, two unrelated cases starting with the same
+    // letter also came out identically coloured, which is the opposite of what an avatar
+    // is for in a list a litigator scans.
+    val skip =
+        setOf("adv", "adv.", "mr", "mr.", "mrs", "mrs.", "ms", "ms.", "dr", "dr.", "m/s", "v", "vs")
     val words =
         trim()
             .split(' ', '.', ',')
