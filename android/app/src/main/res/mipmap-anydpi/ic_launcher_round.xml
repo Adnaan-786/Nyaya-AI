@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-API-26 counterpart to mipmap-anydpi-v26/ic_launcher_round.xml. See the note in
+     the sibling ic_launcher.xml for why this file has to exist at all. Launchers that
+     ask for the round variant crop it themselves, so this is deliberately the same
+     artwork rather than a separately masked copy. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/brand_navy" />
+    <item
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:inset="16.6%" />
+</layer-list>

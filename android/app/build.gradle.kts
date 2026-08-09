@@ -1,8 +1,25 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.nyayaai.android.application)
     alias(libs.plugins.nyayaai.android.compose)
     alias(libs.plugins.nyayaai.android.hilt)
 }
+
+// Release signing, kept out of the repository. `keystore.properties` and the keystore it
+// points at are gitignored: the upload key is the one credential that cannot be rotated
+// — lose it and this applicationId can never be updated on Play again, by anyone.
+//
+// Absent (CI, a fresh clone, anyone who is not publishing), the release variant simply
+// builds unsigned, exactly as before, rather than failing the build for everyone who
+// does not need to sign.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties =
+    Properties().apply {
+        if (keystorePropertiesFile.exists()) {
+            keystorePropertiesFile.inputStream().use(::load)
+        }
+    }
 
 // The google-services plugin hard-fails in two different ways, and both would stop
 // people building this app:
@@ -49,11 +66,32 @@ android {
         testInstrumentationRunner = "ai.nyayaai.app.HiltTestRunner"
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        } else {
+            logger.lifecycle(
+                "keystore.properties not found — release builds will be unsigned. " +
+                    "See docs/RELEASING.md to publish.",
+            )
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
         }
         release {
+            // findByName, not getByName: null leaves the variant unsigned, which is the
+            // documented state for anyone without the key. Deliberately never falls back
+            // to the debug key — that produces an APK that installs happily in testing
+            // and is then rejected by Play, after the build has already claimed success.
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

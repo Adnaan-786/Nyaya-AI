@@ -12,10 +12,14 @@ captures/
 *.apk
 *.aab
 *.keystore
+*.jks
 !debug.keystore
 google-services.json
 !app/src/mock/google-services.json
-/keystore.properties
+# Unanchored on purpose: the signing config reads `android/keystore.properties`, and a
+# leading slash here would only ignore one at the repo root — leaving the real one, with
+# the upload key's password in it, tracked.
+keystore.properties
 
 # Server
 .venv/

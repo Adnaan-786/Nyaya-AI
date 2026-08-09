@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Launcher icon for API 24–25, which is where minSdk sits.
+
+  `adaptive-icon` is API 26+, so the sibling `mipmap-anydpi-v26/ic_launcher.xml` is the
+  *only* definition of this resource on older releases — meaning there was none, and
+  Android 7.0/7.1 had no launcher icon to draw at all. Nothing warned about it: the
+  build succeeds, lint stays quiet, and the APK simply ships with the icon missing on
+  those devices.
+
+  A layer-list of the same two pieces the adaptive icon uses, so the two cannot drift.
+  The inset mirrors the safe zone an adaptive icon's foreground is drawn inside, which
+  is what the foreground vector was authored against — without it the artwork renders
+  edge-to-edge here and looks noticeably larger than on modern devices.
+
+  Vector rather than the conventional per-density PNGs: it keeps one source of truth for
+  the artwork. If a launcher on some old OEM skin renders it poorly, generating real
+  PNGs into mipmap-{m,h,xh,xxh,xxxh}dpi is the fix — this file is then deleted, not
+  edited.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/brand_navy" />
+    <item
+        android:drawable="@drawable/ic_launcher_foreground"
+        android:inset="16.6%" />
+</layer-list>
