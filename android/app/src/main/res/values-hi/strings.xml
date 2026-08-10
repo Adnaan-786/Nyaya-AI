@@ -38,4 +38,7 @@
     <string name="update_required_phone">फ़ोन: %1$s</string>
     <string name="update_required_email">ईमेल: %1$s</string>
     <string name="banner_dismiss">बंद करें</string>
+    <string name="nav_more">और</string>
+    <string name="nav_badge_overflow">%1$d+</string>
+    <string name="nav_notifications_unread">सूचनाएं, %1$d अपठित</string>
 </resources>

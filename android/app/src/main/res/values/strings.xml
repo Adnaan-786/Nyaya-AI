@@ -40,4 +40,7 @@
     <string name="update_required_phone">Phone: %1$s</string>
     <string name="update_required_email">Email: %1$s</string>
     <string name="banner_dismiss">Dismiss</string>
+    <string name="nav_more">More</string>
+    <string name="nav_badge_overflow">%1$d+</string>
+    <string name="nav_notifications_unread">Notifications, %1$d unread</string>
 </resources>

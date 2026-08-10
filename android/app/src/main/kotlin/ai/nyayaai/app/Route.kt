@@ -6,10 +6,15 @@ import ai.nyayaai.core.model.InvoiceId
 import ai.nyayaai.core.model.UserRole
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -89,6 +94,9 @@ val PUSHED_TITLES: Map<String, Int> =
         Route.CLIENTS to R.string.title_clients,
         Route.CLIENT_DETAIL to R.string.title_client,
         Route.CLIENT_ADD to R.string.title_add_client,
+        // A tab until the "More" sheet took the fifth slot. Being here is what gives it a
+        // back arrow now that it is pushed rather than switched to.
+        Route.INVOICES to R.string.nav_invoices,
         Route.INVOICE_DETAIL to R.string.title_invoice,
         Route.INVOICE_ADD to R.string.title_add_invoice,
         Route.NOTIFICATIONS to R.string.title_notifications,
@@ -97,13 +105,46 @@ val PUSHED_TITLES: Map<String, Int> =
         Route.PORTAL_CASE_DETAIL to R.string.title_case,
     )
 
+/**
+ * Four tabs, not five: the fifth slot is the "More" sheet ([MoreSheet]), which is a
+ * disclosure rather than a destination.
+ *
+ * These four are the ones a litigator is *in* during a working day. Everything else —
+ * invoices, the calendar, tasks, clients, team, settings — is reached by name from the
+ * sheet. That is a longer path for invoices than the tab it used to have, and a much
+ * shorter one for clients and tasks, which were previously unlabelled icons in the top
+ * bar and effectively unfindable.
+ */
 private val STAFF_DESTINATIONS =
     listOf(
         Destination(Route.TODAY, R.string.nav_today, Icons.Default.Today),
         Destination(Route.CASES, R.string.nav_cases, Icons.AutoMirrored.Filled.List),
         Destination(Route.VAULT, R.string.nav_vault, Icons.Default.Folder),
         Destination(Route.AI, R.string.nav_ai, Icons.Default.Search),
-        Destination(Route.INVOICES, R.string.nav_invoices, Icons.Default.ReceiptLong),
+    )
+
+/**
+ * What the "More" sheet lists, in the order it shows them. Ordered by how often a
+ * practice actually reaches for each, not alphabetically.
+ *
+ * [adminOnly] mirrors the gate `NyayaNavHost` already applies to `TeamRoute` — offering
+ * a tap that lands on a screen with every control disabled is worse than not offering it.
+ */
+data class MoreEntry(
+    val route: String,
+    val labelRes: Int,
+    val icon: ImageVector,
+    val adminOnly: Boolean = false,
+)
+
+val MORE_ENTRIES =
+    listOf(
+        MoreEntry(Route.CALENDAR, R.string.title_calendar, Icons.Default.CalendarMonth),
+        MoreEntry(Route.TASKS, R.string.title_tasks, Icons.Default.CheckCircle),
+        MoreEntry(Route.CLIENTS, R.string.title_clients, Icons.Default.Groups),
+        MoreEntry(Route.INVOICES, R.string.nav_invoices, Icons.Default.ReceiptLong),
+        MoreEntry(Route.TEAM, R.string.title_team, Icons.Default.Badge, adminOnly = true),
+        MoreEntry(Route.SETTINGS, R.string.title_settings, Icons.Default.Settings),
     )
 
 /**

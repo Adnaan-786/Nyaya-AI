@@ -3,20 +3,19 @@ package ai.nyayaai.app
 import ai.nyayaai.core.common.DeepLink
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.User
+import ai.nyayaai.core.model.UserRole
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,14 +26,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 
 /**
  * The app shell: a top bar that always offers a way out, a bottom bar of tabs, and the
@@ -55,6 +62,21 @@ fun NyayaApp(
     HandleDeepLink(deepLink, user.role.isClient, navController, onDeepLinkHandled)
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+
+    val shellViewModel: ShellViewModel = hiltViewModel()
+    val unreadCount by shellViewModel.unreadCount.collectAsStateWithLifecycle()
+
+    val sheetState = rememberModalBottomSheetState()
+    var showMoreSheet by rememberSaveable { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    /** Closes the sheet before navigating, so it does not linger over the new screen. */
+    fun navigateFromSheet(route: String) {
+        scope.launch { sheetState.hide() }.invokeOnCompletion {
+            showMoreSheet = false
+            navController.navigate(route)
+        }
+    }
 
     val isTab = destinations.any { it.route == currentRoute }
     val titleRes =
@@ -80,10 +102,20 @@ fun NyayaApp(
                     }
                 },
                 actions = {
+                    // One action, not five. The rest moved into the "More" sheet, where
+                    // they have names; this one stays because a notification badge is
+                    // only useful where it is always in view.
                     if (!user.role.isClient) {
-                        StaffActions(
+                        NotificationsAction(
                             visible = isTab,
-                            onNavigate = navController::navigate,
+                            unreadCount = unreadCount,
+                            onClick = {
+                                navController.navigate(Route.NOTIFICATIONS)
+                                // The count is read on the way in, so it is already stale
+                                // on the way back; re-reading here is what stops the badge
+                                // outliving the notifications it counts.
+                                shellViewModel.refreshUnread()
+                            },
                         )
                     }
                 },
@@ -118,6 +150,21 @@ fun NyayaApp(
                             label = { Text(stringResource(destination.labelRes)) },
                         )
                     }
+
+                    // Staff only: client mode's two destinations are the whole app it has.
+                    if (!user.role.isClient) {
+                        NavigationBarItem(
+                            // Selected while open so the bar still shows where the sheet
+                            // came from; it is never "the current screen", because it is
+                            // not a screen.
+                            selected = showMoreSheet,
+                            onClick = { showMoreSheet = true },
+                            icon = {
+                                Icon(Icons.Default.MoreHoriz, contentDescription = null)
+                            },
+                            label = { Text(stringResource(R.string.nav_more)) },
+                        )
+                    }
                 }
             }
         },
@@ -131,57 +178,68 @@ fun NyayaApp(
             modifier = Modifier.padding(padding),
         )
     }
+
+    if (showMoreSheet) {
+        MoreSheet(
+            isAdmin = user.role == UserRole.FIRM_ADMIN,
+            sheetState = sheetState,
+            onNavigate = ::navigateFromSheet,
+            onDismiss = { showMoreSheet = false },
+        )
+    }
 }
 
 /**
- * Calendar, tasks and settings live in the top bar rather than the bottom one: five tabs
- * is already the limit, and these are things a lawyer reaches for occasionally rather
- * than as a home base.
+ * The one surviving top-bar action.
+ *
+ * The count is on the icon rather than in a list somewhere because its whole job is to
+ * be noticed without being looked for. The content description carries the number too —
+ * a badge is a visual channel, and "Notifications" alone would tell a screen-reader user
+ * nothing about whether opening it is worth their time.
  */
 @Composable
-private fun StaffActions(
+private fun NotificationsAction(
     visible: Boolean,
-    onNavigate: (String) -> Unit,
+    unreadCount: Int,
+    onClick: () -> Unit,
 ) {
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn() + scaleIn(),
         exit = fadeOut() + scaleOut(),
     ) {
-        Row {
-            IconButton(onClick = { onNavigate(Route.NOTIFICATIONS) }) {
+        IconButton(onClick = onClick) {
+            BadgedBox(
+                badge = {
+                    if (unreadCount > 0) {
+                        Badge {
+                            Text(
+                                if (unreadCount > MAX_BADGE_COUNT) {
+                                    stringResource(R.string.nav_badge_overflow, MAX_BADGE_COUNT)
+                                } else {
+                                    unreadCount.toString()
+                                },
+                            )
+                        }
+                    }
+                },
+            ) {
                 Icon(
                     Icons.Default.Notifications,
-                    contentDescription = stringResource(R.string.nav_notifications),
-                )
-            }
-            IconButton(onClick = { onNavigate(Route.CALENDAR) }) {
-                Icon(
-                    Icons.Default.CalendarMonth,
-                    contentDescription = stringResource(R.string.title_calendar),
-                )
-            }
-            IconButton(onClick = { onNavigate(Route.TASKS) }) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = stringResource(R.string.title_tasks),
-                )
-            }
-            IconButton(onClick = { onNavigate(Route.CLIENTS) }) {
-                Icon(
-                    Icons.Default.Groups,
-                    contentDescription = stringResource(R.string.title_clients),
-                )
-            }
-            IconButton(onClick = { onNavigate(Route.SETTINGS) }) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.title_settings),
+                    contentDescription =
+                        if (unreadCount > 0) {
+                            stringResource(R.string.nav_notifications_unread, unreadCount)
+                        } else {
+                            stringResource(R.string.nav_notifications)
+                        },
                 )
             }
         }
     }
 }
+
+/** Past this the badge is wider than the icon and stops reading as a count. */
+private const val MAX_BADGE_COUNT = 9
 
 /**
  * B.8: a push and an in-app tap must land in identical state, so an incoming link is
