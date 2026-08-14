@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -118,7 +119,12 @@ private fun TodayContentList(
         if (board.overdueOutcomes.isNotEmpty()) {
             item {
                 StatusBadge(
-                    text = stringResource(R.string.today_outcomes_pending, board.overdueOutcomes.size),
+                    text =
+                        pluralStringResource(
+                            R.plurals.today_outcomes_pending,
+                            board.overdueOutcomes.size,
+                            board.overdueOutcomes.size,
+                        ),
                     tone = StatusTone.WARNING,
                 )
             }

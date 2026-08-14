@@ -9,7 +9,10 @@
     <string name="today_no_hearings_free">आज और कल कोई hearing नहीं है।</string>
     <string name="today_tomorrow_count">कल %1$d</string>
     <string name="today_unread">%1$d अपठित</string>
-    <string name="today_outcomes_pending">%1$d hearings का outcome दर्ज करना बाकी है</string>
+    <plurals name="today_outcomes_pending">
+        <item quantity="one">%1$d hearing का outcome दर्ज करना बाकी है</item>
+        <item quantity="other">%1$d hearings का outcome दर्ज करना बाकी है</item>
+    </plurals>
     <string name="today_tasks">काम</string>
     <string name="today_task_overdue">समय बीत चुका</string>
     <string name="today_no_tasks">कोई खुला काम नहीं</string>

@@ -22,6 +22,14 @@ data class NyayaSpacing(
     val xxl: Dp = 48.dp,
     /** D.4.4: minimum touch target. Anything tappable is at least this tall. */
     val minTouchTarget: Dp = 48.dp,
+    /**
+     * Bottom `contentPadding` for a scrolling list that sits under a FAB.
+     *
+     * A FAB floats above the content rather than displacing it, so without this the last
+     * row is permanently half-covered — and it is the row a user scrolls to the bottom
+     * specifically to reach. 56dp of FAB plus its 16dp margin plus a 16dp gap.
+     */
+    val fabClearance: Dp = 88.dp,
 )
 
 internal val NyayaShapes =

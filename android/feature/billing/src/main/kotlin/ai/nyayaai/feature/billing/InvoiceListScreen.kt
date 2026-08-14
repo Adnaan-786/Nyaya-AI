@@ -106,7 +106,14 @@ fun InvoiceListRoute(
                 } else {
                     LazyColumn(
                         modifier = contentModifier.fillMaxSize(),
-                        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+                        contentPadding =
+                            PaddingValues(
+                                start = NyayaTheme.spacing.md,
+                                end = NyayaTheme.spacing.md,
+                                top = NyayaTheme.spacing.md,
+                                // Clears the FAB, which floats over this list rather than beside it.
+                                bottom = NyayaTheme.spacing.fabClearance,
+                            ),
                         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                     ) {
                         item { OutstandingHeader(invoices) }

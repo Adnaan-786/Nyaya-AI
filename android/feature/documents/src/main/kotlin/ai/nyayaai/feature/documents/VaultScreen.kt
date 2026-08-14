@@ -55,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -205,7 +206,14 @@ fun VaultRoute(
 
         Column(modifier = Modifier.fillMaxSize()) {
             LazyRow(
-                contentPadding = PaddingValues(horizontal = NyayaTheme.spacing.md),
+                // Vertical padding so the chips are not wedged between the app bar and the
+                // first card. The horizontal padding is what lets a partially scrolled
+                // chip peek at the edge, which is the only hint that the row scrolls.
+                contentPadding =
+                    PaddingValues(
+                        horizontal = NyayaTheme.spacing.md,
+                        vertical = NyayaTheme.spacing.sm,
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
             ) {
                 items(FOLDERS) { option ->
@@ -236,7 +244,14 @@ fun VaultRoute(
                         )
                     } else {
                         LazyColumn(
-                            contentPadding = PaddingValues(NyayaTheme.spacing.md),
+                            contentPadding =
+                                PaddingValues(
+                                    start = NyayaTheme.spacing.md,
+                                    end = NyayaTheme.spacing.md,
+                                    top = NyayaTheme.spacing.md,
+                                    // Clears the FAB, which floats over this list rather than beside it.
+                                    bottom = NyayaTheme.spacing.fabClearance,
+                                ),
                             verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                         ) {
                             itemsIndexed(documents, key = { _, d -> d.id.value }) { index, document ->
@@ -277,7 +292,17 @@ private fun DocumentCard(
             horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = document.name, style = MaterialTheme.typography.bodyLarge)
+                // Bounded, because a court filing's name is routinely long enough to wrap
+                // three or four times ("Written statement on behalf of respondent no. 2
+                // dated 14.03.2026.pdf"). Unbounded, it stretched the row and left the
+                // status badge floating in the middle of a wall of text. Two lines keeps
+                // the part that distinguishes one filing from another.
+                Text(
+                    text = document.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
 
                 val meta =
                     listOfNotNull(document.folder, document.sizeBytes.asFileSize())

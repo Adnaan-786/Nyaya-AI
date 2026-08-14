@@ -159,7 +159,14 @@ fun ClientListRoute(
                         }
                     } else {
                         LazyColumn(
-                            contentPadding = PaddingValues(NyayaTheme.spacing.md),
+                            contentPadding =
+                                PaddingValues(
+                                    start = NyayaTheme.spacing.md,
+                                    end = NyayaTheme.spacing.md,
+                                    top = NyayaTheme.spacing.md,
+                                    // Clears the FAB, which floats over this list rather than beside it.
+                                    bottom = NyayaTheme.spacing.fabClearance,
+                                ),
                             verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
                         ) {
                             itemsIndexed(clients, key = { _, item -> item.id.value }) { index, client ->

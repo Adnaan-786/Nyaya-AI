@@ -182,7 +182,14 @@ private fun OverviewTab(
     val case = detail.case
 
     LazyColumn(
-        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+        contentPadding =
+            PaddingValues(
+                start = NyayaTheme.spacing.md,
+                end = NyayaTheme.spacing.md,
+                top = NyayaTheme.spacing.md,
+                // Clears the FAB, which floats over these tabs rather than beside them.
+                bottom = NyayaTheme.spacing.fabClearance,
+            ),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md),
     ) {
         item {
@@ -241,7 +248,14 @@ private fun HearingsTab(hearings: List<Hearing>) {
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+        contentPadding =
+            PaddingValues(
+                start = NyayaTheme.spacing.md,
+                end = NyayaTheme.spacing.md,
+                top = NyayaTheme.spacing.md,
+                // Clears the FAB, which floats over these tabs rather than beside them.
+                bottom = NyayaTheme.spacing.fabClearance,
+            ),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
     ) {
         itemsIndexed(hearings, key = { _, h -> h.id.value }) { index, hearing ->
@@ -285,7 +299,14 @@ private fun TimeTab(timeEntries: List<TimeEntry>) {
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+        contentPadding =
+            PaddingValues(
+                start = NyayaTheme.spacing.md,
+                end = NyayaTheme.spacing.md,
+                top = NyayaTheme.spacing.md,
+                // Clears the FAB, which floats over these tabs rather than beside them.
+                bottom = NyayaTheme.spacing.fabClearance,
+            ),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
     ) {
         itemsIndexed(timeEntries, key = { _, t -> t.id.value }) { index, entry ->
@@ -350,7 +371,14 @@ private fun DocumentsTab(documents: List<Document>) {
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(NyayaTheme.spacing.md),
+        contentPadding =
+            PaddingValues(
+                start = NyayaTheme.spacing.md,
+                end = NyayaTheme.spacing.md,
+                top = NyayaTheme.spacing.md,
+                // Clears the FAB, which floats over these tabs rather than beside them.
+                bottom = NyayaTheme.spacing.fabClearance,
+            ),
         verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
     ) {
         itemsIndexed(documents, key = { _, d -> d.id.value }) { index, document ->
