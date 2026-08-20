@@ -10,7 +10,7 @@
 | M4 — Core CRUD | Done |
 | M5 — eCourts Sync Service | Done |
 | M6 — Document Pipeline | Done |
-| M7 — AI Services | Partial (this update — summarizer only) |
+| M7 — AI Services | Partial (this update — research not started) |
 | M9 — Notifications | Not started |
 | M10 — Billing and Payments | Not started |
 | M11 — Audit, DPDP, Retention | Not started |
@@ -21,57 +21,84 @@
 ### M7 highlights (partial — summarizer only)
 
 M7 is the largest module in the plan (four job types: summarize,
-research, draft, risk_review) and is built incrementally. This update
-covers the **shared AI job framework** plus the **summarizer** end to
-end; research/draft/risk_review are scaffolded but not implemented
-yet (see below).
+research, draft, risk_review) and is built incrementally.
+**Summarize, risk_review, and draft are done end-to-end; research
+(RAG over Indian Kanoon) is the one remaining job type.**
 
 - **Async job framework** (contract B.7, plan C.9): `app/services/ai_job_service.py`
   implements the shared `queued → running → done|failed` lifecycle
-  every AI job type will use — job creation, a per-tenant
-  **concurrency cap** (in-flight `queued`+`running` jobs) and a
-  **daily quota**, both raising `402 QUOTA_EXCEEDED` with
-  `details.limit`/`details.plan` exactly as the contract specifies.
-  Per-plan overrides are a placeholder default until M10's billing
-  plans table exists — flagged explicitly in code, not silently
-  assumed.
+  every AI job type uses — job creation, a per-tenant **concurrency
+  cap** (in-flight `queued`+`running` jobs) and a **daily quota**,
+  both raising `402 QUOTA_EXCEEDED` with `details.limit`/`details.plan`
+  exactly as the contract specifies. Per-plan overrides are a
+  placeholder default until M10's billing plans table exists —
+  flagged explicitly in code, not silently assumed.
 - **Status wording**: the DB enum (from M2) uses
   `pending/running/completed/failed` internally; the API always
   returns the contract's exact wording `queued/running/done/failed`
   via `ai_job_service.wire_status()` — same "map at the boundary,
   don't rename the enum" policy as M4/M5's known deviations.
-- **Routes**: `POST /ai/summarize` (202 Accepted with `job_id` +
-  `estimated_seconds`), `GET /ai/jobs/{id}`.
-- **Summarizer** (`app/ai/summarizer.py`, plan C.9): doc-type
-  detection (chargesheet/judgment/notice/agreement/other) via a cheap
-  classification prompt, then a type-focused extraction prompt.
-  **Long documents (>1200 words) run map-reduce over the chunks M6
-  already produced** — per-chunk extraction, then a reduce pass that
-  deduplicates sections/dates/parties and asks the model to combine
-  the partial summaries into one coherent one. Output always matches
-  the contract's exact B.7 shape (`summary_markdown`, `key_points[]`,
-  `parties[]`, `sections_invoked[]`, `dates[]`, `doc_type_detected`).
-  Mirrors the user's `language` for `summary_markdown`, per contract.
+- **Worker** (`app/workers/ai_worker.py`): one Celery task dispatches
+  by job type via a handler registry (`_HANDLERS`) — adding research
+  later is purely additive, no framework changes needed. Enforces the
+  per-type timeout from plan C.9 (`asyncio.wait_for`), marks the job
+  `failed` with a clear error on timeout or exception (no silent
+  retries that could double AI spend), and sends an in-app
+  `ai_job_complete` notification on success (reusing M5's
+  `notification_service`).
 - **LLM provider** (`app/integrations/llm.py`): same FAKE_MODE
   philosophy as every other integration — the real Anthropic Messages
   API call is implemented (not a stub!) behind
   `LLM_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`, but defaults to a
   **deterministic, heuristic-based fake completion**
-  (`app/ai/fake_llm.py`) so the entire
-  classify → extract → (map-reduce) → JSON-parse pipeline is
-  exercisable and testable completely offline. The fake responses are
-  regex/keyword heuristics over the real document text (not canned
-  strings), so they genuinely exercise the JSON-parsing code real
-  responses would also go through.
-- **Worker** (`app/workers/ai_worker.py`): one Celery task dispatches
-  by job type via a handler registry (`_HANDLERS`) — adding
-  research/draft/risk_review later is purely additive, no framework
-  changes needed. Enforces the per-type timeout from plan C.9
-  (`asyncio.wait_for`), marks the job `failed` with a clear error on
-  timeout or exception (no silent retries that could double AI spend),
-  and sends an in-app `ai_job_complete` notification on success
-  (reusing M5's `notification_service`).
+  (`app/ai/fake_llm.py`, keyed off a `TASK:` tag every prompt's system
+  message starts with) so the entire pipeline is exercisable and
+  testable completely offline. The fake responses are regex/keyword
+  heuristics over the real input text (not canned strings), so they
+  genuinely exercise the same JSON-parsing/markdown-rendering code
+  real responses would also go through.
 
+**Summarizer** (`app/ai/summarizer.py`) — `POST /ai/summarize`:
+doc-type detection (chargesheet/judgment/notice/agreement/other) via a
+cheap classification prompt, then a type-focused extraction prompt.
+Long documents (>1200 words) run **map-reduce over the chunks M6
+already produced** — per-chunk extraction, then a reduce pass that
+deduplicates sections/dates/parties and asks the model to combine the
+partial summaries into one coherent one. Output always matches the
+contract's exact B.7 shape. Mirrors the user's `language`.
+
+**Risk review** (`app/ai/risk_review.py`) — `POST /ai/risk-review`:
+segments contract text into clauses (prefers numbered-clause
+boundaries standard in Indian legal drafting, falls back to paragraph
+breaks), then runs a per-clause risk prompt returning
+severity/explanation/suggestion, matching contract B.7's shape exactly.
+
+**Draftsman** (`app/ai/templates.py`, `app/services/draft_service.py`,
+`app/ai/docx_generator.py`) — `GET /ai/templates`, `POST /ai/draft`:
+- **13 templates** with typed field schemas (bail application, §138 NI
+  Act notice, rent agreement, vakalatnama, plaint, written statement,
+  RTI application, consumer complaint, affidavit, reply to legal
+  notice, maintenance petition, anticipatory bail, adjournment
+  application). *Deviation from plan wording:* the plan's "12 launch
+  templates" bullet list groups "plaint/written statement skeletons"
+  as one item; they're kept as two separate templates here since
+  they're genuinely different documents filed by different parties at
+  different stages of a suit — same "flag the deviation" policy as
+  M4's CaseStatus wording note.
+- Optional `case_id` **auto-fills common fields from real case data**
+  (court name, case number) when the caller didn't already supply
+  them — drawing on data already in the tenant's own database, never
+  inventing anything.
+- Required fields the caller didn't supply are reported in
+  `missing_fields[]` rather than the model inventing placeholder facts
+  (contract B.7: "Unfilled required fields -> missing_fields[], never
+  invented facts") — verified with a test that partial input still
+  produces a best-effort draft plus an accurate missing-fields list.
+- Generated markdown is converted to a real DOCX
+  (`app/ai/docx_generator.py`, using `python-docx`) and uploaded to
+  S3/MinIO, returning a presigned `docx_url` — verified end-to-end in
+  fake mode (valid DOCX zip signature, readable paragraph text).
+  
 **Not yet built in M7:**
 - **Researcher** (RAG over Indian Kanoon), **Draftsman** (12 launch
   templates + DOCX generation), and **Risk review** — all three need

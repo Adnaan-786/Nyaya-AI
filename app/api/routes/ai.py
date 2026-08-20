@@ -3,11 +3,21 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.templates import list_templates
 from app.core.dependencies import AuthContext, get_tenant_scoped_db
 from app.core.rbac import require
 from app.core.responses import ApiResponse
-from app.schemas.ai import AIJobAcceptedOut, AIJobOut, SummarizeIn
-from app.services import ai_job_service, document_service
+from app.schemas.ai import (
+    AIJobAcceptedOut,
+    AIJobOut,
+    DraftIn,
+    RiskReviewIn,
+    SummarizeIn,
+    TemplateFieldOut,
+    TemplateOut,
+)
+from app.services import ai_job_service, case_service, document_service
+from app.services.draft_service import get_template_or_404
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -40,6 +50,88 @@ async def summarize(
         data=AIJobAcceptedOut(
             job_id=job.id,
             estimated_seconds=ai_job_service.ESTIMATED_SECONDS_BY_TYPE.get("summarize", 60),
+        ),
+    )
+
+
+@router.post("/risk-review", response_model=ApiResponse[AIJobAcceptedOut], status_code=202)
+async def risk_review(
+    payload: RiskReviewIn,
+    auth: AuthContext = Depends(require("ai.use")),
+    session: AsyncSession = Depends(get_tenant_scoped_db),
+) -> ApiResponse[AIJobAcceptedOut]:
+    tenant = auth.as_tenant_context()
+
+    await document_service.get_document_or_404(session, tenant, payload.document_id)
+
+    job = await ai_job_service.create_job(
+        session,
+        tenant,
+        user_id=auth.user_id,
+        type="risk_review",
+        input={"document_id": str(payload.document_id)},
+    )
+
+    return ApiResponse(
+        success=True,
+        data=AIJobAcceptedOut(
+            job_id=job.id,
+            estimated_seconds=ai_job_service.ESTIMATED_SECONDS_BY_TYPE.get("risk_review", 60),
+        ),
+    )
+
+
+@router.get("/templates", response_model=ApiResponse[list[TemplateOut]])
+async def get_templates(
+    auth: AuthContext = Depends(require("ai.use")),
+) -> ApiResponse[list[TemplateOut]]:
+    templates = [
+        TemplateOut(
+            id=t.id,
+            name=t.name,
+            category=t.category,
+            fields=[
+                TemplateFieldOut(name=f.name, label=f.label, type=f.type, required=f.required)
+                for f in t.fields
+            ],
+        )
+        for t in list_templates()
+    ]
+    return ApiResponse(success=True, data=templates)
+
+
+@router.post("/draft", response_model=ApiResponse[AIJobAcceptedOut], status_code=202)
+async def draft(
+    payload: DraftIn,
+    auth: AuthContext = Depends(require("ai.use")),
+    session: AsyncSession = Depends(get_tenant_scoped_db),
+) -> ApiResponse[AIJobAcceptedOut]:
+    tenant = auth.as_tenant_context()
+
+    # Validates the template exists before queuing work.
+    get_template_or_404(payload.template_id)
+
+    if payload.case_id is not None:
+        # Confirms the case exists (and belongs to this tenant).
+        await case_service.get_case_or_404(session, tenant, payload.case_id)
+
+    job = await ai_job_service.create_job(
+        session,
+        tenant,
+        user_id=auth.user_id,
+        type="draft",
+        input={
+            "template_id": payload.template_id,
+            "case_id": str(payload.case_id) if payload.case_id else None,
+            "fields": payload.fields,
+        },
+    )
+
+    return ApiResponse(
+        success=True,
+        data=AIJobAcceptedOut(
+            job_id=job.id,
+            estimated_seconds=ai_job_service.ESTIMATED_SECONDS_BY_TYPE.get("draft", 60),
         ),
     )
 

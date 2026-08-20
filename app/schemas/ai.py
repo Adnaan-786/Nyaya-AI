@@ -10,6 +10,30 @@ class SummarizeIn(BaseModel):
     doc_type_hint: Literal["chargesheet", "judgment", "notice", "agreement", "other"] | None = None
 
 
+class RiskReviewIn(BaseModel):
+    document_id: UUID
+
+
+class TemplateFieldOut(BaseModel):
+    name: str
+    label: str
+    type: str
+    required: bool
+
+
+class TemplateOut(BaseModel):
+    id: str
+    name: str
+    category: str
+    fields: list[TemplateFieldOut]
+
+
+class DraftIn(BaseModel):
+    template_id: str
+    case_id: UUID | None = None
+    fields: dict[str, Any] = {}
+
+
 class AIJobAcceptedOut(BaseModel):
     job_id: UUID
     status: Literal["queued"] = "queued"

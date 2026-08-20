@@ -16,16 +16,17 @@ from uuid import UUID
 import sentry_sdk
 from sqlalchemy import select
 
-from app.ai import summarizer
+from app.ai import risk_review, summarizer
 from app.core.logging import get_logger
 from app.db.rls import set_tenant
 from app.db.session import AsyncSessionLocal
 from app.db.tenant import TenantContext
 from app.models.ai_job import AIJob
+from app.models.case import Case
 from app.models.doc_chunk import DocChunk
 from app.models.document import Document
 from app.models.user import User
-from app.services import ai_job_service
+from app.services import ai_job_service, draft_service
 from app.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
@@ -55,11 +56,47 @@ async def _handle_summarize(session, tenant: TenantContext, job: AIJob, language
     )
 
 
+async def _handle_risk_review(session, tenant: TenantContext, job: AIJob, language: str) -> dict:
+    document_id = job.input.get("document_id")
+    if not document_id:
+        raise ValueError("risk_review job is missing input.document_id")
+
+    result = await session.execute(select(Document).where(Document.id == document_id))
+    document = result.scalar_one_or_none()
+    if document is None:
+        raise ValueError(f"document {document_id} not found")
+
+    return await risk_review.review_document(document.extracted_text or "")
+
+
+async def _handle_draft(session, tenant: TenantContext, job: AIJob, language: str) -> dict:
+    template_id = job.input.get("template_id")
+    if not template_id:
+        raise ValueError("draft job is missing input.template_id")
+
+    fields = job.input.get("fields") or {}
+    case_id = job.input.get("case_id")
+
+    case = None
+    if case_id:
+        result = await session.execute(select(Case).where(Case.id == case_id))
+        case = result.scalar_one_or_none()
+
+    return await draft_service.draft_document(
+        tenant=tenant,
+        job_id=job.id,
+        template_id=template_id,
+        case=case,
+        fields=fields,
+        language=language,
+    )
+
+
 _HANDLERS = {
     "summarize": _handle_summarize,
+    "risk_review": _handle_risk_review,
+    "draft": _handle_draft,
     # "research": _handle_research,      # future addition
-    # "draft": _handle_draft,            # future addition
-    # "risk_review": _handle_risk_review,  # future addition
 }
 
 
