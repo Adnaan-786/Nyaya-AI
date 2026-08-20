@@ -29,14 +29,13 @@ class Client(Base, UUIDMixin, TimestampMixin, TenantMixin):
         nullable=True,
     )
 
-    tags: Mapped[dict | None] = mapped_column(
+    tags: Mapped[list | None] = mapped_column(
         JSONB,
         nullable=True,
     )
 
-    user_id: Mapped[list | None] = mapped_column(
-        ForeignKey("users.id"),
-        onupdate="SET NULL",
+    user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         unique=True,
     )

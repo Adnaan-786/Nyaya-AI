@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import ValidationException
 from app.db.tenant import TenantContext
 from app.models.case_note import CaseNote
+from app.models.document import Document
 from app.models.hearing import Hearing
 
 
@@ -93,10 +94,10 @@ async def get_case_timeline(
     session: AsyncSession, tenant: TenantContext, case_id: UUID
 ) -> list[dict]:
     """
-    Merged, descending-order read model of hearings + notes for a case
-    (contract B.6: "merged events: hearings, docs, notes, status changes").
-    Document/status-change events are added once M6/M4-status-history
-    land; this returns hearings + notes today.
+    Merged, descending-order read model of hearings + notes + document
+    uploads for a case (contract B.6: "merged events: hearings, docs,
+    notes, status changes"). Status-change events are added once M11's
+    change-history tracking lands.
     """
 
     hearings = await list_hearings(session, tenant, case_id)
@@ -107,6 +108,13 @@ async def get_case_timeline(
         .where(CaseNote.tenant_id == tenant.tenant_id)
     )
     notes = list(notes_result.scalars().all())
+
+    documents_result = await session.execute(
+        select(Document)
+        .where(Document.case_id == case_id)
+        .where(Document.tenant_id == tenant.tenant_id)
+    )
+    documents = list(documents_result.scalars().all())
 
     events: list[dict] = []
 
@@ -136,6 +144,23 @@ async def get_case_timeline(
                     "id": str(n.id),
                     "text": n.text,
                     "author_id": str(n.author_id) if n.author_id else None,
+                },
+            }
+        )
+
+    for d in documents:
+        events.append(
+            {
+                "type": "document",
+                "at": d.created_at,
+                "data": {
+                    "id": str(d.id),
+                    "name": d.name,
+                    "mime_type": d.mime_type,
+                    "ocr_status": d.ocr_status.value
+                    if hasattr(d.ocr_status, "value")
+                    else d.ocr_status,
+                    "uploaded_by": str(d.uploaded_by) if d.uploaded_by else None,
                 },
             }
         )

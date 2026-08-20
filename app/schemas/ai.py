@@ -34,10 +34,29 @@ class DraftIn(BaseModel):
     fields: dict[str, Any] = {}
 
 
+class ResearchIn(BaseModel):
+    query: str
+    language: Literal["en", "hi"] = "en"
+    conversation_id: UUID | None = None
+
+
 class AIJobAcceptedOut(BaseModel):
     job_id: UUID
     status: Literal["queued"] = "queued"
     estimated_seconds: int
+    conversation_id: UUID | None = None
+
+
+class ConversationMessageOut(BaseModel):
+    role: Literal["user", "assistant"]
+    content: Any
+    at: datetime
+
+
+class ConversationOut(BaseModel):
+    id: UUID
+    messages: list[ConversationMessageOut]
+    created_at: datetime
 
 
 class AIJobOut(BaseModel):

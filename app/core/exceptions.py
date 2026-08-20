@@ -197,6 +197,7 @@ __all__ = [
     "QuotaExceededException",
     "ForbiddenRoleException",
     "CaseNotFoundException",
+    "FirmNotFoundException",
     "ClientNotFoundException",
     "DocumentNotFoundException",
     "UserNotFoundException",

@@ -79,3 +79,104 @@ def build_reduce_prompt(partial_summaries: list[str], *, language: str = "en") -
     )
     user = "\n\n---\n\n".join(partial_summaries)
     return system, user
+
+
+def build_risk_clause_prompt(clause_text: str) -> tuple[str, str]:
+    """Plan C.9: 'per-clause risk prompt (severity, explanation, suggestion)'."""
+    system = (
+        "TASK: risk_review_clause\n"
+        "You are a legal risk reviewer for an Indian law firm. Read "
+        "the contract clause and assess it for risk to the client. "
+        "Respond with ONLY a JSON object with exactly these keys: "
+        '"severity" (one of "high", "medium", "low"), "explanation" '
+        '(string, why this clause is risky or not), "suggestion" '
+        '(string, a concrete redraft or negotiation point). If the '
+        "clause presents no meaningful risk, use severity \"low\" and "
+        "say so plainly."
+    )
+    return system, clause_text
+
+
+def build_draft_prompt(
+    *, template_id: str, template_name: str, instructions: str, fields: dict, language: str = "en"
+) -> tuple[str, str]:
+    """Plan C.9 draftsman: 'prose sections the LLM fills from fields + case data'."""
+    lang_instruction = "Write the document in Hindi." if language == "hi" else "Write the document in English."
+
+    system = (
+        f"TASK: draft_{template_id}\n"
+        f"You are drafting a {template_name} for an Indian law firm. "
+        f"{instructions} Use ONLY the facts given in the fields below -- "
+        "never invent names, dates, amounts, or facts not provided. "
+        f"{lang_instruction} Respond with ONLY the document text in "
+        "markdown (use headings for sections), no commentary before or "
+        "after."
+    )
+    import json
+
+    user = json.dumps(fields, ensure_ascii=False, indent=2)
+    return system, user
+
+
+def build_query_normalize_prompt(query: str) -> tuple[str, str]:
+    """
+    Plan C.9 researcher step 1: "detect Hinglish/Hindi; extract legal
+    signals (sections, acts, years, courts); produce an English search
+    query."
+    """
+    system = (
+        "TASK: normalize_legal_query\n"
+        "You are normalizing a legal research query (possibly in Hindi "
+        "or Hinglish) for search against an Indian case-law database. "
+        "Respond with ONLY a JSON object with exactly these keys: "
+        '"english_query" (string, the query translated/rewritten in '
+        'clear English), "sections" (array of strings, e.g. "Section '
+        '138"), "acts" (array of strings, e.g. "Negotiable Instruments '
+        'Act"), "years" (array of integers), "courts" (array of '
+        "strings, e.g. \"Bombay High Court\" if a specific court was "
+        'mentioned). Use empty arrays where nothing was mentioned.'
+    )
+    return system, query
+
+
+def build_research_generation_prompt(
+    query: str, fragments: list[dict], *, language: str = "en"
+) -> tuple[str, str]:
+    """
+    Plan C.9 researcher step 3: "LLM answers only from the retrieved
+    fragments (system prompt forbids outside knowledge and mandates
+    per-claim citation markers)."
+
+    `fragments` is a list of {"index": int, "case_title", "court",
+    "year", "snippet"} -- the model picks which fragments actually
+    support the answer; it does NOT invent citation metadata itself
+    (that always comes from our own retrieval data, never from the
+    model), which is what makes citation verification meaningful.
+    """
+    lang_instruction = "Write answer_markdown in Hindi." if language == "hi" else "Write answer_markdown in English."
+
+    system = (
+        "TASK: research_generate\n"
+        "You are a legal research assistant for an Indian law firm. "
+        "Answer the query using ONLY the information in the numbered "
+        "fragments below -- do not use any outside knowledge, and do "
+        "not invent case names, courts, or holdings not present in the "
+        "fragments. Reference fragments inline using [N] markers where "
+        "N is the fragment's index. If the fragments do not contain "
+        "enough information to answer confidently, say so plainly "
+        "rather than guessing. Respond with ONLY a JSON object with "
+        'exactly these keys: "answer_markdown" (string, with inline '
+        '[N] markers), "citations" (array of objects, each with '
+        '"fragment_index" (integer) and "relevance_note" (string, one '
+        "sentence on why this fragment supports the answer) -- include "
+        "only fragments you actually relied on). "
+        f"{lang_instruction} Citation case names/courts must stay in "
+        "English regardless of answer language."
+    )
+
+    import json
+
+    user = json.dumps(
+        {"query": query, "fragments": fragments}, ensure_ascii=False, indent=2
+    )
+    return system, user

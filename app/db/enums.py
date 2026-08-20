@@ -61,6 +61,7 @@ class NotificationType(StrEnum):
     AI = "ai"
     SYSTEM = "system"
     CASE_UPDATE = "case_update" # M5: eCourts sync detected a change
+    AI_JOB_COMPLETE = "ai_job_complete"  # M7: matches contract B.8 push type exactly
 
 class TaskStatus(StrEnum):
     PENDING = "pending"

@@ -53,6 +53,21 @@ class Document(Base, UUIDMixin, TimestampMixin, TenantMixin):
         nullable=False,
     )
 
+    # Raw extracted text (OCR output or native text extraction for
+    # DOCX/plain text). This is what gets chunked+embedded (M6) and
+    # summarized (M7); it is never returned directly over the API.
+    extracted_text: Mapped[str | None] = mapped_column(
+        nullable=True,
+    )
+
+    ocr_error: Mapped[str | None] = mapped_column(
+        nullable=True,
+    )
+
+    # Full-text search vector, populated from extracted_text via
+    # to_tsvector() (see app/services/document_service.py) -- never
+    # assigned a plain Python string directly, since asyncpg has no
+    # str -> tsvector adapter.
     ocr_text: Mapped[str | None] = mapped_column(
         TSVECTOR, nullable=True,
     )

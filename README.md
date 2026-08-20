@@ -10,7 +10,7 @@
 | M4 — Core CRUD | Done |
 | M5 — eCourts Sync Service | Done |
 | M6 — Document Pipeline | Done |
-| M7 — AI Services | Partial (this update — research not started) |
+| M7 — AI Services | Done (this update) |
 | M9 — Notifications | Not started |
 | M10 — Billing and Payments | Not started |
 | M11 — Audit, DPDP, Retention | Not started |
@@ -18,12 +18,11 @@
 
 ## 🚀 Module Highlights
 
-### M7 highlights (partial — summarizer only)
+### M7 highlights — all four AI job types done
 
 M7 is the largest module in the plan (four job types: summarize,
-research, draft, risk_review) and is built incrementally.
-**Summarize, risk_review, and draft are done end-to-end; research
-(RAG over Indian Kanoon) is the one remaining job type.**
+research, draft, risk_review) and was built incrementally across
+several passes. **All four are done end-to-end.**
 
 - **Async job framework** (contract B.7, plan C.9): `app/services/ai_job_service.py`
   implements the shared `queued → running → done|failed` lifecycle
@@ -39,13 +38,12 @@ research, draft, risk_review) and is built incrementally.
   via `ai_job_service.wire_status()` — same "map at the boundary,
   don't rename the enum" policy as M4/M5's known deviations.
 - **Worker** (`app/workers/ai_worker.py`): one Celery task dispatches
-  by job type via a handler registry (`_HANDLERS`) — adding research
-  later is purely additive, no framework changes needed. Enforces the
-  per-type timeout from plan C.9 (`asyncio.wait_for`), marks the job
-  `failed` with a clear error on timeout or exception (no silent
-  retries that could double AI spend), and sends an in-app
-  `ai_job_complete` notification on success (reusing M5's
-  `notification_service`).
+  by job type via a handler registry (`_HANDLERS`, all four types
+  registered). Enforces the per-type timeout from plan C.9
+  (`asyncio.wait_for`), marks the job `failed` with a clear error on
+  timeout or exception (no silent retries that could double AI spend),
+  and sends an in-app `ai_job_complete` notification on success
+  (reusing M5's `notification_service`).
 - **LLM provider** (`app/integrations/llm.py`): same FAKE_MODE
   philosophy as every other integration — the real Anthropic Messages
   API call is implemented (not a stub!) behind
@@ -98,22 +96,66 @@ severity/explanation/suggestion, matching contract B.7's shape exactly.
   (`app/ai/docx_generator.py`, using `python-docx`) and uploaded to
   S3/MinIO, returning a presigned `docx_url` — verified end-to-end in
   fake mode (valid DOCX zip signature, readable paragraph text).
-  
+
+**Researcher** (`app/ai/researcher.py`, `app/ai/query_normalizer.py`,
+`app/integrations/indian_kanoon/`, `app/services/conversation_service.py`)
+— `POST /ai/research`, `GET /ai/conversations/{id}`. Builds exactly
+the pipeline in plan C.9:
+1. **Query normalization** — a cheap LLM call extracts sections/acts/
+   years/courts and produces an English search query (FAKE_MODE's
+   heuristic passes the query through untranslated since it can't
+   actually translate Hindi/Hinglish without a real model — flagged
+   explicitly in code, not silently assumed to work).
+2. **Retrieval**: `app/integrations/indian_kanoon/` — same
+   provider-abstraction shape as M5's eCourts integration.
+   `FixtureProvider` (default) searches a 20-entry synthetic case-law
+   corpus (`app/fixtures/indian_kanoon_fixtures.json`, clearly labeled
+   as illustrative demo data, not real citations); the real API
+   provider is a clean stub pending `INDIAN_KANOON_API_KEY` (no
+   subscription provisioned, same policy as NAPIX/Document AI/OpenAI).
+3. **Re-ranking**: reuses M6's embedding provider for real semantic
+   re-ranking. *Bug caught and fixed during testing:* FAKE_MODE's
+   hash-based embeddings have no semantic signal, and were actively
+   scrambling the FixtureProvider's already-correct keyword-relevance
+   ordering — fixed by skipping the re-rank step in fake mode and
+   trusting the provider's own ordering there; only real embeddings
+   re-rank for real.
+4. **Generation**: the LLM only *selects and explains* which retrieved
+   fragments support the answer — it never gets to invent citation
+   metadata (case title/court/year/URL always comes from our own
+   retrieval data), which is what makes verification meaningful rather
+   than theatre.
+5. **Citation verification (contract's "non-negotiable")**: each
+   citation's document is confirmed to exist via the provider, and its
+   `source_url` is checked (real HEAD request once a real provider is
+   configured; a well-formedness check in fake mode, since there's no
+   real endpoint to check yet). Failing citations are dropped.
+   **Fewer than 2 verified citations → `confidence: "insufficient"`
+   with the honest fallback message** — verified with a dedicated test
+   using a query with zero corpus overlap.
+6. **Conversation memory**: `app/services/conversation_service.py`
+   stores turns in `ai_conversations`; a follow-up query gets recent
+   prior turns prepended before retrieval re-runs.
+7. **District-court disclosure**: queries mentioning district/sessions
+   courts or magistrates get an appended note about sparser case-law
+   coverage below High Courts, per plan C.9 point 6.
+
 **Not yet built in M7:**
-- **Researcher** (RAG over Indian Kanoon), **Draftsman** (12 launch
-  templates + DOCX generation), and **Risk review** — all three need
-  their own design pass (Indian Kanoon API integration + citation
-  verification for research; python-docx templates for draftsman).
-  The job framework above is ready for them; each is "write a handler
-  function + a route," not new infrastructure.
 - The 50-item lawyer-reviewed **golden-set eval suite** (plan C.9)
   can't be built without real reviewed data — this needs your input,
   not credentials, so it's a genuinely different kind of blocker than
-  NAPIX/Document AI/OpenAI.
+  NAPIX/Document AI/OpenAI/Indian Kanoon.
 - Per-tenant AI cost/token logging and dashboarding (plan C.9: "Log
   token costs per job") — straightforward to add once real LLM calls
   are live and there's an actual cost to track.
-
+- Every draftsman template should be reviewed by a practicing lawyer
+  before launch (plan C.9's explicit requirement) — the field schemas
+  and prompt instructions here are a solid starting structure, not a
+  substitute for that review.
+- The real Indian Kanoon HTTP integration (`app/integrations/indian_kanoon/real.py`)
+  and real query-translation for Hindi/Hinglish queries are both
+  blocked on credentials/a real LLM call, same as the other
+  `NotImplementedError` stubs in this codebase.
 
 ### M6 highlights
 

@@ -42,6 +42,10 @@ class User(Base, UUIDMixin, TimestampMixin):
         default="en",
     )
 
+    bar_council_id: Mapped[str | None] = mapped_column(
+        String(50),
+    )
+
     tenant = relationship(
         "Tenant",
         back_populates= "users",
@@ -99,7 +103,7 @@ class User(Base, UUIDMixin, TimestampMixin):
         back_populates="assignee",
         cascade="all, delete-orphan",
     )
-    
+
     refresh_tokens = relationship(
         "RefreshToken",
         back_populates="user",

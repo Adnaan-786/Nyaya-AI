@@ -126,6 +126,42 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default="")
 
     # =====================================================
+    # AI Services (module M7)
+    # =====================================================
+
+    # "fake" (deterministic, offline, default) | "anthropic"
+    llm_provider: str = Field(default="fake")
+    llm_model: str = Field(default="claude-sonnet-4-6")
+    llm_max_tokens: int = Field(default=4096)
+    anthropic_api_key: str = Field(default="")
+
+    # Plan C.7: "Per-tenant concurrency cap (e.g. 3 running) and
+    # per-plan daily quotas (config-driven)." Per-plan overrides land
+    # with M10's billing plans table; this flat default applies to
+    # every tenant until then.
+    ai_max_concurrent_jobs_per_tenant: int = Field(default=3)
+    ai_daily_job_quota_per_tenant: int = Field(default=50)
+
+    # Timeouts per job type (plan C.9: "Timeouts: summarize 5 min,
+    # research 2 min, draft 3 min").
+    ai_summarize_timeout_seconds: int = Field(default=300)
+    ai_research_timeout_seconds: int = Field(default=120)
+    ai_draft_timeout_seconds: int = Field(default=180)
+    ai_risk_review_timeout_seconds: int = Field(default=180)
+
+    # =====================================================
+    # Researcher (module M7, plan C.9)
+    # =====================================================
+
+    # fixture (default, offline-safe recorded data) | indiankanoon
+    indian_kanoon_provider: str = Field(default="fixture")
+    indian_kanoon_api_key: str = Field(default="")
+    research_retrieve_top_k: int = Field(default=20)
+    research_rerank_top_k: int = Field(default=6)
+    research_min_verified_citations: int = Field(default=2)
+
+
+    # =====================================================
     # Monitoring
     # =====================================================
 

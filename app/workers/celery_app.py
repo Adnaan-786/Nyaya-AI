@@ -50,3 +50,12 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(hour=19, minute=0),
     },
 }
+
+# `celery_app.autodiscover_tasks(["app.workers"])` above follows
+# Django's app-registry convention (looks for an `app.workers.tasks`
+# submodule), which doesn't apply to this plain-package layout. Import
+# the task modules explicitly instead, so their @celery_app.task
+# decorators actually run and register at worker startup.
+from app.workers import ai_worker as _ai_worker  # noqa: E402,F401
+from app.workers import document_worker as _document_worker  # noqa: E402,F401
+from app.workers import ecourts_worker as _ecourts_worker  # noqa: E402,F401

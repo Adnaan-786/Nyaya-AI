@@ -10,13 +10,16 @@ from app.core.responses import ApiResponse
 from app.schemas.ai import (
     AIJobAcceptedOut,
     AIJobOut,
+    ConversationMessageOut,
+    ConversationOut,
     DraftIn,
+    ResearchIn,
     RiskReviewIn,
     SummarizeIn,
     TemplateFieldOut,
     TemplateOut,
 )
-from app.services import ai_job_service, case_service, document_service
+from app.services import ai_job_service, case_service, conversation_service, document_service
 from app.services.draft_service import get_template_or_404
 
 router = APIRouter(prefix="/ai", tags=["AI"])
@@ -145,3 +148,61 @@ async def get_job(
     tenant = auth.as_tenant_context()
     job = await ai_job_service.get_job_or_404(session, tenant, job_id)
     return ApiResponse(success=True, data=AIJobOut.from_model(job))
+
+
+@router.post("/research", response_model=ApiResponse[AIJobAcceptedOut], status_code=202)
+async def research(
+    payload: ResearchIn,
+    auth: AuthContext = Depends(require("ai.use")),
+    session: AsyncSession = Depends(get_tenant_scoped_db),
+) -> ApiResponse[AIJobAcceptedOut]:
+    tenant = auth.as_tenant_context()
+
+    # Conversation is created/validated synchronously so the caller
+    # gets its id back immediately, even for a brand-new conversation
+    # (contract B.6: POST /ai/research accepts an optional
+    # conversation_id; follow-ups reuse it).
+    conversation = await conversation_service.get_or_create_conversation(
+        session, tenant, user_id=auth.user_id, conversation_id=payload.conversation_id
+    )
+
+    job = await ai_job_service.create_job(
+        session,
+        tenant,
+        user_id=auth.user_id,
+        type="research",
+        input={
+            "query": payload.query,
+            "language": payload.language,
+            "conversation_id": str(conversation.id),
+        },
+    )
+
+    return ApiResponse(
+        success=True,
+        data=AIJobAcceptedOut(
+            job_id=job.id,
+            estimated_seconds=ai_job_service.ESTIMATED_SECONDS_BY_TYPE.get("research", 60),
+            conversation_id=conversation.id,
+        ),
+    )
+
+
+@router.get("/conversations/{conversation_id}", response_model=ApiResponse[ConversationOut])
+async def get_conversation(
+    conversation_id: UUID,
+    auth: AuthContext = Depends(require("ai.use")),
+    session: AsyncSession = Depends(get_tenant_scoped_db),
+) -> ApiResponse[ConversationOut]:
+    tenant = auth.as_tenant_context()
+    conversation = await conversation_service.get_conversation_or_404(
+        session, tenant, conversation_id
+    )
+    return ApiResponse(
+        success=True,
+        data=ConversationOut(
+            id=conversation.id,
+            created_at=conversation.created_at,
+            messages=[ConversationMessageOut(**m) for m in conversation.messages],
+        ),
+    )

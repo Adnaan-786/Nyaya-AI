@@ -1,5 +1,6 @@
 from app.integrations.ocr.base import OCRProvider
 
+
 class DocumentAIProvider(OCRProvider):
     """
     Google Document AI (plan C.1: "OCR: Google Document AI (primary),

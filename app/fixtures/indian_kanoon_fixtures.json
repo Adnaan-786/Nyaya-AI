@@ -1,0 +1,186 @@
+{
+    "_note": "FIXTURE DATA for offline dev/testing only. These are synthetic, illustrative case-law entries, not real Indian Kanoon search results or real citations. Do not present as real legal authority.",
+    "cases": [
+      {
+        "doc_id": "fx-001",
+        "case_title": "State v. Mehta (Fixture)",
+        "court": "Bombay High Court",
+        "year": 2019,
+        "source_url": "https://fixtures.local/indiankanoon/fx-001",
+        "snippet": "Bail under Section 439 CrPC was granted where investigation was substantially complete and the accused had no prior criminal record, the court holding that pre-trial incarceration should not be punitive in nature.",
+        "topics": ["bail", "437", "439", "criminal procedure", "custody"]
+      },
+      {
+        "doc_id": "fx-002",
+        "case_title": "Sharma v. Patel Finance Co. (Fixture)",
+        "court": "Delhi High Court",
+        "year": 2021,
+        "source_url": "https://fixtures.local/indiankanoon/fx-002",
+        "snippet": "In a complaint under Section 138 of the Negotiable Instruments Act, the court held that a statutory notice sent to the correct address raises a presumption of service even if returned unclaimed.",
+        "topics": ["138", "cheque", "negotiable instruments", "dishonor", "notice"]
+      },
+      {
+        "doc_id": "fx-003",
+        "case_title": "Kumar v. Kumar (Fixture)",
+        "court": "Madras High Court",
+        "year": 2020,
+        "source_url": "https://fixtures.local/indiankanoon/fx-003",
+        "snippet": "Maintenance under Section 125 CrPC was enhanced on appeal, the court reiterating that the wife's right to maintenance is not defeated merely because she has some independent income, if it is insufficient for a reasonable standard of living.",
+        "topics": ["maintenance", "125", "matrimonial", "family law"]
+      },
+      {
+        "doc_id": "fx-004",
+        "case_title": "Rao v. Metro Builders Pvt Ltd (Fixture)",
+        "court": "National Consumer Disputes Redressal Commission",
+        "year": 2022,
+        "source_url": "https://fixtures.local/indiankanoon/fx-004",
+        "snippet": "A builder's delay of over two years in handing over possession, without a force majeure justification, was held to be a deficiency in service entitling the consumer to a refund with interest under the Consumer Protection Act, 2019.",
+        "topics": ["consumer protection", "deficiency in service", "builder", "possession delay"]
+      },
+      {
+        "doc_id": "fx-005",
+        "case_title": "Iyer v. Chandran (Fixture)",
+        "court": "Kerala High Court",
+        "year": 2018,
+        "source_url": "https://fixtures.local/indiankanoon/fx-005",
+        "snippet": "A landlord's suit for eviction on the ground of bona fide personal necessity was decreed where the landlord demonstrated genuine need and the tenant failed to show comparative hardship.",
+        "topics": ["rent", "eviction", "landlord", "tenant", "personal necessity"]
+      },
+      {
+        "doc_id": "fx-006",
+        "case_title": "Verma v. State (Fixture)",
+        "court": "Supreme Court of India",
+        "year": 2017,
+        "source_url": "https://fixtures.local/indiankanoon/fx-006",
+        "snippet": "Anticipatory bail under Section 438 CrPC cannot be denied merely on the ground of the gravity of the offence alone; the court must consider the nature of accusation, antecedents, and possibility of the applicant fleeing justice.",
+        "topics": ["anticipatory bail", "438", "criminal procedure"]
+      },
+      {
+        "doc_id": "fx-007",
+        "case_title": "Desai v. Union of India (Fixture)",
+        "court": "Gujarat High Court",
+        "year": 2020,
+        "source_url": "https://fixtures.local/indiankanoon/fx-007",
+        "snippet": "An RTI applicant was held entitled to file-noting information where no exemption under Section 8 of the RTI Act was made out by the public authority, the burden being on the authority to justify refusal.",
+        "topics": ["rti", "right to information", "section 8", "public authority"]
+      },
+      {
+        "doc_id": "fx-008",
+        "case_title": "Nair v. Balan (Fixture)",
+        "court": "Karnataka High Court",
+        "year": 2021,
+        "source_url": "https://fixtures.local/indiankanoon/fx-008",
+        "snippet": "In a suit for specific performance of an agreement to sell, delay in payment of the balance consideration was held excusable where the seller had also contributed to the delay by not clearing title defects.",
+        "topics": ["specific performance", "contract", "agreement to sell", "property"]
+      },
+      {
+        "doc_id": "fx-009",
+        "case_title": "Bose v. TechCorp Solutions Pvt Ltd (Fixture)",
+        "court": "Calcutta High Court",
+        "year": 2022,
+        "source_url": "https://fixtures.local/indiankanoon/fx-009",
+        "snippet": "A non-compete clause restricting a former employee from working in the same industry for two years across all of India was held void as an unreasonable restraint of trade under Section 27 of the Indian Contract Act.",
+        "topics": ["employment", "non-compete", "restraint of trade", "contract act 27"]
+      },
+      {
+        "doc_id": "fx-010",
+        "case_title": "Ahmed v. State of UP (Fixture)",
+        "court": "Allahabad High Court",
+        "year": 2019,
+        "source_url": "https://fixtures.local/indiankanoon/fx-010",
+        "snippet": "In a cybercrime prosecution under Section 66C of the IT Act for identity theft, the court held that mere possession of another's electronic signature without dishonest use does not complete the offence.",
+        "topics": ["cybercrime", "it act", "66c", "identity theft"]
+      },
+      {
+        "doc_id": "fx-011",
+        "case_title": "Fernandes v. Fernandes (Fixture)",
+        "court": "Bombay High Court",
+        "year": 2020,
+        "source_url": "https://fixtures.local/indiankanoon/fx-011",
+        "snippet": "Under the Protection of Women from Domestic Violence Act, 2005, a 'shared household' includes a household where the aggrieved person has lived in a domestic relationship, regardless of ownership or tenancy rights.",
+        "topics": ["domestic violence", "shared household", "protection of women"]
+      },
+      {
+        "doc_id": "fx-012",
+        "case_title": "Ghosh v. National Insurance Co. (Fixture)",
+        "court": "Motor Accident Claims Tribunal",
+        "year": 2021,
+        "source_url": "https://fixtures.local/indiankanoon/fx-012",
+        "snippet": "In a motor accident claim, the tribunal applied the multiplier method for computing loss of dependency, holding that future prospects must be added to the deceased's income even where the deceased was self-employed.",
+        "topics": ["motor accident", "compensation", "multiplier method", "insurance"]
+      },
+      {
+        "doc_id": "fx-013",
+        "case_title": "Joshi v. Joshi (Fixture)",
+        "court": "Rajasthan High Court",
+        "year": 2018,
+        "source_url": "https://fixtures.local/indiankanoon/fx-013",
+        "snippet": "Irretrievable breakdown of marriage, though not a statutory ground under the Hindu Marriage Act, was considered by the court as a relevant factor while assessing cruelty for the purpose of granting divorce.",
+        "topics": ["divorce", "hindu marriage act", "cruelty", "matrimonial"]
+      },
+      {
+        "doc_id": "fx-014",
+        "case_title": "Reddy Traders v. Assistant Commissioner GST (Fixture)",
+        "court": "Telangana High Court",
+        "year": 2022,
+        "source_url": "https://fixtures.local/indiankanoon/fx-014",
+        "snippet": "An input tax credit claim under the GST Act cannot be denied solely on the ground that the supplier failed to deposit tax, where the recipient has genuinely paid the supplier along with tax and possesses a valid invoice.",
+        "topics": ["gst", "input tax credit", "tax", "goods and services"]
+      },
+      {
+        "doc_id": "fx-015",
+        "case_title": "Pillai v. State of Kerala (Fixture)",
+        "court": "Kerala High Court",
+        "year": 2020,
+        "source_url": "https://fixtures.local/indiankanoon/fx-015",
+        "snippet": "In proceedings under the POCSO Act, the court reiterated that the testimony of a child witness, if found reliable and consistent, does not require corroboration as a matter of law.",
+        "topics": ["pocso", "child witness", "criminal law", "testimony"]
+      },
+      {
+        "doc_id": "fx-016",
+        "case_title": "Malhotra Industries v. Singh Enterprises (Fixture)",
+        "court": "Delhi High Court",
+        "year": 2021,
+        "source_url": "https://fixtures.local/indiankanoon/fx-016",
+        "snippet": "An arbitration clause survives the termination of the main contract; disputes arising out of or in connection with the contract, including its validity, are arbitrable unless the clause itself is impeached on independent grounds.",
+        "topics": ["arbitration", "contract", "arbitrability"]
+      },
+      {
+        "doc_id": "fx-017",
+        "case_title": "Kapoor v. Bright Publishing House (Fixture)",
+        "court": "Delhi High Court",
+        "year": 2019,
+        "source_url": "https://fixtures.local/indiankanoon/fx-017",
+        "snippet": "In a copyright infringement suit, substantial similarity in the selection and arrangement of factual content, not the underlying facts themselves, was held to be the relevant test for infringement.",
+        "topics": ["copyright", "intellectual property", "infringement"]
+      },
+      {
+        "doc_id": "fx-018",
+        "case_title": "Yadav v. Pollution Control Board (Fixture)",
+        "court": "National Green Tribunal",
+        "year": 2022,
+        "source_url": "https://fixtures.local/indiankanoon/fx-018",
+        "snippet": "The 'polluter pays' principle was applied to direct a factory to bear the full cost of remediation for groundwater contamination, irrespective of whether the discharge exceeded prescribed limits at the time.",
+        "topics": ["environment", "pollution", "national green tribunal", "polluter pays"]
+      },
+      {
+        "doc_id": "fx-019",
+        "case_title": "Chatterjee v. Roy (Fixture)",
+        "court": "Calcutta High Court",
+        "year": 2017,
+        "source_url": "https://fixtures.local/indiankanoon/fx-019",
+        "snippet": "In a defamation suit based on a social media post, the court held that a statement of opinion honestly held on a matter of public interest is protected, but an assertion of false fact is not.",
+        "topics": ["defamation", "social media", "free speech"]
+      },
+      {
+        "doc_id": "fx-020",
+        "case_title": "Singh v. Punjab State Electricity Board (Fixture)",
+        "court": "Punjab and Haryana High Court",
+        "year": 2020,
+        "source_url": "https://fixtures.local/indiankanoon/fx-020",
+        "snippet": "A departmental inquiry conducted without furnishing the employee a copy of the inquiry report before the disciplinary authority's final decision was held to violate principles of natural justice.",
+        "topics": ["service law", "natural justice", "departmental inquiry", "employment"]
+      }
+    ]
+  }
+  

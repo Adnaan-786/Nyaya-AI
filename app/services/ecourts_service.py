@@ -1,5 +1,5 @@
 from uuid import UUID
-import datetime
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,7 +12,7 @@ from app.core.exceptions import (
 from app.core.security import utcnow
 from app.db.enums import NotificationType
 from app.db.tenant import TenantContext
-from app.integrations.ecourts import ECourtsProviderError, NormalizedCase, get_ecourts_provider, NormalizedHearing
+from app.integrations.ecourts import ECourtsProviderError, NormalizedCase, get_ecourts_provider
 from app.models.case import Case
 from app.models.case_assignee import CaseAssignee
 from app.models.ecourts_lookup_cache import ECourtsLookupCache
@@ -48,7 +48,9 @@ def _normalized_to_dict(normalized: NormalizedCase) -> dict:
 
 
 def _dict_to_normalized(payload: dict) -> NormalizedCase:
+    import datetime
 
+    from app.integrations.ecourts import NormalizedHearing
 
     return NormalizedCase(
         cnr=payload["cnr"],

@@ -1,10 +1,8 @@
 """
 AI job execution (plan C.9): one Celery task drives every AI job type
 through the same queued -> running -> done|failed lifecycle (contract
-B.7), dispatching to a per-type handler. Only "summarize" is
-implemented so far -- research/draft/risk_review are future additions
-to `_HANDLERS` below; nothing else about the framework needs to change
-when they land.
+B.7), dispatching to a per-type handler via `_HANDLERS`. All four job
+types (summarize, risk_review, draft, research) are implemented.
 
 Same asyncio-inside-sync-Celery-task + per-tenant RLS pattern as
 app/workers/ecourts_worker.py and app/workers/document_worker.py.
@@ -16,7 +14,7 @@ from uuid import UUID
 import sentry_sdk
 from sqlalchemy import select
 
-from app.ai import risk_review, summarizer
+from app.ai import researcher, risk_review, summarizer
 from app.core.logging import get_logger
 from app.db.rls import set_tenant
 from app.db.session import AsyncSessionLocal
@@ -26,7 +24,7 @@ from app.models.case import Case
 from app.models.doc_chunk import DocChunk
 from app.models.document import Document
 from app.models.user import User
-from app.services import ai_job_service, draft_service
+from app.services import ai_job_service, conversation_service, draft_service
 from app.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
@@ -92,11 +90,33 @@ async def _handle_draft(session, tenant: TenantContext, job: AIJob, language: st
     )
 
 
+async def _handle_research(session, tenant: TenantContext, job: AIJob, language: str) -> dict:
+    query = job.input.get("query")
+    conversation_id = job.input.get("conversation_id")
+    if not query or not conversation_id:
+        raise ValueError("research job is missing input.query or input.conversation_id")
+
+    from uuid import UUID as _UUID
+
+    conversation = await conversation_service.get_conversation_or_404(
+        session, tenant, _UUID(conversation_id)
+    )
+    context_query = conversation_service.build_context_query(conversation, query)
+
+    result = await researcher.research(
+        query=context_query, language=job.input.get("language") or language
+    )
+
+    await conversation_service.append_turn(session, conversation, query=query, result=result)
+
+    return result
+
+
 _HANDLERS = {
     "summarize": _handle_summarize,
     "risk_review": _handle_risk_review,
     "draft": _handle_draft,
-    # "research": _handle_research,      # future addition
+    "research": _handle_research,
 }
 
 

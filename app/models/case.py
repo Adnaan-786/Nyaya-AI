@@ -25,13 +25,28 @@ class Case(Base, UUIDMixin, TimestampMixin, TenantMixin):
         nullable=False,
     )
 
+    case_number: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
     court_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
     )
 
+    court_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
     judge_name: Mapped[str | None] = mapped_column(
         String(255),
+        nullable=True,
+    )
+
+    case_type: Mapped[str | None] = mapped_column(
+        String(100),
         nullable=True,
     )
 
@@ -64,6 +79,21 @@ class Case(Base, UUIDMixin, TimestampMixin, TenantMixin):
     )
 
     last_synced_at: Mapped[datetime.datetime | None]
+
+    sync_failure_count: Mapped[int] = mapped_column(
+        default=0,
+        nullable=False,
+    )
+
+    consecutive_sync_failures: Mapped[int] = mapped_column(
+        default=0,
+        nullable=False,
+    )
+
+    last_sync_error: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
 
     raw_ecourts: Mapped[dict | None] = mapped_column(
         JSONB,

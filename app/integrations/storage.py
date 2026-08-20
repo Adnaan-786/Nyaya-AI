@@ -77,6 +77,19 @@ def get_object_bytes(key: str) -> bytes:
     return obj["Body"].read()
 
 
+def put_object_bytes(key: str, data: bytes, *, content_type: str) -> None:
+    """
+    Direct (non-presigned) upload for server-generated files -- e.g.
+    module M7's draftsman DOCX output. Distinct from the presigned-PUT
+    flow in request_upload_url, which is for client-uploaded documents
+    (contract B.9).
+    """
+    client = get_s3_client()
+    client.put_object(
+        Bucket=settings.minio_bucket, Key=key, Body=data, ContentType=content_type
+    )
+
+
 def delete_object(key: str) -> None:
     client = get_s3_client()
     client.delete_object(Bucket=settings.minio_bucket, Key=key)
