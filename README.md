@@ -8,8 +8,8 @@
 | M2 — Database Schema & Tenancy | Done |
 | M3 — Auth, RBAC, Devices | Done |
 | M4 — Core CRUD | Done |
-| M5 — eCourts Sync Service | Done (this update) |
-| M6 — Document Pipeline | Not started |
+| M5 — eCourts Sync Service | Done |
+| M6 — Document Pipeline | Done (this update) |
 | M7 — AI Services | Not started |
 | M9 — Notifications | Not started |
 | M10 — Billing and Payments | Not started |
@@ -18,6 +18,63 @@
 
 ## 🚀 Module Highlights
 
+### M6 highlights
+
+- **Presigned upload flow** (contract B.9): `POST /documents/upload-url`
+  validates size (≤50MB) and mime type against the contract's allowed
+  list, creates the `Document` row, and returns a 15-min presigned S3
+  PUT URL keyed `tenants/{tenant_id}/documents/{document_id}/{name}`
+  (`app/integrations/storage.py`, boto3 against MinIO locally / real
+  S3 in staging-prod — same client code, only the endpoint URL
+  changes). `POST /documents/{id}/confirm` enqueues the processing
+  pipeline; `GET /documents/{id}` issues a fresh 15-min presigned GET
+  and writes an audit-log row for every download, per contract.
+- **Processing pipeline** (`app/workers/document_worker.py`, plan
+  C.8.2): OCR → chunk → embed → `ocr_status=done`, run as a Celery
+  task. DOCX gets plain text extraction (no OCR needed); PDFs/images
+  go through Document AI first with an automatic Tesseract fallback.
+  Failures are caught, logged to Sentry, and retried up to 3 times
+  with exponential backoff; `ocr_status` flips to `failed` with the
+  error message stored on the document.
+- **OCR provider abstraction** (`app/integrations/ocr/`): Document AI
+  is left `NotImplementedError` (no GCP credentials yet — same
+  no-guessing policy as NAPIX/commercial-eCourts), but **Tesseract is
+  fully implemented and real** since it's an open-source binary, not a
+  paid/keyed API — genuinely different from the other stubbed
+  integrations. `FAKE_MODE=true` (the default) skips all of this for
+  fully offline dev/CI.
+- **Chunking & embeddings**: ~600-word chunks with overlap
+  (`app/services/chunking.py`, standing in for "~800 tokens" without
+  pulling in a tokenizer dependency) → embedded via
+  `app/integrations/embeddings.py`. The embedding provider is also
+  intentionally stubbed (no OpenAI key), but `FAKE_MODE` produces
+  deterministic hash-based vectors so the full chunk→embed→pgvector
+  round-trip is testable offline — same philosophy as everywhere else.
+- **Universal search** (`GET /search?q=&type=`,
+  `app/services/search_service.py`): genuinely hybrid retrieval —
+  Postgres full-text search over `ocr_text` (GIN index), trigram
+  fuzzy matching on document/case/client names (`pg_trgm`), and
+  pgvector cosine-similarity over chunk embeddings (HNSW index) —
+  merged with reciprocal rank fusion. Strictly tenant-scoped, with
+  highlighted snippets via `ts_headline`.
+- **Migrations**: the search-indexes migration
+  (`aa7202907aac_add_search_indexes.py`) enables `pg_trgm`, adds GIN
+  indexes on `ocr_text`/name columns, and an HNSW index on
+  `doc_chunks.embedding`.
+- Added `tesseract-ocr` + `poppler-utils` to the Dockerfile (Tesseract
+  and `pdf2image` need the system binaries, not just the Python
+  packages) and regenerated `uv.lock` to match `pyproject.toml`
+  (boto3, pytesseract, pillow, pdf2image, python-docx, celery, httpx).
+- `GET /cases/{id}/timeline` now includes document-upload events
+  alongside hearings and notes, closing the gap flagged in M4's README
+  ("document/status-change events are added once M6/M11 land").
+  Status-change events remain an M11 item.
+
+**Not yet built in M6:** the real Google Document AI HTTP integration
+(blocked on GCP credentials, same reasoning as NAPIX/commercial
+eCourts), and the real OpenAI (or other) embedding provider call. Both
+have a single, clearly-marked `NotImplementedError` to fill in once
+credentials exist; nothing else in the pipeline needs to change.
 
 ### M5 highlights
 

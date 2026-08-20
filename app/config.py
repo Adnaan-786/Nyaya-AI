@@ -105,11 +105,36 @@ class Settings(BaseSettings):
     commercial_ecourts_api_key: str = Field(default="")
 
     # =====================================================
+    # Document Pipeline (module M6)
+    # =====================================================
+
+    document_max_upload_bytes: int = Field(default=50 * 1024 * 1024)  # 50 MB, contract B.9
+    document_allowed_mime_types: str = Field(
+        default=(
+            "application/pdf,image/jpeg,image/png,"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+    )
+    document_upload_url_expiry_seconds: int = Field(default=900)  # 15 min, contract B.9
+    document_download_url_expiry_seconds: int = Field(default=900)  # 15 min, contract B.6
+
+    document_chunk_words: int = Field(default=600)  # ~800 tokens (plan C.8)
+    document_chunk_overlap_words: int = Field(default=80)
+
+    embedding_provider: str = Field(default="fake")  # fake|openai
+    embedding_dimensions: int = Field(default=1536)
+    openai_api_key: str = Field(default="")
+
+    # =====================================================
     # Monitoring
     # =====================================================
 
     sentry_dsn: str = Field(default="")
     log_level: str = Field(default="INFO")
+
+    @property
+    def document_allowed_mime_type_set(self) -> set[str]:
+        return {m.strip() for m in self.document_allowed_mime_types.split(",") if m.strip()}
 
 
 @lru_cache
@@ -121,3 +146,4 @@ def get_settings() -> Settings:
     during the application lifetime.
     """
     return Settings()
+

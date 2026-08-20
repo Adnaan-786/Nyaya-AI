@@ -9,6 +9,15 @@ ENV UV_LINK_MODE=copy
 
 WORKDIR /app
 
+# System packages needed by the Tesseract OCR fallback (module M6):
+# tesseract-ocr does the actual OCR; poppler-utils (pdftoppm) is what
+# pdf2image shells out to for rasterizing scanned PDF pages before OCR.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        tesseract-ocr \
+        poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
@@ -24,7 +33,6 @@ COPY app ./app
 RUN uv sync --frozen --no-dev
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
 
 # Copy application
 COPY . .

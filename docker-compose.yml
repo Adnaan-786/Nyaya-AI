@@ -1,5 +1,5 @@
 services:
-  
+
   api:
     build:
       context: .
@@ -25,6 +25,58 @@ services:
       minio:
         condition: service_started
       mailhog:
+        condition: service_started
+
+    restart: unless-stopped
+
+    networks:
+      - nyayaai-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nyayaai-worker
+
+    command: celery -A app.workers.celery_app worker --loglevel=info
+
+    env_file:
+      - .env.docker
+
+    volumes:
+      - .:/app
+      - venv_data:/app/.venv
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+    restart: unless-stopped
+
+    networks:
+      - nyayaai-network
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nyayaai-beat
+
+    command: celery -A app.workers.celery_app beat --loglevel=info
+
+    env_file:
+      - .env.docker
+
+    volumes:
+      - .:/app
+      - venv_data:/app/.venv
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
         condition: service_started
 
     restart: unless-stopped

@@ -6,6 +6,7 @@ from app.api.routes.calendar import router as calendar_router
 from app.api.routes.cases import router as cases_router
 from app.api.routes.clients import router as clients_router
 from app.api.routes.devices import router as devices_router
+from app.api.routes.documents import router as documents_router
 from app.api.routes.firm import router as firm_router
 from app.api.routes.health import router as health_router
 from app.api.routes.tasks import router as tasks_router
@@ -22,4 +23,5 @@ api_router.include_router(clients_router)
 api_router.include_router(cases_router)
 api_router.include_router(tasks_router)
 api_router.include_router(billing_lite_router)
+api_router.include_router(documents_router)
 api_router.include_router(calendar_router)
