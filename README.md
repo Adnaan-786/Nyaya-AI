@@ -9,14 +9,84 @@
 | M3 — Auth, RBAC, Devices | Done |
 | M4 — Core CRUD | Done |
 | M5 — eCourts Sync Service | Done |
-| M6 — Document Pipeline | Done (this update) |
-| M7 — AI Services | Not started |
+| M6 — Document Pipeline | Done |
+| M7 — AI Services | Partial (this update — summarizer only) |
 | M9 — Notifications | Not started |
 | M10 — Billing and Payments | Not started |
 | M11 — Audit, DPDP, Retention | Not started |
 | M12 — Hardening and Deployment | Not started |
 
 ## 🚀 Module Highlights
+
+### M7 highlights (partial — summarizer only)
+
+M7 is the largest module in the plan (four job types: summarize,
+research, draft, risk_review) and is built incrementally. This update
+covers the **shared AI job framework** plus the **summarizer** end to
+end; research/draft/risk_review are scaffolded but not implemented
+yet (see below).
+
+- **Async job framework** (contract B.7, plan C.9): `app/services/ai_job_service.py`
+  implements the shared `queued → running → done|failed` lifecycle
+  every AI job type will use — job creation, a per-tenant
+  **concurrency cap** (in-flight `queued`+`running` jobs) and a
+  **daily quota**, both raising `402 QUOTA_EXCEEDED` with
+  `details.limit`/`details.plan` exactly as the contract specifies.
+  Per-plan overrides are a placeholder default until M10's billing
+  plans table exists — flagged explicitly in code, not silently
+  assumed.
+- **Status wording**: the DB enum (from M2) uses
+  `pending/running/completed/failed` internally; the API always
+  returns the contract's exact wording `queued/running/done/failed`
+  via `ai_job_service.wire_status()` — same "map at the boundary,
+  don't rename the enum" policy as M4/M5's known deviations.
+- **Routes**: `POST /ai/summarize` (202 Accepted with `job_id` +
+  `estimated_seconds`), `GET /ai/jobs/{id}`.
+- **Summarizer** (`app/ai/summarizer.py`, plan C.9): doc-type
+  detection (chargesheet/judgment/notice/agreement/other) via a cheap
+  classification prompt, then a type-focused extraction prompt.
+  **Long documents (>1200 words) run map-reduce over the chunks M6
+  already produced** — per-chunk extraction, then a reduce pass that
+  deduplicates sections/dates/parties and asks the model to combine
+  the partial summaries into one coherent one. Output always matches
+  the contract's exact B.7 shape (`summary_markdown`, `key_points[]`,
+  `parties[]`, `sections_invoked[]`, `dates[]`, `doc_type_detected`).
+  Mirrors the user's `language` for `summary_markdown`, per contract.
+- **LLM provider** (`app/integrations/llm.py`): same FAKE_MODE
+  philosophy as every other integration — the real Anthropic Messages
+  API call is implemented (not a stub!) behind
+  `LLM_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`, but defaults to a
+  **deterministic, heuristic-based fake completion**
+  (`app/ai/fake_llm.py`) so the entire
+  classify → extract → (map-reduce) → JSON-parse pipeline is
+  exercisable and testable completely offline. The fake responses are
+  regex/keyword heuristics over the real document text (not canned
+  strings), so they genuinely exercise the JSON-parsing code real
+  responses would also go through.
+- **Worker** (`app/workers/ai_worker.py`): one Celery task dispatches
+  by job type via a handler registry (`_HANDLERS`) — adding
+  research/draft/risk_review later is purely additive, no framework
+  changes needed. Enforces the per-type timeout from plan C.9
+  (`asyncio.wait_for`), marks the job `failed` with a clear error on
+  timeout or exception (no silent retries that could double AI spend),
+  and sends an in-app `ai_job_complete` notification on success
+  (reusing M5's `notification_service`).
+
+**Not yet built in M7:**
+- **Researcher** (RAG over Indian Kanoon), **Draftsman** (12 launch
+  templates + DOCX generation), and **Risk review** — all three need
+  their own design pass (Indian Kanoon API integration + citation
+  verification for research; python-docx templates for draftsman).
+  The job framework above is ready for them; each is "write a handler
+  function + a route," not new infrastructure.
+- The 50-item lawyer-reviewed **golden-set eval suite** (plan C.9)
+  can't be built without real reviewed data — this needs your input,
+  not credentials, so it's a genuinely different kind of blocker than
+  NAPIX/Document AI/OpenAI.
+- Per-tenant AI cost/token logging and dashboarding (plan C.9: "Log
+  token costs per job") — straightforward to add once real LLM calls
+  are live and there's an actual cost to track.
+
 
 ### M6 highlights
 
