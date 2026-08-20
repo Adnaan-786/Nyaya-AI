@@ -11,6 +11,7 @@ from app.api.routes.firm import router as firm_router
 from app.api.routes.health import router as health_router
 from app.api.routes.tasks import router as tasks_router
 from app.api.routes.users import router as users_router
+from app.api.routes.search import router as search_router
 
 api_router = APIRouter()
 
@@ -25,3 +26,4 @@ api_router.include_router(tasks_router)
 api_router.include_router(billing_lite_router)
 api_router.include_router(documents_router)
 api_router.include_router(calendar_router)
+api_router.include_router(search_router)
