@@ -157,6 +157,32 @@ async def test_upload_url_cannot_be_forged_or_replayed_after_expiry(
     assert stale.json()["error"]["code"] == "UPLOAD_URL_EXPIRED"
 
 
+async def test_upload_url_is_our_own_signed_endpoint_not_an_s3_presigned_put(
+    client: AsyncClient,
+) -> None:
+    """B.9: the issued upload URL must stay a same-origin `/v1/uploads/{id}` link that
+    we sign, never an S3 presigned PUT. The app's OkHttp interceptor attaches
+    `Authorization: Bearer <jwt>` to every request whose path is not explicitly public,
+    and S3 rejects a request carrying both that header and a presigned query-string
+    signature — so this shape is what makes uploads from the shipped app work at all."""
+    headers = await sign_in(client, "Presigned Firm")
+    issued = (
+        await client.post(
+            f"{BASE}/documents/upload-url",
+            headers=headers,
+            json={"name": "shape.pdf", "mime_type": "application/pdf", "size_bytes": 10},
+        )
+    ).json()["data"]
+
+    assert issued["upload_url"].startswith("/v1/uploads/")
+    assert "amazonaws.com" not in issued["upload_url"]
+
+    # The signed URL is the whole authorisation: it must succeed with no Authorization
+    # header at all, exactly like the app's real direct upload.
+    put = await client.put(issued["upload_url"], content=b"%PDF-1.4")
+    assert put.status_code == 200
+
+
 async def test_documents_are_tenant_isolated(client: AsyncClient) -> None:
     a_headers = await sign_in(client, "Doc Firm A")
     b_headers = await sign_in(client, "Doc Firm B")

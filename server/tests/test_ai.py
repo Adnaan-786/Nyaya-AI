@@ -115,6 +115,24 @@ async def test_summarize_returns_202_then_completes(client: AsyncClient) -> None
     assert "Section 138" in result["sections_invoked"]
 
 
+async def test_job_poll_response_keeps_estimated_seconds_and_input_ref(
+    client: AsyncClient,
+) -> None:
+    """`AiJobOut` (the `GET /ai/jobs/{id}` shape the app polls) fixes `estimated_seconds`
+    and `input_ref`. A looser job schema that dropped either — as a `dict[str, Any]`
+    result shape would — breaks the app's spinner estimate and its poll contract."""
+    headers = await sign_in(client, "Contract Firm")
+
+    accepted = await client.post(
+        f"{BASE}/ai/research", headers=headers, json={"query": "contract field regression"}
+    )
+    job = await _await_job(client, headers, accepted.json()["data"]["job_id"])
+
+    assert "estimated_seconds" in job
+    assert job["estimated_seconds"] > 0
+    assert "input_ref" in job
+
+
 async def test_research_never_fabricates_citations_without_a_provider(
     client: AsyncClient,
 ) -> None:
