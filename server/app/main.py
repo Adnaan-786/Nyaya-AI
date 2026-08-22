@@ -13,6 +13,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     ai,
@@ -60,6 +61,20 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     openapi_url="/openapi.json",
+)
+
+# Without this a browser cannot call the API from anywhere but its own origin — the
+# preflight returns 405 and the request never happens. Needed by tools/api-console.
+#
+# `allow_credentials` stays off on purpose. Auth here is a bearer token the caller
+# attaches explicitly, so there is nothing ambient for another origin to ride; turning
+# credentials on would add cookie semantics this API does not use and does not want.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 envelope.install_exception_handlers(app)

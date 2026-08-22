@@ -86,6 +86,19 @@ class Settings(BaseSettings):
     # login and then reject the message.
     smtp_from: str | None = None
 
+    # Browser origins allowed to call this API (the tools/api-console test page, and
+    # whatever host it is served from). Comma-separated.
+    #
+    # Deliberately a list rather than "*": this API answers with privileged client data,
+    # and while bearer auth means a hostile page cannot ride an existing session the way
+    # it could with cookies, there is no reason for any origin but ours to be able to
+    # reach it from a browser at all.
+    cors_origins: str = "http://localhost:8080,http://127.0.0.1:8080"
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"
     # Set for any S3-compatible provider that isn't AWS itself (Cloudflare R2, etc.) —

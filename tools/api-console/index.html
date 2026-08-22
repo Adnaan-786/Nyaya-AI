@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NyayaAI API console</title>
+<style>
+  /* Light and dark both defined up front, so the page never borrows the host's ground. */
+  :root {
+    --bg: #f7f4ec; --panel: #fffdf8; --line: #e2dccc; --ink: #16233b;
+    --muted: #6b6355; --accent: #c8741a; --ok: #1c6b45; --bad: #a5261d;
+    --code-bg: #f1ece0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171d; --panel: #1b1f27; --line: #2c323d; --ink: #e8e6e1;
+      --muted: #9aa0ab; --accent: #e0913f; --ok: #57b487; --bad: #e0736a;
+      --code-bg: #11141a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel);
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  }
+  h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  .grow { flex: 1; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: calc(100vh - 59px); }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  aside { border-right: 1px solid var(--line); padding: 16px; background: var(--panel); }
+  main { padding: 20px; min-width: 0; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em;
+       color: var(--muted); margin: 20px 0 8px; font-weight: 650; }
+  h2:first-child { margin-top: 0; }
+  input, select, textarea, button {
+    font: inherit; color: inherit; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+  }
+  input, select, textarea { width: 100%; }
+  textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; min-height: 120px; }
+  button { background: var(--ink); color: var(--panel); border: none; cursor: pointer; font-weight: 600; }
+  button:hover { opacity: .9; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { min-width: 0; }
+  .stack > * + * { margin-top: 8px; }
+  .ep {
+    display: block; width: 100%; text-align: left; background: transparent; color: var(--ink);
+    border: none; border-radius: 6px; padding: 5px 8px; cursor: pointer;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 400;
+  }
+  .ep:hover { background: var(--code-bg); }
+  .m { display: inline-block; width: 46px; font-weight: 700; font-size: 10px; }
+  .m.GET { color: var(--ok); } .m.POST { color: var(--accent); }
+  .m.PATCH, .m.PUT { color: #7a6ccc; } .m.DELETE { color: var(--bad); }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px; overflow-x: auto; font-size: 13px; margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .status { font-weight: 700; } .status.ok { color: var(--ok); } .status.bad { color: var(--bad); }
+  .pill { font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.live { color: var(--ok); border-color: var(--ok); }
+  .hint { font-size: 12px; color: var(--muted); }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NyayaAI API console</h1>
+  <span id="authPill" class="pill">signed out</span>
+  <span class="grow"></span>
+  <span class="hint">testing tool &mdash; not the product</span>
+</header>
+
+<div class="layout">
+  <aside>
+    <h2>Server</h2>
+    <div class="stack">
+      <select id="baseUrl">
+        <option value="http://localhost:8000/v1">local &middot; :8000</option>
+        <option value="https://nyayaai-api.onrender.com/v1">staging &middot; render</option>
+        <option value="custom">custom&hellip;</option>
+      </select>
+      <input id="baseUrlCustom" placeholder="https://&hellip;/v1" style="display:none" />
+      <button class="ghost" id="pingBtn">Ping /health</button>
+    </div>
+
+    <h2>Sign in</h2>
+    <div class="stack">
+      <select id="channel">
+        <option value="email">Email OTP</option>
+        <option value="phone">Phone OTP</option>
+      </select>
+      <input id="identifier" placeholder="you@firm.in" />
+      <button id="requestBtn">Send code</button>
+      <input id="otp" placeholder="6-digit code" inputmode="numeric" />
+      <button id="verifyBtn">Verify &amp; store token</button>
+      <div class="row">
+        <button class="ghost grow" id="refreshBtn">Refresh</button>
+        <button class="ghost grow" id="logoutBtn">Sign out</button>
+      </div>
+      <div class="hint" id="authHint">FAKE_MODE servers accept <code>123456</code>.</div>
+    </div>
+
+    <h2>Endpoints</h2>
+    <div id="endpoints"></div>
+  </aside>
+
+  <main>
+    <div class="stack">
+      <div class="row">
+        <select id="method" style="width:110px">
+          <option>GET</option><option>POST</option><option>PATCH</option>
+          <option>PUT</option><option>DELETE</option>
+        </select>
+        <input id="path" placeholder="/cases" />
+        <button id="sendBtn" style="width:110px">Send</button>
+      </div>
+
+      <div>
+        <label for="body">Request body (JSON &mdash; ignored for GET/DELETE)</label>
+        <textarea id="body" spellcheck="false"></textarea>
+      </div>
+
+      <div class="row">
+        <span id="status" class="status">&mdash;</span>
+        <span class="hint" id="timing"></span>
+      </div>
+
+      <pre id="out">Pick an endpoint, or sign in first.</pre>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Endpoints mirror app/main.py's router set. Not exhaustive by design: this is the
+  // surface a tester actually drives, plus the ones most likely to break after a sync.
+  var ENDPOINTS = {
+    "Auth": [
+      ["POST", "/auth/email/request", { email: "you@firm.in" }],
+      ["POST", "/auth/email/verify", { email: "you@firm.in", otp: "123456" }],
+      ["POST", "/auth/otp/request", { phone: "+919812345678" }],
+      ["POST", "/auth/otp/verify", { phone: "+919812345678", otp: "123456" }],
+      ["POST", "/auth/refresh", { refresh_token: "" }],
+      ["POST", "/auth/onboard", { name: "Adv. Name", role_hint: "firm_admin", firm_name: "Firm", language: "en" }],
+      ["GET", "/me"]
+    ],
+    "Practice": [
+      ["GET", "/cases"], ["POST", "/cases", { title: "A v. B", case_type: "Civil" }],
+      ["POST", "/cases/lookup-cnr", { cnr: "DLHC010012342026" }],
+      ["GET", "/clients"], ["POST", "/clients", { name: "Client", phone: "+919812345000" }],
+      ["GET", "/calendar/today"], ["GET", "/calendar"],
+      ["GET", "/tasks"], ["POST", "/tasks", { title: "Task", due_date: "2026-09-01" }],
+      ["GET", "/time-entries"], ["GET", "/expenses"], ["GET", "/users"]
+    ],
+    "Documents & AI": [
+      ["GET", "/documents"],
+      ["POST", "/documents/upload-url", { name: "file.pdf", mime_type: "application/pdf", size_bytes: 1024 }],
+      ["GET", "/search?q=notice"],
+      ["POST", "/ai/research", { question: "Limitation period for a suit on a promissory note?" }],
+      ["POST", "/ai/summarize", { document_id: "" }],
+      ["GET", "/ai/jobs"]
+    ],
+    "Billing": [
+      ["GET", "/invoices"], ["POST", "/payments/order", { invoice_id: "" }]
+    ],
+    "Ops": [
+      ["GET", "/health"], ["GET", "/app/config"], ["GET", "/notifications"]
+    ]
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var store = {
+    get access() { return localStorage.getItem("nyaya.access") || ""; },
+    set access(v) { v ? localStorage.setItem("nyaya.access", v) : localStorage.removeItem("nyaya.access"); },
+    get refresh() { return localStorage.getItem("nyaya.refresh") || ""; },
+    set refresh(v) { v ? localStorage.setItem("nyaya.refresh", v) : localStorage.removeItem("nyaya.refresh"); }
+  };
+
+  function base() {
+    var v = $("baseUrl").value;
+    return (v === "custom" ? $("baseUrlCustom").value : v).replace(/\/+$/, "");
+  }
+
+  function paintAuth() {
+    var pill = $("authPill");
+    if (store.access) {
+      // Show the subject, not the token. A console that prints a bearer token in full
+      // invites it into screenshots and bug reports.
+      var who = "signed in";
+      try {
+        var claims = JSON.parse(atob(store.access.split(".")[1]));
+        if (claims.role) { who = "signed in · " + claims.role; }
+      } catch (e) { /* not a JWT we can read; the label is cosmetic */ }
+      pill.textContent = who;
+      pill.className = "pill live";
+    } else {
+      pill.textContent = "signed out";
+      pill.className = "pill";
+    }
+  }
+
+  function show(status, ms, payload) {
+    $("status").textContent = status;
+    $("status").className = "status " + (status >= 200 && status < 300 ? "ok" : "bad");
+    $("timing").textContent = ms + " ms";
+    $("out").textContent = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+  }
+
+  async function call(method, path, body, opts) {
+    opts = opts || {};
+    var url = base() + (path.charAt(0) === "/" ? path : "/" + path);
+    var headers = { "Content-Type": "application/json" };
+    if (store.access && !opts.anonymous) { headers.Authorization = "Bearer " + store.access; }
+
+    var started = performance.now();
+    var res, text;
+    try {
+      res = await fetch(url, {
+        method: method,
+        headers: headers,
+        body: (method === "GET" || method === "DELETE") ? undefined : (body || undefined)
+      });
+      text = await res.text();
+    } catch (err) {
+      // A browser reports a CORS rejection as an opaque network failure, so name the
+      // likeliest cause rather than leaving the tester with "Failed to fetch".
+      show(0, Math.round(performance.now() - started),
+        "Network or CORS failure: " + err.message +
+        "\n\nIf the server is up, its CORS_ORIGINS probably does not include:\n  " + location.origin);
+      return null;
+    }
+
+    var ms = Math.round(performance.now() - started);
+    var parsed;
+    try { parsed = JSON.parse(text); } catch (e) { parsed = text; }
+    show(res.status, ms, parsed);
+    return parsed;
+  }
+
+  // ---- endpoint list -------------------------------------------------------
+  var list = $("endpoints");
+  Object.keys(ENDPOINTS).forEach(function (group) {
+    var h = document.createElement("h2");
+    h.textContent = group;
+    h.style.marginTop = "14px";
+    list.appendChild(h);
+    ENDPOINTS[group].forEach(function (row) {
+      var btn = document.createElement("button");
+      btn.className = "ep";
+      btn.innerHTML = '<span class="m ' + row[0] + '">' + row[0] + "</span>" + row[1];
+      btn.onclick = function () {
+        $("method").value = row[0];
+        $("path").value = row[1];
+        $("body").value = row[2] ? JSON.stringify(row[2], null, 2) : "";
+      };
+      list.appendChild(btn);
+    });
+  });
+
+  // ---- wiring --------------------------------------------------------------
+  $("baseUrl").onchange = function () {
+    $("baseUrlCustom").style.display = this.value === "custom" ? "block" : "none";
+  };
+
+  $("pingBtn").onclick = function () { call("GET", "/health", null, { anonymous: true }); };
+
+  $("channel").onchange = function () {
+    $("identifier").placeholder = this.value === "email" ? "you@firm.in" : "+919812345678";
+  };
+
+  $("requestBtn").onclick = function () {
+    var email = $("channel").value === "email";
+    var id = $("identifier").value.trim();
+    call("POST", email ? "/auth/email/request" : "/auth/otp/request",
+      JSON.stringify(email ? { email: id } : { phone: id }), { anonymous: true });
+  };
+
+  $("verifyBtn").onclick = async function () {
+    var email = $("channel").value === "email";
+    var id = $("identifier").value.trim();
+    var payload = email
+      ? { email: id, otp: $("otp").value.trim() }
+      : { phone: id, otp: $("otp").value.trim() };
+    var out = await call("POST", email ? "/auth/email/verify" : "/auth/otp/verify",
+      JSON.stringify(payload), { anonymous: true });
+    if (out && out.success && out.data) {
+      store.access = out.data.access_token;
+      store.refresh = out.data.refresh_token;
+      paintAuth();
+    }
+  };
+
+  $("refreshBtn").onclick = async function () {
+    var out = await call("POST", "/auth/refresh",
+      JSON.stringify({ refresh_token: store.refresh }), { anonymous: true });
+    if (out && out.success && out.data) {
+      store.access = out.data.access_token;
+      store.refresh = out.data.refresh_token;
+      paintAuth();
+    }
+  };
+
+  $("logoutBtn").onclick = function () {
+    store.access = ""; store.refresh = "";
+    paintAuth();
+    show(200, 0, "Tokens cleared from this browser.");
+  };
+
+  $("sendBtn").onclick = function () {
+    call($("method").value, $("path").value.trim(), $("body").value.trim() || null);
+  };
+
+  paintAuth();
+})();
+</script>
+</body>
+</html>
