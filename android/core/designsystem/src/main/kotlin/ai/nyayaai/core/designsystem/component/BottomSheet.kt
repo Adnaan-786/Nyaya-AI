@@ -33,7 +33,7 @@ fun NyayaBottomSheet(
         shape = MaterialTheme.shapes.extraLarge,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        windowInsets = WindowInsets.safeDrawing,
+        contentWindowInsets = { WindowInsets.safeDrawing },
         dragHandle = {
             BottomSheetDefaults.DragHandle(
                 color = MaterialTheme.colorScheme.outline
