@@ -5,9 +5,22 @@ import ai.nyayaai.core.designsystem.component.AiDisclaimerBanner
 import ai.nyayaai.core.designsystem.component.EmptyState
 import ai.nyayaai.core.designsystem.component.ErrorState
 import ai.nyayaai.core.designsystem.component.HearingChip
+import ai.nyayaai.core.designsystem.component.HeroAmount
+import ai.nyayaai.core.designsystem.component.InitialAvatar
 import ai.nyayaai.core.designsystem.component.LoadingList
+import ai.nyayaai.core.designsystem.component.NyayaBottomSheet
+import ai.nyayaai.core.designsystem.component.NyayaCard
+import ai.nyayaai.core.designsystem.component.NyayaConfirmDialog
+import ai.nyayaai.core.designsystem.component.NyayaDateField
+import ai.nyayaai.core.designsystem.component.NyayaDropdownField
+import ai.nyayaai.core.designsystem.component.NyayaMoneyField
+import ai.nyayaai.core.designsystem.component.NyayaTextField
+import ai.nyayaai.core.designsystem.component.SectionHeader
+import ai.nyayaai.core.designsystem.component.Stat
+import ai.nyayaai.core.designsystem.component.StatStrip
 import ai.nyayaai.core.designsystem.component.StatusBadge
 import ai.nyayaai.core.designsystem.component.StatusTone
+import ai.nyayaai.core.designsystem.component.TimelineRail
 import ai.nyayaai.core.designsystem.theme.NyayaTheme
 import ai.nyayaai.core.model.CourtDate
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +41,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.datetime.LocalDate
@@ -44,6 +62,8 @@ import kotlinx.datetime.LocalDate
 @Composable
 fun ComponentGalleryScreen(modifier: Modifier = Modifier) {
     val today = todayInIndia()
+    var showDialog by remember { mutableStateOf(false) }
+    var showBottomSheet by remember { mutableStateOf(false) }
 
     Surface(modifier = modifier.fillMaxSize()) {
         Column(
@@ -58,8 +78,6 @@ fun ComponentGalleryScreen(modifier: Modifier = Modifier) {
             Text("Headline Small", style = MaterialTheme.typography.headlineSmall)
             Text("Title Medium", style = MaterialTheme.typography.titleMedium)
             Text("Body Large — the quick brown fox", style = MaterialTheme.typography.bodyLarge)
-            // Devanagari sample: matras above and below the baseline are where a font
-            // without proper coverage visibly breaks.
             Text("शीर्षक — अगली सुनवाई की तारीख", style = MaterialTheme.typography.bodyLarge)
             Text("Aaj ki hearings · कल की सुनवाई", style = MaterialTheme.typography.bodyMedium)
 
@@ -69,26 +87,72 @@ fun ComponentGalleryScreen(modifier: Modifier = Modifier) {
             TextButton(onClick = {}) { Text("Tertiary") }
 
             Section("Text fields")
-            OutlinedTextField(
+            NyayaTextField(
                 value = "",
                 onValueChange = {},
-                label = { Text("Empty") },
-                modifier = Modifier.fillMaxWidth(),
+                label = "Empty"
             )
-            OutlinedTextField(
+            NyayaTextField(
                 value = "MHAU01",
                 onValueChange = {},
-                label = { Text("With value") },
-                modifier = Modifier.fillMaxWidth(),
+                label = "With value"
             )
-            OutlinedTextField(
+            NyayaTextField(
                 value = "12345",
                 onValueChange = {},
-                isError = true,
-                label = { Text("Error") },
-                supportingText = { Text("CNR must be 16 characters") },
-                modifier = Modifier.fillMaxWidth(),
+                label = "Error",
+                error = "CNR must be 16 characters"
             )
+            NyayaDateField(
+                value = CourtDate(today),
+                onValueChange = {},
+                label = "Date Field"
+            )
+            NyayaDropdownField(
+                value = "Selected Option",
+                options = listOf("Selected Option", "Another Option"),
+                onSelect = {},
+                label = "Dropdown Field",
+                optionLabel = { it }
+            )
+            NyayaMoneyField(
+                paise = 15000,
+                onValueChange = {},
+                label = "Money Field"
+            )
+
+            Section("Cards")
+            NyayaCard(onClick = {}) {
+                Text("Case title", style = MaterialTheme.typography.titleMedium)
+                Text("Client name", style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Section("Patterns")
+            SectionHeader(
+                title = "Section Title",
+                actionLabel = "See all",
+                onAction = {}
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md)) {
+                InitialAvatar(name = "Sharma Textiles")
+                InitialAvatar(name = "Adv. Meera Iyer")
+            }
+            StatStrip(
+                stats = listOf(
+                    Stat("Hearings", "3"),
+                    Stat("Tasks", "12"),
+                    Stat("Docs", "4")
+                )
+            )
+            HeroAmount(
+                label = "Total Due",
+                value = "₹1,500",
+                caption = "For 3 invoices"
+            )
+            Row {
+                TimelineRail(isNow = true, isLast = false)
+                Text("Hearing 1", modifier = Modifier.padding(start = NyayaTheme.spacing.md))
+            }
 
             Section("Status badges")
             FlowRow(horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm)) {
@@ -106,6 +170,16 @@ fun ComponentGalleryScreen(modifier: Modifier = Modifier) {
                 HearingChip(CourtDate(today.plusDays(21)))
                 HearingChip(CourtDate(today.plusDays(-2)))
             }
+            
+            Section("Overlays")
+            Row(horizontalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.md)) {
+                Button(onClick = { showDialog = true }) {
+                    Text("Show Dialog")
+                }
+                Button(onClick = { showBottomSheet = true }) {
+                    Text("Show Bottom Sheet")
+                }
+            }
 
             Section("AI disclaimer (B.11 — mandatory on every AI surface)")
             AiDisclaimerBanner()
@@ -122,6 +196,28 @@ fun ComponentGalleryScreen(modifier: Modifier = Modifier) {
                 description = "Add your first case by CNR to start tracking hearings.",
                 action = { Button(onClick = {}) { Text("Add case") } },
             )
+        }
+    }
+
+    if (showDialog) {
+        NyayaConfirmDialog(
+            title = "Delete Case?",
+            message = "This action cannot be undone. All documents and hearings will be removed.",
+            confirmText = "Delete",
+            onConfirm = { showDialog = false },
+            dismissText = "Cancel",
+            onDismiss = { showDialog = false }
+        )
+    }
+
+    if (showBottomSheet) {
+        NyayaBottomSheet(
+            onDismissRequest = { showBottomSheet = false }
+        ) {
+            Column(modifier = Modifier.padding(NyayaTheme.spacing.md)) {
+                Text("Bottom Sheet Content", style = MaterialTheme.typography.titleLarge)
+                Text("This is standard bottom sheet content conforming to the design system.", modifier = Modifier.padding(top = NyayaTheme.spacing.sm))
+            }
         }
     }
 }
