@@ -1,0 +1,525 @@
+openapi: 3.1.0
+
+info:
+  title: NyayaAI Server
+  version: 1.0.0
+  description: |
+    Authoritative API contract for the NyayaAI Backend.
+
+servers:
+  - url: http://localhost:8000
+    description: Local Development
+
+tags:
+  - name: Health
+    description: Service health endpoints
+  - name: Auth
+    description: Authentication and onboarding endpoints
+  - name: Users
+    description: User profile endpoints
+  - name: Devices
+    description: Device registration for push notifications
+  - name: Firm
+    description: Firm and team management endpoints
+
+paths:
+
+  /v1/health:
+    get:
+      tags:
+        - Health
+
+      summary: Health Check
+
+      description: Returns the health status of the API.
+
+      operationId: healthCheck
+
+      responses:
+
+        "200":
+          description: Service is healthy
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseHealth"
+
+        "500":
+          description: Internal Server Error
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+
+  /v1/auth/otp/request:
+    post:
+      tags: [Auth]
+      summary: Request OTP
+      description: Sends OTP to phone number.
+      operationId: requestOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  example: "+919812345678"
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseHealth"
+
+  /v1/auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP
+      description: Verifies OTP and returns JWT tokens.
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { type: string }
+                otp: { type: string }
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+
+  /v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh token
+      description: Rotates refresh token and issues new access/refresh pair.
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token: { type: string }
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+
+  /v1/auth/onboard:
+    post:
+      tags: [Auth]
+      summary: Onboard new user
+      description: Creates tenant + profile for a new user.
+      operationId: onboardUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                role_hint: { type: string, enum: ["lawyer","firm_admin"] }
+                firm_name: { type: string }
+                bar_council_id: { type: string }
+                language: { type: string }
+      responses:
+        "200":
+          description: User onboarded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /v1/me:
+    get:
+      tags: [Users]
+      summary: Get current user
+      description: Returns the authenticated user profile.
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+    patch:
+      tags: [Users]
+      summary: Update current user
+      description: Updates the authenticated user profile.
+      operationId: updateCurrentUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /v1/devices:
+    post:
+      tags: [Devices]
+      summary: Register device
+      description: Registers FCM token for push notifications.
+      operationId: registerDevice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fcm_token: { type: string }
+                platform: { type: string, example: "android" }
+                app_version: { type: string }
+      responses:
+        "200":
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseHealth"
+
+  /v1/devices/{id}:
+    delete:
+      tags: [Devices]
+      summary: Delete device
+      description: Removes a registered device.
+      operationId: deleteDevice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { $ref: "#/components/schemas/UUID" }
+      responses:
+        "200":
+          description: Device deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseHealth"
+
+  /v1/firm:
+    get:
+      tags: [Firm]
+      summary: Get firm details
+      description: Returns the current firm information.
+      operationId: getFirm
+      responses:
+        "200":
+          description: Firm details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Firm"
+
+components:
+
+  #################################################################
+  # Security
+  #################################################################
+
+  securitySchemes:
+
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  #################################################################
+  # Reusable Schemas
+  #################################################################
+
+  schemas:
+
+    UUID:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2026-07-27T18:30:00Z"
+
+    PaginationMeta:
+
+      type: object
+
+      required:
+        - page
+        - limit
+        - total
+
+      properties:
+
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 20
+
+        total:
+          type: integer
+          minimum: 0
+          example: 250
+    
+    AuthTokens:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        is_new_user: { type: boolean }
+        user: { $ref: "#/components/schemas/User" }
+
+    User:
+      type: object
+      properties:
+        id: { $ref: "#/components/schemas/UUID" }
+        tenant_id: { $ref: "#/components/schemas/UUID" }
+        name: { type: string }
+        phone: { type: string }
+        email: { type: string, nullable: true }
+        role: { $ref: "#/components/schemas/UserRole" }
+        language: { type: string }
+        created_at: { $ref: "#/components/schemas/Timestamp" }
+
+    Firm:
+      type: object
+      properties:
+        id: { $ref: "#/components/schemas/UUID" }
+        name: { type: string }
+        created_at: { $ref: "#/components/schemas/Timestamp" }
+
+    #################################################################
+    # Health Response
+    #################################################################
+
+    ApiResponseHealth:
+
+      type: object
+
+      required:
+        - success
+        - data
+
+      properties:
+
+        success:
+          type: boolean
+          example: true
+
+        data:
+
+          type: object
+
+          required:
+            - status
+            - service
+            - version
+            - environment
+
+          properties:
+
+            status:
+              type: string
+              example: healthy
+
+            service:
+              type: string
+              example: NyayaAI Server
+
+            version:
+              type: string
+              example: "1.0.0"
+
+            environment:
+              type: string
+              example: development
+
+        error:
+          nullable: true
+
+        meta:
+          nullable: true
+
+    #################################################################
+    # Error Responses
+    #################################################################
+
+    ErrorEnvelope:
+
+      type: object
+
+      required:
+        - success
+        - error
+
+      properties:
+
+        success:
+          type: boolean
+          example: false
+
+        data:
+          nullable: true
+
+        error:
+          $ref: "#/components/schemas/ErrorResponse"
+
+        meta:
+          nullable: true
+
+    ErrorResponse:
+
+      type: object
+
+      required:
+        - code
+        - message
+
+      properties:
+
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+
+        message:
+          type: string
+          example: Validation failed
+
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    ErrorCode:
+
+      type: string
+
+      enum:
+        - VALIDATION_ERROR
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - FORBIDDEN_ROLE
+        - QUOTA_EXCEEDED
+        - RATE_LIMITED
+        - CASE_NOT_FOUND
+        - CLIENT_NOT_FOUND
+        - USER_NOT_FOUND
+        - DOCUMENT_NOT_FOUND
+        - DUPLICATE_RESOURCE
+        - CNR_INVALID
+        - UPGRADE_REQUIRED
+        - INTERNAL_ERROR
+        - UPSTREAM_UNAVAILABLE
+
+    #################################################################
+    # Common Enums (Backend Contracts)
+    #################################################################
+
+    PlanType:
+      type: string
+      enum:
+        - FREE
+        - PRO
+        - ENTERPRISE
+
+    UserRole:
+      type: string
+      enum:
+        - ADMIN
+        - LAWYER
+        - PARALEGAL
+        - STAFF
+
+    OCRStatus:
+      type: string
+      enum:
+        - PENDING
+        - PROCESSING
+        - COMPLETED
+        - FAILED
+
+    TaskStatus:
+      type: string
+      enum:
+        - PENDING
+        - SUCCESS
+
+    AIJobStatus:
+      type: string
+      enum:
+        - PENDING
+        - RUNNING
+        - SUCCESS
+        - FAILED
+
+    AIJobType:
+      type: string
+      enum:
+        - OCR
+        - EMBEDDING
+        - SUMMARY
+        - CHAT
+        - CLASSIFICATION
+
+    InvoiceStatus:
+      type: string
+      enum:
+        - DRAFT
+        - SENT
+        - PAID
+        - OVERDUE
+        - CANCELLED
+
+    PaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - VERIFIED
+        - FAILED
+
+    HearingSource:
+      type: string
+      enum:
+        - MANUAL
+        - ECOURTS
+
+    NotificationType:
+      type: string
+      enum:
+        - INFO
+        - WARNING
+        - SUCCESS
+        - ERROR
