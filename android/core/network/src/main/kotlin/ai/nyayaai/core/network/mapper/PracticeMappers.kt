@@ -32,6 +32,7 @@ import ai.nyayaai.core.network.dto.AiResultDto
 import ai.nyayaai.core.network.dto.CaseDto
 import ai.nyayaai.core.network.dto.CitationDto
 import ai.nyayaai.core.network.dto.ClientDto
+import ai.nyayaai.core.network.dto.ClauseRiskDto
 import ai.nyayaai.core.network.dto.CnrPreviewDto
 import ai.nyayaai.core.network.dto.DocumentDto
 import ai.nyayaai.core.network.dto.HearingDto
@@ -184,6 +185,10 @@ data class AiContent(
     val answerMarkdown: String?,
     val confidence: ResearchConfidence,
     val citations: List<Citation>,
+    val documentMarkdown: String?,
+    val docxUrl: String?,
+    val missingFields: List<String>,
+    val risks: List<ClauseRisk>,
 )
 
 data class Citation(
@@ -205,6 +210,25 @@ fun AiResultDto.toContent(): AiContent =
         answerMarkdown = answerMarkdown,
         confidence = ResearchConfidence.from(confidence),
         citations = citations.map { it.toDomain() },
+        documentMarkdown = documentMarkdown,
+        docxUrl = docxUrl,
+        missingFields = missingFields,
+        risks = risks.map { it.toDomain() },
+    )
+
+data class ClauseRisk(
+    val severity: String,
+    val clauseText: String,
+    val explanation: String,
+    val suggestion: String,
+)
+
+fun ClauseRiskDto.toDomain(): ClauseRisk =
+    ClauseRisk(
+        severity = severity.orEmpty(),
+        clauseText = clauseText.orEmpty(),
+        explanation = explanation.orEmpty(),
+        suggestion = suggestion.orEmpty(),
     )
 
 fun CitationDto.toDomain(): Citation =

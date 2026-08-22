@@ -156,8 +156,8 @@ class SummarizeViewModel
         }
 
         private companion object {
-            const val POLL_INTERVAL_MS = 1_500L
-            const val MAX_POLLS = 40
+            const val POLL_INTERVAL_MS = 3_000L
+            const val MAX_POLLS = 100
             const val TIMEOUT_MESSAGE =
                 "This is taking longer than usual. It will appear under recent results when it finishes."
             const val GENERIC_ERROR = "Summarization failed. Please try again."

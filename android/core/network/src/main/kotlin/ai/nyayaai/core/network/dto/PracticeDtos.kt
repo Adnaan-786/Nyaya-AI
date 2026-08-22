@@ -301,6 +301,20 @@ data class AiResultDto(
     val answerMarkdown: String? = null,
     val confidence: String? = null,
     val citations: List<CitationDto> = emptyList(),
+    // Draft
+    val documentMarkdown: String? = null,
+    val docxUrl: String? = null,
+    val missingFields: List<String> = emptyList(),
+    // Risk Review
+    val risks: List<ClauseRiskDto> = emptyList(),
+)
+
+@Serializable
+data class ClauseRiskDto(
+    val severity: String? = null,
+    val clauseText: String? = null,
+    val explanation: String? = null,
+    val suggestion: String? = null,
 )
 
 @Serializable
@@ -324,6 +338,19 @@ data class ResearchRequestDto(
     val query: String,
     val language: String = "en",
     val conversationId: String? = null,
+)
+
+@Serializable
+data class DraftRequestDto(
+    val templateId: String,
+    val caseId: String? = null,
+    val fields: Map<String, String> = emptyMap(),
+    val language: String = "en",
+)
+
+@Serializable
+data class RiskReviewRequestDto(
+    val documentId: String,
 )
 
 /** D.10 client mode. A deliberately smaller shape than [CaseDto] — see PortalMappers. */

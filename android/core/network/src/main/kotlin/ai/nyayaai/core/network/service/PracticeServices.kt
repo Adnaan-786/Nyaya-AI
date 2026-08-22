@@ -24,6 +24,8 @@ import ai.nyayaai.core.network.dto.PaymentVerifyRequestDto
 import ai.nyayaai.core.network.dto.PortalCaseDto
 import ai.nyayaai.core.network.dto.PortalInvoiceDto
 import ai.nyayaai.core.network.dto.ResearchRequestDto
+import ai.nyayaai.core.network.dto.DraftRequestDto
+import ai.nyayaai.core.network.dto.RiskReviewRequestDto
 import ai.nyayaai.core.network.dto.SummarizeRequestDto
 import ai.nyayaai.core.network.dto.TaskCreateDto
 import ai.nyayaai.core.network.dto.TaskDto
@@ -259,6 +261,16 @@ interface AiService {
     @POST("ai/research")
     suspend fun research(
         @Body body: ResearchRequestDto,
+    ): ApiEnvelope<AiJobDto>
+
+    @POST("ai/draft")
+    suspend fun draft(
+        @Body body: DraftRequestDto,
+    ): ApiEnvelope<AiJobDto>
+
+    @POST("ai/risk-review")
+    suspend fun riskReview(
+        @Body body: RiskReviewRequestDto,
     ): ApiEnvelope<AiJobDto>
 
     @GET("ai/jobs/{id}")
