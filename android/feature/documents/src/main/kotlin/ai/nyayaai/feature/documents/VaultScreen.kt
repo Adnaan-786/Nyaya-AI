@@ -19,7 +19,6 @@ import ai.nyayaai.core.network.api.isRetryable
 import ai.nyayaai.core.network.api.map
 import ai.nyayaai.core.network.mapper.toDomain
 import ai.nyayaai.core.network.service.DocumentService
-import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
@@ -29,7 +28,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -62,11 +60,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -81,18 +86,26 @@ class DocumentRepository
             caller.call { service.documents(folder = folder) }.map { list -> list.map { it.toDomain() } }
     }
 
+private val ACTIVE_WORK_STATES = setOf(WorkInfo.State.ENQUEUED, WorkInfo.State.RUNNING, WorkInfo.State.BLOCKED)
+
 @HiltViewModel
 class VaultViewModel
     @Inject
     constructor(
         private val repository: DocumentRepository,
-        private val uploader: ScanUploader,
+        private val uploadQueue: ScanUploadQueue,
     ) : ViewModel() {
         private val _state = MutableStateFlow<UiState<List<Document>>>(UiState.Loading)
         val state: StateFlow<UiState<List<Document>>> = _state.asStateFlow()
 
-        private val _uploading = MutableStateFlow(false)
-        val uploading: StateFlow<Boolean> = _uploading.asStateFlow()
+        // D.7's WorkManager queue survives this ViewModel, so "is anything uploading"
+        // is read straight off WorkManager rather than tracked locally — it is correct
+        // even for an upload that was queued before the app was last killed.
+        val uploading: StateFlow<Boolean> =
+            uploadQueue
+                .uploads()
+                .map { infos -> infos.any { it.state in ACTIVE_WORK_STATES } }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(UPLOAD_FLOW_TIMEOUT_MS), false)
 
         private val _message = MutableStateFlow<String?>(null)
         val message: StateFlow<String?> = _message.asStateFlow()
@@ -100,8 +113,40 @@ class VaultViewModel
         private val _folder = MutableStateFlow<String?>(null)
         val folder: StateFlow<String?> = _folder.asStateFlow()
 
+        // WorkInfo for a finished job keeps re-emitting in WorkManager's own history until
+        // it is pruned, so each terminal id is handled once rather than reloading the list
+        // or re-showing a toast on every recomposition-triggered collection.
+        private val handledWork = mutableSetOf<UUID>()
+
         init {
             load()
+            uploadQueue
+                .uploads()
+                .onEach(::onWorkInfosChanged)
+                .launchIn(viewModelScope)
+        }
+
+        private fun onWorkInfosChanged(infos: List<WorkInfo>) {
+            infos.forEach { info ->
+                if (info.id in handledWork) return@forEach
+                when (info.state) {
+                    WorkInfo.State.SUCCEEDED -> {
+                        handledWork += info.id
+                        // Reload rather than prepending locally: OCR status is decided
+                        // server-side and the row should show what the server actually has.
+                        load()
+                    }
+
+                    WorkInfo.State.FAILED -> {
+                        handledWork += info.id
+                        _message.value =
+                            info.outputData.getString(ScanUploadWorker.KEY_ERROR_MESSAGE)
+                                ?: "The upload did not complete."
+                    }
+
+                    else -> Unit
+                }
+            }
         }
 
         fun onFolderChanged(value: String?) {
@@ -120,39 +165,31 @@ class VaultViewModel
             }
         }
 
-        /** D.7: a finished scan goes straight into the B.9 upload flow. */
+        /** D.7: a finished scan goes straight into the B.9 upload flow, queued durably so
+         * it survives the app being killed before the PUT lands. */
         fun uploadScan(
-            context: Context,
             uri: Uri,
             pageCount: Int,
         ) {
-            _uploading.value = true
             viewModelScope.launch {
                 // Named by day and page count so a vault full of scans is still
                 // scannable by eye before OCR has run.
                 val pages = if (pageCount == 1) "1 page" else "$pageCount pages"
                 val name = "Scan ${todayInIndia()} ($pages).pdf"
-                val result =
-                    uploader.upload(
-                        context = context,
-                        uri = uri,
-                        name = name,
-                        caseId = null,
-                        folder = _folder.value,
-                    )
-                _uploading.value = false
 
-                when (result) {
-                    // Reload rather than prepending locally: OCR status is decided
-                    // server-side and the row should show what the server actually has.
-                    is ApiResult.Success -> load()
-                    is ApiResult.Failure -> _message.value = result.error.message
+                when (val result = uploadQueue.enqueue(uri, name, caseId = null, folder = _folder.value)) {
+                    is QueueResult.Enqueued -> Unit // uploading/state update comes from the WorkInfo flow above.
+                    is QueueResult.Rejected -> _message.value = result.message
                 }
             }
         }
 
         fun clearMessage() {
             _message.value = null
+        }
+
+        private companion object {
+            const val UPLOAD_FLOW_TIMEOUT_MS = 5000L
         }
     }
 
@@ -177,7 +214,7 @@ fun VaultRoute(
         rememberDocumentScanner(
             onScanned = { result ->
                 result.pdf?.let { pdf ->
-                    viewModel.uploadScan(context, pdf.uri, pdf.pageCount)
+                    viewModel.uploadScan(pdf.uri, pdf.pageCount)
                 }
             },
             // No Play Services, or the module could not download. Saying so beats a

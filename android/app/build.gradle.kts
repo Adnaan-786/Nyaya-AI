@@ -166,6 +166,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.hilt.navigation.compose)
 
+    // D.7: NyayaApplication supplies the HiltWorkerFactory that lets ScanUploadWorker
+    // (feature:documents) be constructed with its real dependencies. See NyayaApplication.
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.hilt.android.testing)

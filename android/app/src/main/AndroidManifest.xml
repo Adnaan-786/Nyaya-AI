@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Android 13+ runtime permission. The pre-permission explainer lands in Sprint A8;
          the permission is declared now because the A1.6 FCM slice needs it. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- D.7's upload worker runs `setForeground()` with a progress notification so the
+         OS does not kill a large upload mid-PUT — Android 14+ requires the matching
+         foreground-service-type permission declared explicitly, on top of the general one. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:name=".NyayaApplication"
@@ -56,6 +62,23 @@
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="docscanner" />
+
+        <!-- WorkManager's default `androidx.startup` initializer would build the
+             singleton with the stock `WorkerFactory`, which cannot construct
+             `ScanUploadWorker` (it needs Hilt-injected dependencies). Removing it here
+             is what makes `NyayaApplication.workManagerConfiguration` — the one that
+             supplies the `HiltWorkerFactory` — the configuration WorkManager actually
+             uses; on-demand initialization then builds WorkManager lazily from that. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup.InitializationProvider"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>

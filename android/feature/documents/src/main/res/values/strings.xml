@@ -14,6 +14,13 @@
     <string name="vault_scan">Scan a document</string>
     <string name="vault_scan_unavailable">Scanning needs Google Play Services on this device.</string>
 
+    <!-- Upload queue (B.9 WorkManager-backed queue) -->
+    <string name="vault_upload_too_large">This scan is larger than the 50 MB upload limit and could not be queued.</string>
+    <string name="vault_scan_unreadable">The scan could not be read.</string>
+    <string name="vault_upload_channel_name">Document uploads</string>
+    <string name="vault_upload_notification_title">Uploading %1$s</string>
+    <string name="vault_upload_notification_failed">%1$s could not be uploaded</string>
+
     <!-- Summarize (B.7 client) -->
     <string name="vault_summarize">Summarize</string>
     <string name="vault_summarize_title">Document summary</string>

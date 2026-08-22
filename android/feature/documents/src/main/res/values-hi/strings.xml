@@ -14,6 +14,12 @@
     <string name="vault_scan">दस्तावेज़ स्कैन करें</string>
     <string name="vault_scan_unavailable">स्कैन करने के लिए इस डिवाइस पर Google Play Services चाहिए।</string>
 
+    <string name="vault_upload_too_large">यह स्कैन 50 MB की अपलोड सीमा से बड़ा है और अपलोड के लिए कतारबद्ध नहीं किया जा सका।</string>
+    <string name="vault_scan_unreadable">स्कैन पढ़ा नहीं जा सका।</string>
+    <string name="vault_upload_channel_name">दस्तावेज़ अपलोड</string>
+    <string name="vault_upload_notification_title">%1$s अपलोड हो रहा है</string>
+    <string name="vault_upload_notification_failed">%1$s अपलोड नहीं हो सका</string>
+
     <string name="vault_summarize">सारांश बनाएँ</string>
     <string name="vault_summarize_title">दस्तावेज़ का सारांश</string>
     <string name="vault_summarize_submitting">सारांश तैयार करना शुरू किया जा रहा है…</string>
