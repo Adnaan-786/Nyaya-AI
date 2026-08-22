@@ -1,9 +1,18 @@
 """Environment-driven settings (12-factor, C.3.4)."""
 
 from functools import lru_cache
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Query keys that libpq understands but asyncpg.connect() rejects with a TypeError.
+# Only these are removed from DATABASE_URL; everything else in the query string
+# reaches asyncpg intact (SQLAlchemy's asyncpg dialect merges query params into
+# the connect kwargs), which is how a unix-socket DSN carries its target:
+# postgresql://user@/db?host=/tmp&port=5433 connects to /tmp/.s.PGSQL.5433, while
+# blanket-stripping the query silently repointed it at localhost:5432.
+_LIBPQ_ONLY_QUERY_KEYS = frozenset({"sslmode", "channel_binding"})
 
 
 class Settings(BaseSettings):
@@ -19,11 +28,20 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _normalise_database_url(self) -> "Settings":
         url = self.database_url
-        # Remember if SSL was requested before stripping query params.
+        # Remember if SSL was requested before stripping the libpq-only params.
         self.database_requires_ssl = "sslmode=" in url or "ssl=" in url
-        # Strip query params — asyncpg rejects libpq-only keys like
-        # sslmode, channel_binding, etc. SSL is passed via connect_args.
-        url = url.split("?")[0]
+        # Drop only the keys asyncpg chokes on — SSL is passed via connect_args.
+        # Survivors keep their original encoding byte-for-byte: re-encoding the
+        # query would turn `/tmp` into `%2Ftmp`, which Alembic's configparser
+        # rejects when env.py hands it the URL.
+        scheme, netloc, path, query, fragment = urlsplit(url)
+        if query:
+            query = "&".join(
+                pair
+                for pair in query.split("&")
+                if pair.partition("=")[0] not in _LIBPQ_ONLY_QUERY_KEYS
+            )
+        url = urlunsplit((scheme, netloc, path, query, fragment))
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://") and "+asyncpg" not in url:
