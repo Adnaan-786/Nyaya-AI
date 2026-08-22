@@ -111,6 +111,21 @@ class Case(UuidPk, TenantScoped, Timestamped, Base):
     next_hearing_date: Mapped[dt.date | None] = mapped_column(Date)
     ecourts_synced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     last_synced_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+    # Two counters, not one: the lifetime total is what tells a lawyer whether this
+    # CNR has always been flaky, while the consecutive run is what the scheduler
+    # backs off on — a case that failed twenty times over a year and succeeds today
+    # must not be treated the same as one failing right now.
+    #
+    # `server_default` as well as `default` because these are being added to a table
+    # that already has rows: without it the ADD COLUMN would need a NULL pass, and the
+    # model would then disagree with the database on every future autogenerate.
+    sync_failure_count: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+    consecutive_sync_failures: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+    last_sync_error: Mapped[str | None] = mapped_column(Text)
     raw_ecourts: Mapped[dict | None] = mapped_column(JSONB)
 
 
@@ -157,6 +172,10 @@ class Document(UuidPk, TenantScoped, Timestamped, Base):
     # pending | done | failed (B.5)
     ocr_status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
     ocr_text: Mapped[str | None] = mapped_column(Text)
+    # Why extraction failed, kept alongside `ocr_status = "failed"`. The status alone
+    # cannot distinguish "this is a scan and OCR is not configured" from "the file is
+    # corrupt", which are different problems for whoever uploaded it.
+    ocr_error: Mapped[str | None] = mapped_column(Text)
     uploaded_by: Mapped[uuid.UUID | None] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
     )

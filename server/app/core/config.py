@@ -56,10 +56,11 @@ class Settings(BaseSettings):
     msg91_sender_id: str | None = None
     ecourts_api_key: str | None = None
     indiankanoon_api_key: str | None = None
-    # Kept for app/integrations/ocr.py's scanned-document gate, which only checks
-    # whether *some* AI provider looks configured — that path is independently
-    # unimplemented (Document AI was never wired) regardless of which LLM answers
-    # summarize/research, so this staying unset even with Grok configured is fine.
+    # Two consumers: the `anthropic` LLM provider below, and
+    # app/integrations/ocr.py's scanned-document gate, which only checks whether
+    # *some* AI provider looks configured — that path is independently unimplemented
+    # (Document AI was never wired) regardless of which LLM answers summarize/research,
+    # so this staying unset while Groq serves the AI surface is fine.
     anthropic_api_key: str | None = None
 
     # Groq (groq.com) — fast inference hosting for open models, and easily confused
@@ -68,6 +69,53 @@ class Settings(BaseSettings):
     # model has been retired before relying on it.
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"
+
+    # Which backend answers summarize/research/draft/risk-review: fake | groq |
+    # anthropic. Defaults to groq because that is what the deployed instance runs on
+    # — changing this default would silently repoint production at another vendor.
+    # `fake` is not only a test seam: an unconfigured provider degrades to it rather
+    # than 500ing, so the demo stays usable before any key is provisioned.
+    llm_provider: str = "groq"
+    # Anthropic only. Groq's model is `groq_model` above, because the two providers'
+    # model catalogues have nothing to do with each other and a single field would
+    # mean re-editing it every time the provider is switched.
+    llm_model: str = "claude-sonnet-4-6"
+    llm_max_tokens: int = 4096
+
+    # C.7: per-tenant concurrency cap and daily quota. Per-plan overrides live in
+    # app/api/ai.py's DAILY_JOB_LIMITS until the billing module owns them; these are
+    # the flat fallbacks.
+    ai_max_concurrent_jobs_per_tenant: int = 3
+    ai_daily_job_quota_per_tenant: int = 50
+
+    # C.9 per-job-type timeouts. A summary of a 40-page scan legitimately takes
+    # minutes; a research answer that has not landed in two is not coming.
+    ai_summarize_timeout_seconds: int = 300
+    ai_research_timeout_seconds: int = 120
+    ai_draft_timeout_seconds: int = 180
+    ai_risk_review_timeout_seconds: int = 180
+
+    # Document pipeline (C.8). Separate from `max_upload_bytes` below, which caps
+    # every upload; this one is the document-specific limit B.9 states.
+    document_max_upload_bytes: int = 50 * 1024 * 1024
+    document_allowed_mime_types: str = (
+        "application/pdf,image/jpeg,image/png,"
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    # B.9/B.6: presigned URLs are the only way bytes move, so their lifetime is the
+    # window in which a leaked link is useful. 15 minutes is long enough for a slow
+    # mobile upload and short enough that a link pasted into a chat expires.
+    document_upload_url_expiry_seconds: int = 900
+    document_download_url_expiry_seconds: int = 900
+
+    # ~800 tokens per chunk (C.8), with enough overlap that a sentence spanning a
+    # boundary is still retrievable from one side of it.
+    document_chunk_words: int = 600
+    document_chunk_overlap_words: int = 80
+
+    embedding_provider: str = "fake"
+    embedding_dimensions: int = 1536
+    openai_api_key: str | None = None
 
     # Transactional email (OTP login). Two delivery paths:
     #
@@ -98,6 +146,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def document_allowed_mime_type_set(self) -> set[str]:
+        return {m.strip() for m in self.document_allowed_mime_types.split(",") if m.strip()}
 
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"
