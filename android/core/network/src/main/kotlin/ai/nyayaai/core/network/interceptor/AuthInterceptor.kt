@@ -21,6 +21,9 @@ class AuthInterceptor
     ) : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
             val request = chain.request()
+            // S3 presigned URLs carry their own auth in the query string.
+            if (request.url.queryParameter("X-Amz-Signature") != null) return chain.proceed(request)
+            
             if (isPublic(request)) return chain.proceed(request)
 
             val token = tokenStore.accessToken ?: return chain.proceed(request)
