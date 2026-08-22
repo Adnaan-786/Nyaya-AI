@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +56,7 @@ fun SectionHeader(
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier =
                     Modifier
+                        .minimumInteractiveComponentSize()
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                         .clickable(onClick = onAction)
