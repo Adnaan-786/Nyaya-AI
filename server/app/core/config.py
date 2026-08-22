@@ -56,11 +56,9 @@ class Settings(BaseSettings):
     msg91_sender_id: str | None = None
     ecourts_api_key: str | None = None
     indiankanoon_api_key: str | None = None
-    # Two consumers: the `anthropic` LLM provider below, and
-    # app/integrations/ocr.py's scanned-document gate, which only checks whether
-    # *some* AI provider looks configured — that path is independently unimplemented
-    # (Document AI was never wired) regardless of which LLM answers summarize/research,
-    # so this staying unset while Groq serves the AI surface is fine.
+    # Only consumer is the `anthropic` LLM provider below. OCR used to check this too,
+    # as a proxy for "does any AI look configured" — it no longer does, because OCR now
+    # has providers of its own with their own credentials (see `ocr_provider`).
     anthropic_api_key: str | None = None
 
     # Groq (groq.com) — fast inference hosting for open models, and easily confused
@@ -96,7 +94,8 @@ class Settings(BaseSettings):
     ai_risk_review_timeout_seconds: int = 180
 
     # Document pipeline (C.8). Separate from `max_upload_bytes` below, which caps
-    # every upload; this one is the document-specific limit B.9 states.
+    # every upload; this one is the document-specific limit B.9 states. The smaller of
+    # the two wins — see app/services/document_service.py::upload_limit_bytes.
     document_max_upload_bytes: int = 50 * 1024 * 1024
     document_allowed_mime_types: str = (
         "application/pdf,image/jpeg,image/png,"
@@ -116,6 +115,22 @@ class Settings(BaseSettings):
     embedding_provider: str = "fake"
     embedding_dimensions: int = 1536
     openai_api_key: str | None = None
+
+    # Which provider answers image and scanned-PDF OCR: auto | document_ai | tesseract
+    # | none. `auto` is the C.1 chain — Document AI first, local Tesseract behind it.
+    # Pin it to one when a provider is configured but misbehaving, so a Document AI
+    # outage surfaces as failures instead of hiding behind worse local results.
+    # PDFs that carry their own text layer never reach any of these.
+    ocr_provider: str = "auto"
+    document_ai_project_id: str | None = None
+    # Part of the API hostname as well as the resource path — a mismatch here is a 404
+    # on a processor that plainly exists.
+    document_ai_location: str = "us"
+    document_ai_processor_id: str | None = None
+    # Service-account JSON for Document AI. Deliberately not `firebase_credentials_path`
+    # below: these are different service accounts with different scopes, and sharing one
+    # would hand the push credential read access to every uploaded document.
+    google_credentials_path: str | None = None
 
     # Transactional email (OTP login). Two delivery paths:
     #
@@ -150,6 +165,11 @@ class Settings(BaseSettings):
     @property
     def document_allowed_mime_type_set(self) -> set[str]:
         return {m.strip() for m in self.document_allowed_mime_types.split(",") if m.strip()}
+
+    # Opt-in placeholder OCR text for scanned documents. Off even under FAKE_MODE,
+    # because ocr_status is rendered to the user as a claim about whether a document is
+    # searchable — see run_providers() in app/integrations/ocr/factory.py.
+    ocr_fake_text: bool = False
 
     s3_bucket: str | None = None
     aws_region: str = "ap-south-1"

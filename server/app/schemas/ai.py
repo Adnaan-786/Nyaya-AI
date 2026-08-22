@@ -8,7 +8,7 @@ model was never asked for.
 
 import datetime as dt
 import uuid
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -94,3 +94,99 @@ class ResearchResult(BaseModel):
     answer_markdown: str
     citations: list[Citation]
     confidence: Literal["high", "medium", "insufficient"]
+
+
+# --- Draft and risk review (C.9) -------------------------------------------------
+
+
+class RiskReviewRequest(BaseModel):
+    document_id: uuid.UUID
+
+
+class DraftRequest(BaseModel):
+    template_id: str
+    # Optional: when given, court name and case number are filled from the firm's own
+    # case record rather than retyped.
+    case_id: uuid.UUID | None = None
+    fields: dict[str, Any] = Field(default_factory=dict)
+    language: Literal["en", "hi"] = "en"
+
+
+class TemplateFieldOut(BaseModel):
+    """One form field. `type` is what the app renders — `number` fields on money are
+    integer paise, `date` fields are dates, per B.1.5."""
+
+    name: str
+    label: str
+    type: Literal["string", "date", "number", "text"]
+    required: bool
+
+
+class TemplateOut(BaseModel):
+    id: str
+    name: str
+    category: str
+    fields: list[TemplateFieldOut]
+
+
+class DraftResult(BaseModel):
+    """B.7 `draft` result.
+
+    `missing_fields` is not an error list — the draft is still produced. It is what the
+    app deep-links from so the lawyer can fill the gaps the model was forbidden to
+    invent.
+    """
+
+    document_markdown: str
+    docx_url: str
+    document_id: uuid.UUID
+    missing_fields: list[str]
+
+
+class ClauseRisk(BaseModel):
+    severity: Literal["high", "medium", "low"]
+    clause_text: str = Field(description="The clause this assessment is about, verbatim.")
+    explanation: str
+    suggestion: str = Field(description="A concrete redraft or negotiation point.")
+
+
+class RiskReviewResult(BaseModel):
+    """B.7 `risk_review` result: one row per clause, in document order."""
+
+    risks: list[ClauseRisk]
+
+
+# --- Research conversations (B.6) ------------------------------------------------
+
+
+class ConversationCreateRequest(BaseModel):
+    title: str = Field("Research", max_length=300)
+
+
+class ConversationMessageOut(BaseModel):
+    role: Literal["user", "assistant"]
+    # A string for the lawyer's turn, a research result object for the assistant's.
+    content: Any
+    at: dt.datetime
+
+
+class ConversationSummaryOut(BaseModel):
+    """The list row. Deliberately without `messages`: a research thread's turns carry
+    whole answers, and shipping twenty of them to build a list of titles is a page of
+    mobile data spent on nothing the screen shows."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    created_at: dt.datetime
+    updated_at: dt.datetime
+
+
+class ConversationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    messages: list[ConversationMessageOut]
+    created_at: dt.datetime

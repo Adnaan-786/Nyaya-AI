@@ -1,6 +1,7 @@
 """B.9 upload flow, OCR, and the security around signed URLs."""
 
 import time
+import uuid
 
 import pytest
 from httpx import AsyncClient
@@ -185,3 +186,74 @@ async def test_download_returns_the_original_bytes(client: AsyncClient) -> None:
     assert downloaded.status_code == 200
     assert downloaded.content == CHARGESHEET
     assert downloaded.headers["content-type"].startswith("application/pdf")
+
+
+async def test_a_scan_that_cannot_be_read_fails_honestly_and_keeps_the_file(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The whole point of the OCR provider chain degrading rather than throwing.
+
+    With no provider configured the document must end `failed` with a stored reason —
+    not `done` with nothing in it, and not a lost upload.
+    """
+    from app.core.config import get_settings
+    from app.core.db import SessionFactory
+    from app.models import Document
+
+    monkeypatch.setattr(get_settings(), "fake_mode", False)
+
+    headers = await sign_in(client, "Scan Firm")
+    scanned = _pdf([])  # valid PDF, no text layer — a scan, as far as pypdf can tell
+    document_id = await _upload(client, headers, "Scan.pdf", scanned)
+
+    document = (
+        await client.get(f"{BASE}/documents/{document_id}", headers=headers)
+    ).json()["data"]
+    assert document["ocr_status"] == "failed"
+
+    async with SessionFactory() as session:
+        row = await session.get(Document, uuid.UUID(document_id))
+        assert row.ocr_error
+        assert row.ocr_text is None
+
+    # The bytes are still there: a document nobody could read is still a document.
+    downloaded = await client.get(document["download_url"])
+    assert downloaded.content == scanned
+
+
+async def test_upload_url_expiry_follows_the_configured_window(
+    client: AsyncClient,
+) -> None:
+    from app.core.config import get_settings
+
+    headers = await sign_in(client, "Expiry Firm")
+    issued = (
+        await client.post(
+            f"{BASE}/documents/upload-url",
+            headers=headers,
+            json={"name": "e.pdf", "mime_type": "application/pdf", "size_bytes": 100},
+        )
+    ).json()["data"]
+
+    assert issued["expires_in_seconds"] == get_settings().document_upload_url_expiry_seconds
+
+
+async def test_a_put_larger_than_the_limit_is_rejected(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Step 1 only sees the size the client claims; step 2 sees the file."""
+    from app.core.config import get_settings
+
+    headers = await sign_in(client, "Oversize Firm")
+    issued = (
+        await client.post(
+            f"{BASE}/documents/upload-url",
+            headers=headers,
+            json={"name": "lie.pdf", "mime_type": "application/pdf", "size_bytes": 10},
+        )
+    ).json()["data"]
+
+    monkeypatch.setattr(get_settings(), "document_max_upload_bytes", 16)
+    put = await client.put(issued["upload_url"], content=b"x" * 64)
+
+    assert put.json()["error"]["code"] == "VALIDATION_ERROR"

@@ -19,10 +19,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import Page, get_scoped_or_404, paginate
 from app.core import envelope, security
 from app.core.config import get_settings
-from app.core.db import SessionFactory, get_session, scoped
-from app.integrations import ocr, storage
+from app.core.db import get_session, scoped
+from app.integrations import storage
 from app.models import Case, Client, Document
 from app.schemas.documents import DocumentOut, UploadUrlOut, UploadUrlRequest
+from app.services import document_service
 
 router = APIRouter(tags=["documents"])
 settings = get_settings()
@@ -44,7 +45,7 @@ async def create_upload_url(
     session: AsyncSession = Depends(get_session),
     principal: security.Principal = Depends(security.require_staff),
 ):
-    storage.validate_upload(body.mime_type, body.size_bytes)
+    document_service.validate_upload(body.mime_type, body.size_bytes)
 
     if body.case_id is not None:
         await get_scoped_or_404(session, Case, body.case_id, principal.tenant_id, "case")
@@ -75,7 +76,7 @@ async def create_upload_url(
         UploadUrlOut(
             upload_url=storage.build_upload_url(str(document.id)),
             document_id=document.id,
-            expires_in_seconds=storage.UPLOAD_URL_TTL_SECONDS,
+            expires_in_seconds=settings.document_upload_url_expiry_seconds,
         ).model_dump(mode="json")
     )
 
@@ -101,9 +102,8 @@ async def receive_upload(
         raise envelope.not_found("document")
 
     data = await request.body()
-    if len(data) > settings.max_upload_bytes:
-        megabytes = settings.max_upload_bytes // (1024 * 1024)
-        raise envelope.validation(f"Files must be smaller than {megabytes} MB.")
+    # The size declared at step 1 was a claim; this is the file.
+    document_service.validate_size(len(data))
 
     await storage.put_object(document.storage_key, data)
     # Trust the bytes actually received over the size the client predicted.
@@ -130,31 +130,13 @@ async def confirm_upload(
     )
     document.confirmed = True
     document.ocr_status = "pending"
+    # A re-confirmed document is being re-run; the previous reason no longer applies.
+    document.ocr_error = None
     await session.commit()
     await session.refresh(document)
 
-    background.add_task(run_ocr, document.id)
+    background.add_task(document_service.run_ocr, document.id)
     return envelope.ok(_to_out(document))
-
-
-async def run_ocr(document_id: uuid.UUID) -> None:
-    """Background OCR. Opens its own session — the request's is already closed."""
-    async with SessionFactory() as session:
-        document = await session.get(Document, document_id)
-        if document is None:
-            return
-
-        try:
-            data = await storage.get_object(document.storage_key)
-            result = await ocr.extract_text(data, document.mime_type)
-        except Exception:  # noqa: BLE001 - a failed extraction must not lose the file
-            document.ocr_status = "failed"
-            await session.commit()
-            return
-
-        document.ocr_text = result.text
-        document.ocr_status = result.status
-        await session.commit()
 
 
 @router.get("/documents")

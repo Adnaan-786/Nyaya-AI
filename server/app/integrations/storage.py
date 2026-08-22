@@ -2,11 +2,17 @@
 
 The app's flow is fixed by the contract: ask for an upload URL, PUT the bytes straight
 to it, then confirm. That flow must not change depending on where the bytes land, so
-both backends expose the same two operations and the same 15-minute signed URL.
+both backends expose the same two operations and the same signed URL.
 
 * **S3** when a bucket is configured — the real path, per-tenant key prefixes (C.1).
 * **Local disk** otherwise, with a signed URL pointing at our own PUT endpoint. This is
   not a stub: the app performs a genuine direct upload against a URL it cannot forge.
+
+The signed URL is always *ours*, never an S3 presigned PUT, even when S3 is holding the
+bytes. The app's OkHttp stack attaches `Authorization: Bearer <jwt>` to every request
+whose path is not explicitly public, and S3 rejects a request carrying both a
+query-string signature and an Authorization header outright. Switching to a presigned
+PUT therefore means changing the shipped app first, not just the server.
 
 Keys are always `tenant/<tenant_id>/<document_id>/<filename>`, so a bucket listing can
 never mix two firms' files and a leaked key reveals nothing about another tenant.
@@ -24,18 +30,14 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-UPLOAD_URL_TTL_SECONDS = 15 * 60
-
-ALLOWED_MIME_TYPES = {
-    "application/pdf",
-    "image/jpeg",
-    "image/png",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-}
-
 
 def storage_key(tenant_id: str, document_id: str, filename: str) -> str:
-    safe = Path(filename).name.replace("/", "_") or "file"
+    # `Path(...).name` strips a POSIX directory prefix; the explicit replacements catch
+    # a Windows-style path, which POSIX `Path` treats as one long filename, and a
+    # traversal attempt that survives as bare dots.
+    safe = Path(filename).name.replace("/", "_").replace("\\", "_").strip()
+    if not safe or set(safe) <= {"."}:
+        safe = "file"
     return f"tenant/{tenant_id}/{document_id}/{safe}"
 
 
@@ -62,21 +64,9 @@ def verify_signature(document_id: str, expires_at: int, signature: str) -> None:
 
 
 def build_upload_url(document_id: str) -> str:
-    expires_at = int(time.time()) + UPLOAD_URL_TTL_SECONDS
+    expires_at = int(time.time()) + settings.document_upload_url_expiry_seconds
     signature = sign(document_id, expires_at)
     return f"/v1/uploads/{document_id}?expires={expires_at}&signature={signature}"
-
-
-def validate_upload(mime_type: str, size_bytes: int) -> None:
-    if mime_type not in ALLOWED_MIME_TYPES:
-        raise envelope.validation(
-            "That file type is not supported.", {"mime_type": mime_type}
-        )
-    if size_bytes <= 0 or size_bytes > settings.max_upload_bytes:
-        megabytes = settings.max_upload_bytes // (1024 * 1024)
-        raise envelope.validation(
-            f"Files must be smaller than {megabytes} MB.", {"size_bytes": str(size_bytes)}
-        )
 
 
 def _local_path(key: str) -> Path:
@@ -130,7 +120,12 @@ async def delete_object(key: str) -> None:
 
 
 def build_download_url(document_id: str) -> str:
-    """B.5: download URLs are short-lived and must never be cached by the client."""
-    expires_at = int(time.time()) + UPLOAD_URL_TTL_SECONDS
+    """B.5: download URLs are short-lived and must never be cached by the client.
+
+    Its own expiry setting rather than the upload one: they happen to match today, but
+    a slow mobile upload and a document being opened for reading are different windows,
+    and only one of them wants lengthening on a bad connection.
+    """
+    expires_at = int(time.time()) + settings.document_download_url_expiry_seconds
     signature = sign(document_id, expires_at)
     return f"/v1/documents/{document_id}/download?expires={expires_at}&signature={signature}"

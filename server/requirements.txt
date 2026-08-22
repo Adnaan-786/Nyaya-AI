@@ -81,3 +81,15 @@ requests==2.32.5
 # S3_BUCKET is actually set. Also the client for any S3-compatible provider (R2, etc.)
 # via S3_ENDPOINT_URL.
 boto3==1.43.62
+
+# Deliberately absent: pytesseract, pillow, pdf2image. They are the local OCR fallback
+# in app/integrations/ocr/tesseract.py, and they are useless without the tesseract-ocr
+# and poppler-utils *system* packages, which the Render Python runtime does not carry.
+# Installing the Python halves alone would turn a clear "OCR is not configured" into a
+# TesseractNotFound at extraction time. The provider names both packages when it
+# declines, so a host that does have them only needs `pip install` to light it up.
+
+# DOCX generation for AI drafts (app/ai/docx_generator.py imports `docx`, the module
+# name this package installs as). lxml comes with it as its XML backend.
+python-docx==1.2.0
+lxml==6.1.2

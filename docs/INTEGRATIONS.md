@@ -1,9 +1,10 @@
 # Third-party setup
 
-Three integrations need credentials you have to create yourself — I can't create accounts
+These integrations need credentials you have to create yourself — I can't create accounts
 on your behalf. Each one is **inert until you supply its credential**, and the app and
 server both build, run and demo fully without any of them. Nothing here is a blocker for
-showing the product; these turn on real push, real payments and the scanner module.
+showing the product; these turn on real push, real payments, the scanner module and OCR
+of scanned documents.
 
 The scanner (#3) needs no account at all.
 
@@ -162,6 +163,42 @@ assembly are all local; only the finished PDF is uploaded, through the normal B.
 
 ---
 
+## 4. Google Document AI — OCR for scanned documents
+
+Only needed for documents with **no text layer**: photographs of orders, and the PDFs the
+scanner (#3) produces. A PDF downloaded from eCourts already carries its own text and is
+extracted locally with pypdf, free and offline — which is most of them.
+
+Without this, a scan uploads and downloads normally but ends `ocr_status = failed` with
+the reason recorded in `documents.ocr_error`, and its contents are not searchable.
+
+Create a Document AI processor (type: *Document OCR*) in the GCP console, then a service
+account with the *Document AI API User* role, and set on the server:
+
+```
+DOCUMENT_AI_PROJECT_ID=your-gcp-project
+DOCUMENT_AI_PROCESSOR_ID=abc123def456
+DOCUMENT_AI_LOCATION=us          # or eu / asia — must match where you created it
+GOOGLE_CREDENTIALS_PATH=/etc/secrets/document-ai.json
+```
+
+The location is part of the API hostname as well as the resource path, so a mismatch
+reads as a 404 on a processor that plainly exists.
+
+Two things worth knowing before turning it on:
+
+- **It is billed per page**, and Indian court scans are long. `OCR_PROVIDER=none` turns
+  extraction off outright if a bill surprises you.
+- **A separate service account from Firebase (#1).** Sharing one would give the push
+  credential read access to every document a firm has uploaded.
+
+`OCR_PROVIDER=tesseract` selects the local fallback instead — no account, no per-page
+cost, worse results. It needs `pip install pytesseract pillow pdf2image` plus the
+`tesseract-ocr` and `poppler-utils` system packages, which Render's Python runtime does
+not include; the server says so explicitly when they are missing.
+
+---
+
 ## What each credential can do if leaked
 
 | Credential | Where it lives | Risk |
@@ -171,6 +208,7 @@ assembly are all local; only the finished PDF is uploaded, through the normal B.
 | Razorpay Key ID | app | None. Public by design. |
 | Razorpay Key Secret | server only | **High.** Can create and capture charges. |
 | Razorpay webhook secret | server only | **High.** Forge a webhook, mark invoices paid. |
+| Document AI service account | server only | **Medium.** Runs up a per-page bill; reads nothing of ours. |
 
 The three marked high must never reach the repo, the app, or a log line. The server reads
 all of them from the environment for that reason.

@@ -9,7 +9,7 @@ from app.api import ai
 from app.integrations.llm import _drop_unverifiable_citations
 from app.schemas.ai import Citation, ResearchResult
 from tests.conftest import BASE, sign_in
-from tests.test_documents import CHARGESHEET, _upload
+from tests.test_documents import CHARGESHEET, _pdf, _upload
 
 pytestmark = pytest.mark.asyncio
 
@@ -212,3 +212,93 @@ async def test_jobs_are_scoped_to_the_requesting_user(client: AsyncClient) -> No
 
     listed = (await client.get(f"{BASE}/ai/jobs", headers=b_headers)).json()
     assert listed["meta"]["total"] == 0
+
+
+CONTRACT = _pdf(
+    [
+        "SERVICE AGREEMENT",
+        "1. The Vendor shall indemnify and hold harmless the Client from all claims.",
+        "2. Payment shall be made within 15 days of invoice.",
+    ]
+)
+
+
+async def test_risk_review_returns_a_row_per_clause(client: AsyncClient) -> None:
+    """D.8 renders the result as a list a lawyer works down, so each row must carry its
+    own severity, its own clause text, and something to do about it."""
+    headers = await sign_in(client, "Risk Firm")
+    document_id = await _upload(client, headers, "Agreement.pdf", CONTRACT)
+
+    accepted = await client.post(
+        f"{BASE}/ai/risk-review", headers=headers, json={"document_id": document_id}
+    )
+    assert accepted.status_code == 202
+
+    job = await _await_job(client, headers, accepted.json()["data"]["job_id"])
+    assert job["status"] == "done", job["error"]
+
+    risks = job["result"]["risks"]
+    assert risks
+    for risk in risks:
+        assert set(risk) == {"severity", "clause_text", "explanation", "suggestion"}
+        assert risk["severity"] in ("high", "medium", "low")
+
+
+async def test_risk_review_without_extracted_text_fails_fast(client: AsyncClient) -> None:
+    headers = await sign_in(client, "Risk NoText Firm")
+    issued = (
+        await client.post(
+            f"{BASE}/documents/upload-url",
+            headers=headers,
+            json={"name": "x.pdf", "mime_type": "application/pdf", "size_bytes": 10},
+        )
+    ).json()["data"]
+
+    response = await client.post(
+        f"{BASE}/ai/risk-review", headers=headers, json={"document_id": issued["document_id"]}
+    )
+
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_another_firms_document_cannot_be_risk_reviewed(client: AsyncClient) -> None:
+    a_headers = await sign_in(client, "Risk Firm A")
+    b_headers = await sign_in(client, "Risk Firm B")
+    document_id = await _upload(client, a_headers, "Agreement.pdf", CONTRACT)
+
+    response = await client.post(
+        f"{BASE}/ai/risk-review", headers=b_headers, json={"document_id": document_id}
+    )
+
+    assert response.json()["error"]["code"] == "DOCUMENT_NOT_FOUND"
+
+
+async def test_the_template_catalogue_is_what_the_drafting_form_needs(
+    client: AsyncClient,
+) -> None:
+    headers = await sign_in(client, "Template Firm")
+
+    templates = (await client.get(f"{BASE}/ai/templates", headers=headers)).json()["data"]
+
+    assert templates
+    for template in templates:
+        assert set(template) == {"id", "name", "category", "fields"}
+        assert template["fields"], template["id"]
+        for field in template["fields"]:
+            assert field["type"] in ("string", "date", "number", "text")
+
+
+async def test_the_new_job_types_are_listable_by_type(client: AsyncClient) -> None:
+    """D.8's "Recent AI results" filter has to know about draft and risk_review too,
+    or the hub silently hides half the history."""
+    headers = await sign_in(client, "Job Filter Firm")
+    await client.post(
+        f"{BASE}/ai/draft",
+        headers=headers,
+        json={"template_id": "affidavit", "fields": {"deponent_name": "Anita Rao"}},
+    )
+
+    listed = (await client.get(f"{BASE}/ai/jobs?type=draft", headers=headers)).json()
+
+    assert listed["meta"]["total"] == 1
+    assert listed["data"][0]["type"] == "draft"
