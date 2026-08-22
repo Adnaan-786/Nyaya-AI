@@ -112,3 +112,18 @@ data class NotificationDto(
 data class UserRoleUpdateDto(
     val role: String,
 )
+
+@Serializable
+data class HealthDto(
+    val status: String? = null,
+    val service: String? = null,
+    val version: String? = null,
+    val environment: String? = null,
+)
+
+@Serializable
+data class FirmDto(
+    val id: String? = null,
+    val name: String? = null,
+    val createdAt: String? = null,
+)

@@ -13,9 +13,12 @@ import ai.nyayaai.core.network.dto.OtpVerifyRequestDto
 import ai.nyayaai.core.network.dto.RefreshRequestDto
 import ai.nyayaai.core.network.dto.TokenPairDto
 import ai.nyayaai.core.network.dto.UserDto
+import ai.nyayaai.core.network.dto.HealthDto
+import ai.nyayaai.core.network.dto.FirmDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 
@@ -65,6 +68,17 @@ interface AuthService {
 
     @GET("app/config")
     suspend fun appConfig(): ApiEnvelope<AppConfigDto>
+
+    @GET("health")
+    suspend fun health(): ApiEnvelope<HealthDto>
+
+    @PATCH("me")
+    suspend fun updateMe(
+        @Body body: UserDto,
+    ): ApiEnvelope<UserDto>
+
+    @GET("firm")
+    suspend fun firm(): ApiEnvelope<FirmDto>
 }
 
 /**
