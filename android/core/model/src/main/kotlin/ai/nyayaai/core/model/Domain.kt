@@ -130,6 +130,7 @@ data class Invoice(
     val totalPaise: Paise,
     val status: InvoiceStatus,
     val dueDate: CourtDate?,
+    val description: String?,
     val pdfUrl: String?,
     val paymentLink: String?,
 )
@@ -151,6 +152,7 @@ data class Task(
     val title: String,
     val assigneeId: UserId?,
     val dueDate: CourtDate?,
+    val description: String?,
     val status: TaskStatus,
     val createdBy: UserId?,
 )
@@ -187,4 +189,15 @@ data class Session(
     val accessToken: String,
     val refreshToken: String,
     val isNewUser: Boolean,
+)
+
+@JvmInline
+value class CaseNoteId(val value: String)
+
+data class CaseNote(
+    val id: CaseNoteId,
+    val caseId: CaseId,
+    val authorId: UserId,
+    val text: String,
+    val createdAt: kotlinx.datetime.Instant,
 )

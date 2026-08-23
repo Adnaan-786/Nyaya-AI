@@ -71,4 +71,9 @@
     <string name="case_summarize_progress_estimate">सारांश तैयार हो रहा है — लगभग %1$d सेकंड…</string>
     <string name="case_summarize_doc_type">पहचाना गया प्रकार: %1$s</string>
     <string name="case_summarize_close">बंद करें</string>
+
+    <string name="case_tab_notes">नोट्स</string>
+    <string name="case_tab_tasks">कार्य</string>
+    <string name="case_no_notes">अभी तक कोई नोट्स नहीं</string>
+    <string name="case_no_tasks">अभी तक कोई कार्य नहीं</string>
 </resources>

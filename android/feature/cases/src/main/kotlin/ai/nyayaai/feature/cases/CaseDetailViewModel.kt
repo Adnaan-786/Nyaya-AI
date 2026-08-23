@@ -25,6 +25,8 @@ data class CaseDetail(
     val hearings: List<Hearing>,
     val documents: List<Document>,
     val timeEntries: List<TimeEntry>,
+    val notes: List<ai.nyayaai.core.model.CaseNote> = emptyList(),
+    val tasks: List<ai.nyayaai.core.model.Task> = emptyList(),
     val isSyncing: Boolean = false,
     /** Surfaced as a transient message; a failed sync must not replace the case on screen. */
     val syncMessage: String? = null,
@@ -55,6 +57,8 @@ class CaseDetailViewModel
                 val hearingsCall = async { repository.hearings(caseId) }
                 val documentsCall = async { repository.documents(caseId) }
                 val timeEntriesCall = async { timeEntryRepository.timeEntries(caseId) }
+                val notesCall = async { repository.notes(caseId) }
+                val tasksCall = async { repository.tasks(caseId) }
 
                 _state.value =
                     when (val case = caseCall.await()) {
@@ -71,6 +75,8 @@ class CaseDetailViewModel
                                     hearings = (hearingsCall.await() as? ApiResult.Success)?.data.orEmpty(),
                                     documents = (documentsCall.await() as? ApiResult.Success)?.data.orEmpty(),
                                     timeEntries = (timeEntriesCall.await() as? ApiResult.Success)?.data.orEmpty(),
+                                    notes = (notesCall.await() as? ApiResult.Success)?.data.orEmpty(),
+                                    tasks = (tasksCall.await() as? ApiResult.Success)?.data.orEmpty(),
                                 ),
                             )
                     }
@@ -116,4 +122,36 @@ class CaseDetailViewModel
         companion object {
             const val ARG_CASE_ID = "caseId"
         }
-    }
+    
+        fun addNote(text: String) {
+            val current = _state.value as? UiState.Content ?: return
+            viewModelScope.launch {
+                when (val result = repository.addNote(caseId, text)) {
+                    is ApiResult.Success -> {
+                        _state.value = UiState.Content(
+                            current.data.copy(
+                                notes = listOf(result.data) + current.data.notes
+                            )
+                        )
+                    }
+                    is ApiResult.Failure -> { /* Ideally show error */ }
+                }
+            }
+        }
+
+        fun addTask(title: String, description: String? = null, dueDate: ai.nyayaai.core.model.CourtDate? = null) {
+            val current = _state.value as? UiState.Content ?: return
+            viewModelScope.launch {
+                when (val result = repository.addTask(caseId, title, description, dueDate)) {
+                    is ApiResult.Success -> {
+                        _state.value = UiState.Content(
+                            current.data.copy(
+                                tasks = listOf(result.data) + current.data.tasks
+                            )
+                        )
+                    }
+                    is ApiResult.Failure -> { /* Ideally show error */ }
+                }
+            }
+        }
+}

@@ -152,6 +152,7 @@ data class TaskDto(
     val title: String? = null,
     val assigneeId: String? = null,
     val dueDate: String? = null,
+    val description: String? = null,
     val status: String? = null,
     val createdBy: String? = null,
 )
@@ -161,6 +162,7 @@ data class TaskCreateDto(
     val title: String,
     val caseId: String? = null,
     val dueDate: String? = null,
+    val description: String? = null,
     // Left null: the server assigns the creator as the default assignee when this is
     // omitted (TaskCreate schema). No assignee picker exists in the app yet.
     val assigneeId: String? = null,
@@ -203,6 +205,7 @@ data class InvoiceDto(
     val totalPaise: Long = 0,
     val status: String? = null,
     val dueDate: String? = null,
+    val description: String? = null,
     val pdfUrl: String? = null,
     val paymentLink: String? = null,
     val createdAt: String? = null,
@@ -382,6 +385,7 @@ data class PortalInvoiceDto(
     val totalPaise: Long = 0,
     val status: String? = null,
     val dueDate: String? = null,
+    val description: String? = null,
     val pdfUrl: String? = null,
     val paymentLink: String? = null,
     val createdAt: String? = null,
@@ -405,4 +409,25 @@ data class UploadUrlDto(
     // The window the app has to finish the PUT. A queued upload that sits offline past
     // this must re-request rather than fail (A5).
     val expiresInSeconds: Int = 0,
+)
+
+@Serializable
+data class CaseNoteCreateDto(
+    val text: String,
+)
+
+@Serializable
+data class CaseNoteDto(
+    val id: String,
+    val caseId: String,
+    val authorId: String,
+    val text: String,
+    val createdAt: String,
+)
+
+@Serializable
+data class TimelineEventDto(
+    val type: String,
+    val at: String,
+    val data: kotlinx.serialization.json.JsonElement,
 )

@@ -9,6 +9,7 @@ import ai.nyayaai.feature.billing.AddInvoiceRoute
 import ai.nyayaai.feature.billing.InvoiceDetailRoute
 import ai.nyayaai.feature.billing.InvoiceDetailViewModel
 import ai.nyayaai.feature.billing.InvoiceListRoute
+import ai.nyayaai.feature.billing.TimeTrackerRoute
 import ai.nyayaai.feature.calendar.CalendarRoute
 import ai.nyayaai.feature.cases.AddByCnrRoute
 import ai.nyayaai.feature.cases.AddCaseRoute
@@ -122,6 +123,10 @@ fun NyayaNavHost(
                     }
                 },
             )
+        }
+
+        composable(Route.TIME_TRACKER) {
+            TimeTrackerRoute()
         }
 
         composable(

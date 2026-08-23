@@ -77,4 +77,9 @@
     <string name="case_summarize_progress_estimate">Summarizing — about %1$d seconds…</string>
     <string name="case_summarize_doc_type">Detected type: %1$s</string>
     <string name="case_summarize_close">Close</string>
+
+    <string name="case_tab_notes">Notes</string>
+    <string name="case_tab_tasks">Tasks</string>
+    <string name="case_no_notes">No notes yet</string>
+    <string name="case_no_tasks">No tasks yet</string>
 </resources>

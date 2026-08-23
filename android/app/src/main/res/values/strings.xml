@@ -24,6 +24,7 @@
     <string name="title_team">Team</string>
     <string name="nav_notifications">Notifications</string>
     <string name="title_add_invoice">New invoice</string>
+    <string name="title_time_tracker">Time tracker</string>
     <string name="title_calendar">Calendar</string>
     <string name="title_tasks">Tasks</string>
     <string name="title_settings">Settings</string>

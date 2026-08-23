@@ -21,6 +21,9 @@ import ai.nyayaai.core.model.DocumentId
 import ai.nyayaai.core.model.Hearing
 import ai.nyayaai.core.model.OcrStatus
 import ai.nyayaai.core.model.TimeEntry
+import ai.nyayaai.core.model.CaseNote
+import ai.nyayaai.core.model.Task
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -179,7 +182,9 @@ private fun CaseDetailContent(
                         0 -> OverviewTab(detail, onSync)
                         1 -> HearingsTab(detail.hearings)
                         2 -> TimeTab(detail.timeEntries)
-                        else -> DocumentsTab(detail.documents)
+                        3 -> DocumentsTab(detail.documents)
+                        4 -> NotesTab(detail.notes)
+                        else -> TasksTab(detail.tasks)
                     }
                 }
             }
@@ -472,9 +477,86 @@ private val TAB_LABELS =
         R.string.case_tab_hearings,
         R.string.case_tab_time,
         R.string.case_tab_documents,
+        R.string.case_tab_notes,
+        R.string.case_tab_tasks,
     )
 
 // A simple fade, not a slide — these tabs are peers, not a hierarchy, matching
 // NyayaNavHost's own tab cross-fades.
 private const val TAB_FADE_MS = 260
 private const val FAB_FADE_MS = 200
+
+@Composable
+private fun NotesTab(notes: List<CaseNote>) {
+    if (notes.isEmpty()) {
+        EmptyState(title = stringResource(R.string.case_no_notes))
+        return
+    }
+
+    LazyColumn(
+        contentPadding =
+            PaddingValues(
+                start = NyayaTheme.spacing.md,
+                end = NyayaTheme.spacing.md,
+                top = NyayaTheme.spacing.md,
+                bottom = NyayaTheme.spacing.fabClearance,
+            ),
+        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+    ) {
+        itemsIndexed(notes, key = { _, n -> n.id.value }) { index, note ->
+            NyayaCard(modifier = Modifier.animatedListEntry(index)) {
+                Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                    Text(text = note.text, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TasksTab(tasks: List<Task>) {
+    if (tasks.isEmpty()) {
+        EmptyState(title = stringResource(R.string.case_no_tasks))
+        return
+    }
+
+    LazyColumn(
+        contentPadding =
+            PaddingValues(
+                start = NyayaTheme.spacing.md,
+                end = NyayaTheme.spacing.md,
+                top = NyayaTheme.spacing.md,
+                bottom = NyayaTheme.spacing.fabClearance,
+            ),
+        verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.sm),
+    ) {
+        itemsIndexed(tasks, key = { _, t -> t.id.value }) { index, task ->
+            NyayaCard(modifier = Modifier.animatedListEntry(index)) {
+                Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = task.title,
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        StatusBadge(
+                            text = task.status.name,
+                            tone = StatusTone.NEUTRAL,
+                        )
+                    }
+                    task.description?.let { Text(text = it, style = MaterialTheme.typography.bodyMedium) }
+                    task.dueDate?.let {
+                        Text(
+                            text = it.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

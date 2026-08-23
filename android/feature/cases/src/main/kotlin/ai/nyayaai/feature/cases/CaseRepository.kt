@@ -26,6 +26,7 @@ class CaseRepository
     @Inject
     constructor(
         private val service: CaseService,
+        private val calendarService: ai.nyayaai.core.network.service.CalendarService,
         private val caller: ApiCaller,
     ) {
         suspend fun cases(
@@ -114,4 +115,45 @@ class CaseRepository
                         ),
                     )
                 }.map { it.toDomain() }
-    }
+    
+        suspend fun notes(caseId: CaseId): ApiResult<List<ai.nyayaai.core.model.CaseNote>> =
+            caller.call { service.timeline(caseId.value) }.map { list -> 
+                list.filter { it.type == "note" }
+                    .map { 
+                        // The JSON element needs to be decoded to CaseNoteDto
+                        val dto = kotlinx.serialization.json.Json.decodeFromJsonElement(
+                            ai.nyayaai.core.network.dto.CaseNoteDto.serializer(), 
+                            it.data
+                        )
+                        dto.toDomain() 
+                    }
+            }
+
+        suspend fun addNote(caseId: CaseId, text: String): ApiResult<ai.nyayaai.core.model.CaseNote> =
+            caller.call { service.addNote(caseId.value, ai.nyayaai.core.network.dto.CaseNoteCreateDto(text)) }
+                .map { it.toDomain() }
+
+        // INTERIM: The server lacks a case-scoped task retrieval endpoint (e.g. GET /cases/{id}/tasks).
+        // Fetching all tasks and filtering by case_id client-side for now.
+        // Once the m1-module1 gap is closed, this should switch to a case-scoped GET or a case_id query parameter.
+        suspend fun tasks(caseId: CaseId): ApiResult<List<ai.nyayaai.core.model.Task>> =
+            caller.call { calendarService.tasks(status = null) }
+                .map { list -> list.map { it.toDomain() }.filter { it.caseId == caseId } }
+
+        suspend fun addTask(
+            caseId: CaseId, 
+            title: String, 
+            description: String?, 
+            dueDate: CourtDate?
+        ): ApiResult<ai.nyayaai.core.model.Task> =
+            caller.call { 
+                calendarService.createTask(
+                    ai.nyayaai.core.network.dto.TaskCreateDto(
+                        title = title,
+                        caseId = caseId.value,
+                        dueDate = dueDate?.toString(),
+                        description = description?.takeIf { it.isNotBlank() }
+                    )
+                ) 
+            }.map { it.toDomain() }
+}

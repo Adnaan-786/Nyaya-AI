@@ -138,6 +138,18 @@ interface CaseService {
     suspend fun inviteClient(
         @Path("client_id") clientId: String,
     ): ApiEnvelope<ClientInviteResultDto>
+
+    @POST("cases/{id}/notes")
+    suspend fun addNote(
+        @retrofit2.http.Path("id") id: String,
+        @retrofit2.http.Body body: ai.nyayaai.core.network.dto.CaseNoteCreateDto,
+    ): ai.nyayaai.core.network.api.ApiEnvelope<ai.nyayaai.core.network.dto.CaseNoteDto>
+
+    @GET("cases/{id}/timeline")
+    suspend fun timeline(
+        @retrofit2.http.Path("id") id: String,
+    ): ai.nyayaai.core.network.api.ApiEnvelope<List<ai.nyayaai.core.network.dto.TimelineEventDto>>
+
 }
 
 interface CalendarService {

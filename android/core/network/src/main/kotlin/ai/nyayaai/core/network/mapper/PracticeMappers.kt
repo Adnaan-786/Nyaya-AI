@@ -113,6 +113,7 @@ fun TaskDto.toDomain(): Task =
         title = title.requiredString("task.title"),
         assigneeId = assigneeId?.let(::UserId),
         dueDate = dueDate.toCourtDateOrNull(),
+        description = description,
         status = TaskStatus.from(status),
         createdBy = createdBy?.let(::UserId),
     )
@@ -140,6 +141,7 @@ fun InvoiceDto.toDomain(): Invoice =
         totalPaise = Paise(totalPaise),
         status = InvoiceStatus.from(status),
         dueDate = dueDate.toCourtDateOrNull(),
+        description = description,
         pdfUrl = pdfUrl,
         paymentLink = paymentLink,
     )
@@ -371,4 +373,13 @@ fun PortalInvoiceDto.toDomain(): PortalInvoice =
         status = InvoiceStatus.from(status),
         dueDate = dueDate.toCourtDateOrNull(),
         paymentLink = paymentLink,
+    )
+
+fun ai.nyayaai.core.network.dto.CaseNoteDto.toDomain(): ai.nyayaai.core.model.CaseNote =
+    ai.nyayaai.core.model.CaseNote(
+        id = ai.nyayaai.core.model.CaseNoteId(id),
+        caseId = ai.nyayaai.core.model.CaseId(caseId),
+        authorId = ai.nyayaai.core.model.UserId(authorId),
+        text = text,
+        createdAt = createdAt.toInstantOrThrow("case_note.created_at"),
     )

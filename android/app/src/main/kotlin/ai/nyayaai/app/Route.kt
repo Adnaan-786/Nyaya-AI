@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -39,6 +40,10 @@ object Route {
     const val INVOICES = "invoices"
     const val INVOICE_DETAIL = "invoice/{invoiceId}"
     const val INVOICE_ADD = "invoice/new"
+
+    /** D.9 screen inventory #19: a global stopwatch across cases, distinct from
+     * [CASE_TIME_ADD]'s per-case manual entry. */
+    const val TIME_TRACKER = "billing/timer"
     const val CALENDAR = "calendar"
     const val TASKS = "tasks"
     const val TASK_ADD = "task/new"
@@ -101,6 +106,7 @@ val PUSHED_TITLES: Map<String, Int> =
         Route.INVOICES to R.string.nav_invoices,
         Route.INVOICE_DETAIL to R.string.title_invoice,
         Route.INVOICE_ADD to R.string.title_add_invoice,
+        Route.TIME_TRACKER to R.string.title_time_tracker,
         Route.NOTIFICATIONS to R.string.title_notifications,
         Route.TEAM to R.string.title_team,
         // Client mode's own case screen — same generic "Case" title staff mode uses.
@@ -145,6 +151,7 @@ val MORE_ENTRIES =
         MoreEntry(Route.TASKS, R.string.title_tasks, Icons.Default.CheckCircle),
         MoreEntry(Route.CLIENTS, R.string.title_clients, Icons.Default.Groups),
         MoreEntry(Route.INVOICES, R.string.nav_invoices, Icons.Default.ReceiptLong),
+        MoreEntry(Route.TIME_TRACKER, R.string.title_time_tracker, Icons.Default.Timer),
         MoreEntry(Route.TEAM, R.string.title_team, Icons.Default.Badge, adminOnly = true),
         MoreEntry(Route.SETTINGS, R.string.title_settings, Icons.Default.Settings),
     )
