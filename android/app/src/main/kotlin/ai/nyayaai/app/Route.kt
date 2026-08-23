@@ -27,6 +27,7 @@ object Route {
     const val TODAY = "today"
     const val CASES = "cases"
     const val CASE_DETAIL = "case/{caseId}"
+    const val CASE_ADD_CHOOSER = "case/chooser"
     const val ADD_CNR = "case/add"
 
     /** The manual-entry escape hatch from [ADD_CNR], and (D.5) a destination in its own right. */
@@ -83,6 +84,7 @@ data class Destination(
 val PUSHED_TITLES: Map<String, Int> =
     mapOf(
         Route.CASE_DETAIL to R.string.title_case,
+        Route.CASE_ADD_CHOOSER to R.string.title_add_case,
         Route.ADD_CNR to R.string.title_add_case,
         Route.CASE_ADD_MANUAL to R.string.title_add_case,
         Route.CASE_HEARING_ADD to R.string.title_add_hearing,

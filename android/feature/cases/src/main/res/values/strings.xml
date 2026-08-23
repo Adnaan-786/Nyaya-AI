@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="chooser_cnr">Look up by CNR</string>
+    <string name="chooser_manual">Enter manually</string>
     <string name="cases_title">Cases</string>
     <string name="cases_search_hint">Search cases, clients, CNR</string>
     <string name="cases_filter_all">All</string>

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="chooser_cnr">CNR द्वारा खोजें</string>
+    <string name="chooser_manual">मैन्युअल रूप से दर्ज करें</string>
     <string name="cases_title">मुकदमे</string>
     <string name="cases_search_hint">केस, क्लाइंट या CNR खोजें</string>
     <string name="cases_filter_all">सभी</string>

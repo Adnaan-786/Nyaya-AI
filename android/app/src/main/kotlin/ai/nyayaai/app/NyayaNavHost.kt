@@ -87,7 +87,7 @@ fun NyayaNavHost(
         composable(Route.CASES, enterTransition = { fade() }, exitTransition = { fadeAway() }) {
             CaseListRoute(
                 onOpenCase = { navController.navigate(Route.caseDetail(it)) },
-                onAddCase = { navController.navigate(Route.ADD_CNR) },
+                onAddCase = { navController.navigate(Route.CASE_ADD_CHOOSER) },
             )
         }
 
@@ -136,6 +136,13 @@ fun NyayaNavHost(
                 onAddTimeEntry = {
                     caseId?.let { navController.navigate(Route.caseTimeAdd(CaseId(it))) }
                 },
+            )
+        }
+
+        composable(Route.CASE_ADD_CHOOSER) {
+            ai.nyayaai.feature.cases.AddCaseChooserRoute(
+                onNavigateToCnr = { navController.navigate(Route.ADD_CNR) },
+                onNavigateToManual = { navController.navigate(Route.CASE_ADD_MANUAL) },
             )
         }
 
