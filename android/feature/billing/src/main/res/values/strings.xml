@@ -39,4 +39,16 @@
     <string name="billing_add_line_quantity">Quantity</string>
     <string name="billing_add_line_rate">Rate per unit</string>
     <string name="billing_add_line_remove">Remove line</string>
+    <string name="timer_title">Time tracker</string>
+    <string name="timer_case_label">Case</string>
+    <string name="timer_start">Start timer</string>
+    <string name="timer_stop">Stop</string>
+    <string name="timer_running">Timer running</string>
+    <string name="timer_saved">Time entry saved.</string>
+    <string name="timer_failed">Could not save the time entry. Please try again.</string>
+    <string name="timer_channel_name">Time tracker</string>
+    <string name="timer_notification_title">Tracking time — %1$s</string>
+    <string name="timer_notification_body">Tap Stop when you\'re done.</string>
+    <string name="timer_unbilled_title">Unbilled time by case</string>
+    <string name="timer_unbilled_empty">No unbilled time yet.</string>
 </resources>

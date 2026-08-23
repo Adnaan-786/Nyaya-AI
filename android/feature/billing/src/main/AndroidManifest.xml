@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- D.9's per-case stopwatch: none of Android 14's standard foreground-service
+         categories (dataSync, mediaPlayback, location, …) describe a billable-hours
+         timer, so this declares specialUse per Google's own guidance for exactly that
+         case — see TimeTrackerService's PROPERTY_SPECIAL_USE_FGS_SUBTYPE below. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <application>
+        <service
+            android:name=".TimeTrackerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="case_time_tracking" />
+        </service>
+    </application>
+
+</manifest>

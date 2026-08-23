@@ -38,4 +38,16 @@
     <string name="billing_add_line_quantity">मात्रा</string>
     <string name="billing_add_line_rate">प्रति इकाई दर</string>
     <string name="billing_add_line_remove">लाइन हटाएं</string>
+    <string name="timer_title">समय ट्रैकर</string>
+    <string name="timer_case_label">केस</string>
+    <string name="timer_start">टाइमर शुरू करें</string>
+    <string name="timer_stop">रोकें</string>
+    <string name="timer_running">टाइमर चल रहा है</string>
+    <string name="timer_saved">समय-प्रविष्टि सहेजी गई।</string>
+    <string name="timer_failed">समय-प्रविष्टि सहेजी नहीं जा सकी। कृपया फिर से कोशिश करें।</string>
+    <string name="timer_channel_name">समय ट्रैकर</string>
+    <string name="timer_notification_title">समय ट्रैक हो रहा है — %1$s</string>
+    <string name="timer_notification_body">पूरा होने पर रोकें दबाएं।</string>
+    <string name="timer_unbilled_title">केस अनुसार बिना बिल का समय</string>
+    <string name="timer_unbilled_empty">अभी कोई बिना बिल का समय नहीं।</string>
 </resources>
