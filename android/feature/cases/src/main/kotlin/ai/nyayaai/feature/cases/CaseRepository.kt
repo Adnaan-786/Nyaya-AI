@@ -59,7 +59,10 @@ class CaseRepository
                 .call { service.createFromCnr(CaseFromCnrRequestDto(cnr, clientId?.value)) }
                 .map { it.toDomain() }
 
-        /** Server-side rate limit is 1/hour; the UI shows "Synced N ago" rather than retrying. */
+        /**
+         * Server-side rate limit is 1/hour. The case-list badge (CaseListScreen.CaseCard)
+         * reads [Case.lastSyncedAt] from the returned case rather than this call retrying.
+         */
         suspend fun sync(id: CaseId): ApiResult<Case> = caller.call { service.sync(id.value) }.map { it.toDomain() }
 
         /** Manual intake (D.6): every field but [title] is optional, and blank means absent on the wire. */

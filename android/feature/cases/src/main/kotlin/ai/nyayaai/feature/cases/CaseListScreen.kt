@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 @Composable
 fun CaseListRoute(
@@ -169,9 +171,35 @@ internal fun CaseCard(
                             text = stringResource(R.string.cases_manual_badge),
                             tone = StatusTone.WARNING,
                         )
+                    } else {
+                        StatusBadge(
+                            text =
+                                case.lastSyncedAt?.let {
+                                    stringResource(R.string.cases_synced_ago, it.syncedAgoText())
+                                } ?: stringResource(R.string.cases_synced_never),
+                            tone = StatusTone.NEUTRAL,
+                        )
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * A short "N ago" fragment for the case-list sync badge. Kept local to this screen rather
+ * than in core:common, same reasoning as `NotificationsScreen.timeAgoLabel` — a genuine
+ * instant needs clock-relative math that a court date's calendar-day arithmetic doesn't fit.
+ */
+private fun Instant.syncedAgoText(clock: Clock = Clock.System): String {
+    val totalSeconds = (clock.now() - this).inWholeSeconds.coerceAtLeast(0)
+    val minutes = totalSeconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    return when {
+        minutes < 1 -> "just now"
+        hours < 1 -> "${minutes}m ago"
+        days < 1 -> "${hours}h ago"
+        else -> "${days}d ago"
     }
 }

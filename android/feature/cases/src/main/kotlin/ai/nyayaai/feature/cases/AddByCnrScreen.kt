@@ -179,7 +179,7 @@ private fun PreviewCard(
         Column(verticalArrangement = Arrangement.spacedBy(NyayaTheme.spacing.xs)) {
             Text(text = preview.title, style = MaterialTheme.typography.titleSmall)
 
-            listOfNotNull(preview.caseNumber, preview.courtName, preview.judgeName)
+            listOfNotNull(preview.caseNumber, preview.courtName, preview.judgeName, preview.stage)
                 .forEach {
                     Text(
                         text = it,
@@ -187,6 +187,13 @@ private fun PreviewCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+
+            if (preview.parties.isNotEmpty()) {
+                Text(
+                    text = preview.parties.joinToString(" vs "),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
 
             preview.nextHearingDate?.let {
                 Text(

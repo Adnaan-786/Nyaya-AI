@@ -6,7 +6,6 @@
     <string name="today_no_hearings_detail">Nothing listed for today. Tomorrow has %1$d.</string>
     <string name="today_no_hearings_free">Nothing listed for today or tomorrow.</string>
     <string name="today_tomorrow_count">%1$d tomorrow</string>
-    <string name="today_unread">%1$d unread</string>
     <plurals name="today_outcomes_pending">
         <item quantity="one">%1$d hearing needs an outcome</item>
         <item quantity="other">%1$d hearings need an outcome</item>

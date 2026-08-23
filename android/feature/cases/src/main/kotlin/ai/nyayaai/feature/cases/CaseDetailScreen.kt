@@ -40,6 +40,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +50,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -95,6 +97,7 @@ fun CaseDetailRoute(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CaseDetailContent(
     detail: CaseDetail,
@@ -158,16 +161,26 @@ private fun CaseDetailContent(
                 }
             }
 
-            AnimatedContent(
-                targetState = tab,
-                transitionSpec = { fadeIn(tween(TAB_FADE_MS)) togetherWith fadeOut(tween(TAB_FADE_MS)) },
-                label = "case-detail-tab",
-            ) { targetTab ->
-                when (targetTab) {
-                    0 -> OverviewTab(detail, onSync)
-                    1 -> HearingsTab(detail.hearings)
-                    2 -> TimeTab(detail.timeEntries)
-                    else -> DocumentsTab(detail.documents)
+            // Pull-to-refresh maps to the same POST /cases/{id}/sync as the Overview tab's
+            // button (CaseDetailViewModel.sync()) — that call already treats a rate-limit
+            // failure as a transient syncMessage rather than an error, so the gesture is
+            // safe to offer on every tab, not just Overview.
+            PullToRefreshBox(
+                isRefreshing = detail.isSyncing,
+                onRefresh = onSync,
+                modifier = Modifier.weight(1f),
+            ) {
+                AnimatedContent(
+                    targetState = tab,
+                    transitionSpec = { fadeIn(tween(TAB_FADE_MS)) togetherWith fadeOut(tween(TAB_FADE_MS)) },
+                    label = "case-detail-tab",
+                ) { targetTab ->
+                    when (targetTab) {
+                        0 -> OverviewTab(detail, onSync)
+                        1 -> HearingsTab(detail.hearings)
+                        2 -> TimeTab(detail.timeEntries)
+                        else -> DocumentsTab(detail.documents)
+                    }
                 }
             }
         }

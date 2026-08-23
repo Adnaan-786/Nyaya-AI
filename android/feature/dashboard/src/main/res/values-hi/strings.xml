@@ -8,7 +8,6 @@
     <string name="today_no_hearings_detail">आज कुछ भी सूचीबद्ध नहीं है। कल %1$d हैं।</string>
     <string name="today_no_hearings_free">आज और कल कोई hearing नहीं है।</string>
     <string name="today_tomorrow_count">कल %1$d</string>
-    <string name="today_unread">%1$d अपठित</string>
     <plurals name="today_outcomes_pending">
         <item quantity="one">%1$d hearing का outcome दर्ज करना बाकी है</item>
         <item quantity="other">%1$d hearings का outcome दर्ज करना बाकी है</item>
