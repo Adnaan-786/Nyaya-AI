@@ -32,11 +32,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -55,14 +59,42 @@ fun InvoiceListRoute(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val payment by viewModel.paymentCoordinator.state.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // The list refreshes when the server settles a payment, so the status badge shows
-    // what the server decided rather than what Checkout claimed.
+    // Keyed on `payment` so a state change (e.g. Verifying -> Settled) cancels whatever
+    // this coroutine was doing before — an indefinite "Verifying…" snackbar is dismissed
+    // for free the moment the server actually decides, no manual bookkeeping needed.
     LaunchedEffect(payment) {
-        if (payment is PaymentState.Settled) {
-            viewModel.load()
-            viewModel.paymentCoordinator.clear()
+        when (val current = payment) {
+            is PaymentState.Verifying ->
+                snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.billing_payment_verifying),
+                    duration = SnackbarDuration.Indefinite,
+                )
+
+            // The list refreshes when the server settles a payment, so the status badge
+            // shows what the server decided rather than what Checkout claimed.
+            is PaymentState.Settled -> {
+                viewModel.load()
+                viewModel.paymentCoordinator.clear()
+            }
+
+            is PaymentState.Failed ->
+                snackbarHostState.showSnackbar(
+                    message = current.message ?: context.getString(R.string.billing_payment_failed),
+                    duration = SnackbarDuration.Long,
+                )
+
+            PaymentState.Idle, PaymentState.InProgress -> Unit
+        }
+    }
+
+    LaunchedEffect(message) {
+        message?.let {
+            snackbarHostState.showSnackbar(message = it, duration = SnackbarDuration.Short)
+            viewModel.clearMessage()
         }
     }
 
@@ -70,6 +102,7 @@ fun InvoiceListRoute(
     // invoices, or whose list failed to load, still needs a way to create the first one.
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddInvoice) {
                 Icon(
@@ -257,7 +290,7 @@ private fun InvoiceStatus.labelRes(): Int =
         InvoiceStatus.SENT -> R.string.billing_status_sent
         InvoiceStatus.PAID -> R.string.billing_status_paid
         InvoiceStatus.OVERDUE -> R.string.billing_status_overdue
-        InvoiceStatus.UNKNOWN -> R.string.billing_status_draft
+        InvoiceStatus.UNKNOWN -> R.string.billing_status_unknown
     }
 
 private fun InvoiceStatus.tone(): StatusTone =

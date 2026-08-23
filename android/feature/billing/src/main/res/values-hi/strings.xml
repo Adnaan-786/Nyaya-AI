@@ -7,7 +7,10 @@
     <string name="billing_status_sent">भेजा गया</string>
     <string name="billing_status_paid">भुगतान हुआ</string>
     <string name="billing_status_overdue">बकाया</string>
+    <string name="billing_status_unknown">अज्ञात</string>
     <string name="billing_due">%1$s तक देय</string>
+    <string name="billing_payment_verifying">भुगतान की पुष्टि हो रही है…</string>
+    <string name="billing_payment_failed">भुगतान की पुष्टि नहीं हो सकी। कृपया फिर से कोशिश करें।</string>
     <string name="billing_send">भेजें</string>
     <string name="billing_pay">अभी भुगतान करें</string>
     <string name="billing_subtotal">उप-योग</string>

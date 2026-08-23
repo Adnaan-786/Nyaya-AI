@@ -270,7 +270,7 @@ private fun InvoiceStatus.labelRes(): Int =
         InvoiceStatus.SENT -> R.string.billing_status_sent
         InvoiceStatus.PAID -> R.string.billing_status_paid
         InvoiceStatus.OVERDUE -> R.string.billing_status_overdue
-        InvoiceStatus.UNKNOWN -> R.string.billing_status_draft
+        InvoiceStatus.UNKNOWN -> R.string.billing_status_unknown
     }
 
 private fun InvoiceStatus.tone(): StatusTone =
