@@ -53,10 +53,10 @@ class CaseRepository
 
         suspend fun createFromCnr(
             cnr: String,
-            clientId: ClientId?,
+            clientId: ClientId,
         ): ApiResult<Case> =
             caller
-                .call { service.createFromCnr(CaseFromCnrRequestDto(cnr, clientId?.value)) }
+                .call { service.createFromCnr(CaseFromCnrRequestDto(cnr, clientId.value)) }
                 .map { it.toDomain() }
 
         /**
@@ -68,6 +68,7 @@ class CaseRepository
         /** Manual intake (D.6): every field but [title] is optional, and blank means absent on the wire. */
         suspend fun createCase(
             title: String,
+            clientId: ClientId,
             caseNumber: String?,
             courtName: String?,
             courtType: String?,
@@ -81,6 +82,7 @@ class CaseRepository
                     service.createCase(
                         CaseCreateDto(
                             title = title,
+                            clientId = clientId.value,
                             caseNumber = caseNumber?.takeIf { it.isNotBlank() },
                             courtName = courtName?.takeIf { it.isNotBlank() },
                             courtType = courtType?.takeIf { it.isNotBlank() },

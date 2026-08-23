@@ -6,6 +6,11 @@ import ai.nyayaai.core.designsystem.component.NyayaTextField
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.CourtDate
 import ai.nyayaai.core.network.api.ApiResult
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,6 +36,9 @@ import javax.inject.Inject
  */
 data class AddCaseUiState(
     val title: String = "",
+    val clientId: ai.nyayaai.core.model.ClientId? = null,
+    val clientName: String? = null,
+    val showClientPicker: Boolean = false,
     val caseNumber: String = "",
     val courtName: String = "",
     val courtType: String = "",
@@ -42,7 +50,7 @@ data class AddCaseUiState(
     val error: String? = null,
     val createdCaseId: CaseId? = null,
 ) {
-    val isValid: Boolean get() = title.isNotBlank()
+    val isValid: Boolean get() = title.isNotBlank() && clientId != null
 }
 
 @HiltViewModel
@@ -56,6 +64,14 @@ class AddCaseViewModel
 
         fun onTitleChanged(value: String) {
             _state.update { it.copy(title = value, error = null) }
+        }
+
+        fun onClientSelected(client: ai.nyayaai.core.model.Client) {
+            _state.update { it.copy(clientId = client.id, clientName = client.name, showClientPicker = false, error = null) }
+        }
+
+        fun setClientPickerVisible(visible: Boolean) {
+            _state.update { it.copy(showClientPicker = visible) }
         }
 
         fun onCaseNumberChanged(value: String) {
@@ -96,6 +112,7 @@ class AddCaseViewModel
                     val result =
                         repository.createCase(
                             title = current.title,
+                            clientId = current.clientId!!,
                             caseNumber = current.caseNumber,
                             courtName = current.courtName,
                             courtType = current.courtType,
@@ -136,6 +153,30 @@ fun AddCaseRoute(
         modifier = modifier,
         error = state.error,
     ) {
+        Box(modifier = Modifier.fillMaxWidth().clickable { viewModel.setClientPickerVisible(true) }) {
+            OutlinedTextField(
+                value = state.clientName ?: "",
+                onValueChange = {},
+                readOnly = true,
+                enabled = false,
+                label = { Text(stringResource(ai.nyayaai.feature.clients.R.string.clients_title)) },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(stringResource(ai.nyayaai.feature.clients.R.string.clients_search_hint)) },
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            )
+        }
+
+        if (state.showClientPicker) {
+            ai.nyayaai.feature.clients.ClientPickerBottomSheet(
+                onClientSelected = viewModel::onClientSelected,
+                onDismissRequest = { viewModel.setClientPickerVisible(false) },
+            )
+        }
+
         NyayaTextField(
             value = state.title,
             onValueChange = viewModel::onTitleChanged,

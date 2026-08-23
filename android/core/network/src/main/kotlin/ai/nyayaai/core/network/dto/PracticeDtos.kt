@@ -64,7 +64,7 @@ data class CaseDto(
 @Serializable
 data class CaseCreateDto(
     val title: String,
-    val clientId: String? = null,
+    val clientId: String,
     val cnr: String? = null,
     val caseNumber: String? = null,
     val courtName: String? = null,
@@ -97,7 +97,7 @@ data class CnrPreviewDto(
 @Serializable
 data class CaseFromCnrRequestDto(
     val cnr: String,
-    val clientId: String? = null,
+    val clientId: String,
 )
 
 @Serializable

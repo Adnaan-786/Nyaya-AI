@@ -9,11 +9,15 @@ import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.network.api.ApiError
 import ai.nyayaai.core.network.api.ApiResult
 import ai.nyayaai.core.network.mapper.CnrPreview
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,9 +51,13 @@ data class AddByCnrUiState(
      * dead end. A lawyer standing in a corridor cannot wait for someone else's uptime.
      */
     val offerManualEntry: Boolean = false,
+    val clientId: ai.nyayaai.core.model.ClientId? = null,
+    val clientName: String? = null,
+    val showClientPicker: Boolean = false,
     val createdCaseId: CaseId? = null,
 ) {
     val isCnrComplete: Boolean get() = cnr.length == CNR_LENGTH
+    val canConfirm: Boolean get() = preview != null && clientId != null
 }
 
 @HiltViewModel
@@ -97,14 +105,22 @@ class AddByCnrViewModel
             }
         }
 
+        fun onClientSelected(client: ai.nyayaai.core.model.Client) {
+            _state.update { it.copy(clientId = client.id, clientName = client.name, showClientPicker = false, error = null) }
+        }
+
+        fun setClientPickerVisible(visible: Boolean) {
+            _state.update { it.copy(showClientPicker = visible) }
+        }
+
         fun confirm() {
             val current = _state.value
             val preview = current.preview ?: return
-            if (current.isSaving) return
+            if (current.isSaving || current.clientId == null) return
 
             _state.update { it.copy(isSaving = true, error = null) }
             viewModelScope.launch {
-                when (val result = repository.createFromCnr(preview.cnr, clientId = null)) {
+                when (val result = repository.createFromCnr(preview.cnr, clientId = current.clientId)) {
                     is ApiResult.Success ->
                         _state.update { it.copy(isSaving = false, createdCaseId = result.data.id) }
 
@@ -159,9 +175,34 @@ fun AddByCnrRoute(
 
         state.preview?.let { preview ->
             PreviewCard(preview)
+            
+            Box(modifier = Modifier.fillMaxWidth().clickable { viewModel.setClientPickerVisible(true) }) {
+                OutlinedTextField(
+                    value = state.clientName ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    enabled = false,
+                    label = { Text(stringResource(ai.nyayaai.feature.clients.R.string.clients_title)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(ai.nyayaai.feature.clients.R.string.clients_search_hint)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                )
+            }
+
+            if (state.showClientPicker) {
+                ai.nyayaai.feature.clients.ClientPickerBottomSheet(
+                    onClientSelected = viewModel::onClientSelected,
+                    onDismissRequest = { viewModel.setClientPickerVisible(false) },
+                )
+            }
+
             Button(
                 onClick = viewModel::confirm,
-                enabled = !state.isSaving,
+                enabled = !state.isSaving && state.canConfirm,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.cnr_confirm))
