@@ -37,12 +37,8 @@ data class AddClientUiState(
     val error: String? = null,
     val createdClientId: ClientId? = null,
 ) {
-    /** Indian mobile numbers are 10 digits — same rule `LoginUiState.isPhoneValid` uses at sign-in. */
-    val isValid: Boolean get() = name.isNotBlank() && phone.length == PHONE_LENGTH && phone.all(Char::isDigit)
-
-    companion object {
-        const val PHONE_LENGTH = 10
-    }
+    /** E.164 format: up to 15 digits, optional leading + */
+    val isValid: Boolean get() = name.isNotBlank() && phone.matches(Regex("^\\+?\\d{10,15}$"))
 }
 
 @HiltViewModel
@@ -60,7 +56,10 @@ class AddClientViewModel
 
         fun onPhoneChanged(value: String) {
             _state.update {
-                it.copy(phone = value.filter(Char::isDigit).take(AddClientUiState.PHONE_LENGTH), error = null)
+                val hasPlus = value.trimStart().startsWith("+")
+                val digits = value.filter(Char::isDigit).take(15)
+                val newPhone = if (hasPlus) "+$digits" else digits
+                it.copy(phone = newPhone, error = null)
             }
         }
 
