@@ -13,4 +13,6 @@
     <string name="portal_judge">जज: %1$s</string>
     <string name="portal_case_history">सुनवाई का इतिहास</string>
     <string name="portal_no_history">अभी तक कोई सुनवाई दर्ज नहीं</string>
+    <string name="portal_payment_verifying">भुगतान की पुष्टि हो रही है…</string>
+    <string name="portal_payment_failed">भुगतान की पुष्टि नहीं हो सकी। कृपया फिर से कोशिश करें।</string>
 </resources>

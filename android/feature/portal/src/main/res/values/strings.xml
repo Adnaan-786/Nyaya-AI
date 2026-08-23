@@ -13,4 +13,6 @@
     <string name="portal_judge">Judge: %1$s</string>
     <string name="portal_case_history">Hearing history</string>
     <string name="portal_no_history">No hearings recorded yet</string>
+    <string name="portal_payment_verifying">Verifying payment…</string>
+    <string name="portal_payment_failed">Payment could not be verified. Please try again.</string>
 </resources>

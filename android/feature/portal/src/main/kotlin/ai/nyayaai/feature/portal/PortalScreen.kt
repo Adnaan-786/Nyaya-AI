@@ -18,6 +18,18 @@ import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.model.InvoiceStatus
 import ai.nyayaai.core.network.mapper.PortalCase
 import ai.nyayaai.core.network.mapper.PortalInvoice
+import ai.nyayaai.core.model.InvoiceId
+import ai.nyayaai.feature.billing.CheckoutLauncher
+import ai.nyayaai.feature.billing.CheckoutRequest
+import ai.nyayaai.feature.billing.PaymentState
+import android.app.Activity
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,41 +59,95 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  */
 @Composable
 fun PortalRoute(
-    onPay: (String) -> Unit,
+    userName: String,
     onOpenCase: (CaseId) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PortalViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val payment by viewModel.paymentCoordinator.state.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    when (state) {
-        is UiState.Loading -> LoadingList(modifier = modifier)
+    LaunchedEffect(payment) {
+        when (val current = payment) {
+            is PaymentState.Verifying ->
+                snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.portal_payment_verifying),
+                    duration = SnackbarDuration.Indefinite,
+                )
 
-        is UiState.Error -> {
-            val error = state as UiState.Error
-            ErrorState(
-                message = error.message,
-                onRetry = viewModel::load.takeIf { error.retryable },
-                modifier = modifier,
-            )
+            is PaymentState.Settled -> {
+                viewModel.load()
+                viewModel.paymentCoordinator.clear()
+            }
+
+            is PaymentState.Failed ->
+                snackbarHostState.showSnackbar(
+                    message = current.message ?: context.getString(R.string.portal_payment_failed),
+                    duration = SnackbarDuration.Long,
+                )
+
+            PaymentState.Idle, PaymentState.InProgress -> Unit
         }
+    }
 
-        is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title, modifier = modifier)
+    LaunchedEffect(message) {
+        message?.let {
+            snackbarHostState.showSnackbar(message = it, duration = SnackbarDuration.Short)
+            viewModel.clearMessage()
+        }
+    }
 
-        is UiState.Content ->
-            PortalContentList(
-                (state as UiState.Content<PortalContent>).data,
-                onPay,
-                onOpenCase,
-                modifier,
-            )
+    Scaffold(
+        modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { padding ->
+        when (state) {
+            is UiState.Loading -> LoadingList(modifier = Modifier.padding(padding))
+
+            is UiState.Error -> {
+                val error = state as UiState.Error
+                ErrorState(
+                    message = error.message,
+                    onRetry = viewModel::load.takeIf { error.retryable },
+                    modifier = Modifier.padding(padding),
+                )
+            }
+
+            is UiState.Empty -> EmptyState(title = (state as UiState.Empty).title, modifier = Modifier.padding(padding))
+
+            is UiState.Content ->
+                PortalContentList(
+                    content = (state as UiState.Content<PortalContent>).data,
+                    userName = userName,
+                    onPay = { invoiceId ->
+                        viewModel.pay(invoiceId) { order ->
+                            CheckoutLauncher.start(
+                                activity = context as Activity,
+                                request = CheckoutRequest(
+                                    keyId = order.keyId,
+                                    orderId = order.orderId,
+                                    amountPaise = order.amountPaise,
+                                    invoiceNumber = (state as UiState.Content<PortalContent>).data.invoices.first { it.id == invoiceId }.number,
+                                    firmName = userName,
+                                ),
+                            )
+                        }
+                    },
+                    onOpenCase = onOpenCase,
+                    modifier = Modifier.padding(padding),
+                )
+        }
     }
 }
 
 @Composable
 private fun PortalContentList(
     content: PortalContent,
-    onPay: (String) -> Unit,
+    userName: String,
+    onPay: (InvoiceId) -> Unit,
     onOpenCase: (CaseId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -167,7 +233,7 @@ private fun PortalCaseCard(
 @Composable
 private fun PortalInvoiceCard(
     invoice: PortalInvoice,
-    onPay: (String) -> Unit,
+    onPay: (InvoiceId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NyayaCard(modifier = modifier) {
@@ -198,10 +264,8 @@ private fun PortalInvoiceCard(
                     tone = StatusTone.POSITIVE,
                 )
             } else {
-                invoice.paymentLink?.let { link ->
-                    TextButton(onClick = { onPay(link) }) {
-                        Text(stringResource(R.string.portal_pay))
-                    }
+                TextButton(onClick = { onPay(invoice.id) }) {
+                    Text(stringResource(R.string.portal_pay))
                 }
             }
         }

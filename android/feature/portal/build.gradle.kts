@@ -5,3 +5,7 @@ plugins {
 android {
     namespace = "ai.nyayaai.feature.portal"
 }
+
+dependencies {
+    implementation(project(":feature:billing"))
+}

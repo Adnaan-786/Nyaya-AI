@@ -1,5 +1,9 @@
 package ai.nyayaai.feature.portal
 
+import ai.nyayaai.core.model.InvoiceId
+import ai.nyayaai.feature.billing.BillingRepository
+import ai.nyayaai.feature.billing.PaymentCoordinator
+import ai.nyayaai.feature.billing.PaymentOrder
 import ai.nyayaai.core.common.UiState
 import ai.nyayaai.core.model.CaseId
 import ai.nyayaai.core.network.api.ApiCaller
@@ -43,6 +47,7 @@ data class PortalContent(
     val invoices: List<PortalInvoice>,
 )
 
+
 /**
  * D.10 client mode.
  *
@@ -56,9 +61,14 @@ class PortalViewModel
     @Inject
     constructor(
         private val repository: PortalRepository,
+        private val billingRepository: BillingRepository,
+        val paymentCoordinator: PaymentCoordinator,
     ) : ViewModel() {
         private val _state = MutableStateFlow<UiState<PortalContent>>(UiState.Loading)
         val state: StateFlow<UiState<PortalContent>> = _state.asStateFlow()
+
+        private val _message = MutableStateFlow<String?>(null)
+        val message: StateFlow<String?> = _message.asStateFlow()
 
         init {
             load()
@@ -84,6 +94,25 @@ class PortalViewModel
                                 ),
                             )
                     }
+            }
+        }
+
+        fun clearMessage() {
+            _message.value = null
+        }
+
+        fun pay(
+            invoiceId: InvoiceId,
+            onReady: (PaymentOrder) -> Unit,
+        ) {
+            viewModelScope.launch {
+                when (val order = billingRepository.createOrder(invoiceId)) {
+                    is ApiResult.Success -> {
+                        paymentCoordinator.beginning(invoiceId, order.data.orderId)
+                        onReady(order.data)
+                    }
+                    is ApiResult.Failure -> _message.value = order.error.message
+                }
             }
         }
     }

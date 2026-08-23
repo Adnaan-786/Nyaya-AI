@@ -206,7 +206,7 @@ fun NyayaNavHost(
             // D.10: PortalCaseDetailRoute, never the staff CaseDetailRoute — a client tap
             // must never reach a staff screen.
             PortalRoute(
-                onPay = onOpenUrl,
+                userName = user.name,
                 onOpenCase = { navController.navigate(Route.portalCaseDetail(it)) },
             )
         }
