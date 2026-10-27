@@ -182,6 +182,11 @@ class Settings(BaseSettings):
 
     msg91_auth_key: str = Field(default="")
 
+    # Optional owner-role URL used only by Alembic. The running app
+    # should connect as a restricted, non-superuser role so Row-Level
+    # Security actually applies (superusers bypass it entirely).
+    migration_database_url: str = Field(default="")
+
     # =====================================================
     # Billing and Payments (module M10)
     # =====================================================

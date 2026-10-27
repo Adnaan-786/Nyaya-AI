@@ -12,7 +12,7 @@ class Device(Base, UUIDMixin, TimestampMixin):
         ForeignKey("users.id", ondelete="CASCADE"),
     )
 
-    fcm_token: Mapped[str] = mapped_column(String)
+    fcm_token: Mapped[str] = mapped_column(String, unique=True, index=True)
 
     platform: Mapped[str] = mapped_column(String(30))
 

@@ -143,6 +143,20 @@ class CNRInvalidException(AppException):
         )
 
 
+class ConsentRequiredException(AppException):
+    def __init__(
+        self,
+        message: str = "You must accept the current privacy notice to continue.",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            message=message,
+            code=ErrorCode.CONSENT_REQUIRED,
+            status_code=403,
+            details=details,
+        )
+
+
 class UpgradeRequiredException(AppException):
     def __init__(
         self, 
@@ -205,6 +219,7 @@ __all__ = [
     "UserNotFoundException",
     "DuplicateResourceException",
     "CNRInvalidException",
+    "ConsentRequiredException",
     "UpgradeRequiredException",
     "RateLimitException",
     "InternalErrorException",

@@ -49,4 +49,7 @@ class Task(Base, UUIDMixin, TenantMixin, TimestampMixin):
 
     tenant = relationship("Tenant", back_populates="tasks")
     case = relationship("Case", back_populates="tasks")
-    assignee = relationship("User", back_populates="tasks")
+    # Two FKs point at users (assigned_to, created_by), so each
+    # relationship must name its own foreign key explicitly.
+    assignee = relationship("User", back_populates="tasks", foreign_keys=[assigned_to])
+    creator = relationship("User", foreign_keys=[created_by])

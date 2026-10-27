@@ -99,8 +99,9 @@ class User(Base, UUIDMixin, TimestampMixin):
     )
 
     tasks = relationship(
-        "Task", 
+        "Task",
         back_populates="assignee",
+        foreign_keys="Task.assigned_to",
         cascade="all, delete-orphan",
     )
 

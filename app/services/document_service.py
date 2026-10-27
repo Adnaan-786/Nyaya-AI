@@ -99,7 +99,16 @@ async def confirm_upload(session: AsyncSession, document: Document) -> Document:
     await session.commit()
     await session.refresh(document)
 
-    process_document.delay(str(document.id), str(document.tenant_id))
+    try:
+        process_document.apply_async((str(document.id), str(document.tenant_id)), retry=False)
+    except Exception as exc:  # noqa: BLE001 - broker down
+        # The file is safely in storage and the document stays `pending`;
+        # confirm is idempotent, so the app can simply retry it.
+        from app.core.exceptions import UpstreamUnavailableException
+
+        raise UpstreamUnavailableException(
+            message="Document processing is temporarily unavailable. Please retry in a moment."
+        ) from exc
 
     return document
 

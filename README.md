@@ -13,11 +13,75 @@
 | M7 — AI Services | Done |
 | M9 — Notifications | Done (this update) |
 | M10 — Billing and Payments | Done (this update) |
-| M11 — Audit, DPDP, Retention | Not started |
+| M11 — Audit, DPDP, Retention | Done (this update) |
 | M12 — Hardening and Deployment | Not started |
 
-
 ## 🚀 Module Highlights
+
+### M11 highlights
+
+- **Audit that is actually written** (`app/core/audit_middleware.py`):
+  every successful, authenticated mutation (POST/PUT/PATCH/DELETE) records
+  who, what (`POST /cases/{case_id}/hearings`) and which resource.
+  **This closes a gap from M4**: the plan said "every mutating endpoint
+  writes an audit row", but until now only document-download links were
+  audited. Reads (GET) are *not* audited -- see the breach runbook for what
+  that means for scoping an incident.
+- **Append-only, for every role** (migration `c3d4e5f6a7b8`): triggers
+  reject UPDATE/DELETE/TRUNCATE on `audit_logs` even for the table owner or
+  a superuser -- plain GRANTs cannot do that. The one permitted change is the
+  foreign-key action that nulls `actor_id` if a user row is ever hard-deleted.
+  Verified directly against Postgres, including `DELETE` aimed straight at a
+  populated partition.
+- **Monthly partitions**: `audit_logs` is RANGE-partitioned on `at`, with a
+  DEFAULT partition so an audit write can never fail for want of a partition.
+  `audit_create_partition()` (SECURITY DEFINER, so the app role needs no DDL
+  rights) moves any rows out of the default partition before attaching, and
+  gives each partition its own RLS so querying one directly can't bypass
+  tenant isolation. `audit_drop_partitions_before()` is the only deletion
+  path and **refuses any cutoff newer than 36 months**.
+- `GET /audit` (firm_admin) with filters: actor, action, entity type/id,
+  `from`/`to` (bounding `at` lets Postgres prune partitions), paginated.
+- **Consent gate** (`consent_service.py`): `GET /legal/consent-text?lang=`
+  (unauthenticated), `GET/POST /legal/consent`. Acceptance stores the version
+  **and a hash of the exact text shown**. Until the current version is
+  accepted, every route except `/auth/*`, `/legal/*`, `/me` and `/devices`
+  returns `403 CONSENT_REQUIRED` (a new, additive error code -- the Android
+  team needs to handle it). Bumping `CURRENT_VERSION` forces everyone to
+  re-consent. **The notice text is a working draft for counsel/DPO review.**
+- **Export** (`POST /legal/export`, `GET /legal/requests/{id}`): a ZIP of the
+  user's *own* data (profile, consents, devices -- never push tokens --
+  notification settings/history, tasks, time entries, assigned cases,
+  document metadata, AI job history, their own audit trail) uploaded to S3
+  with a link valid for 7 days. It deliberately does **not** bulk-export firm
+  or client matter data or document contents (privilege; see the runbook).
+- **Erasure** (`POST /legal/delete-request`, `DELETE` to cancel): a 30-day
+  soft window, then a daily job erases personal data and **anonymises the
+  account**, keeping the firm's records. Documents the user uploaded are
+  deleted (file, text, embeddings) **unless** they sit on a case that is open
+  or under **legal hold** (`PATCH /cases/{id}/legal-hold`, firm_admin only);
+  those are retained and counted in the request summary. The retention rule
+  is conservative and **needs counsel's confirmation**.
+- **Retention jobs** (`retention_worker.py`): OTP rows 24 h, stale push
+  tokens 60 days (the sweep plan C.5.5 promised and M3 never built),
+  expired refresh tokens, expired export archives, rolling audit partitions.
+- **Runbooks**: `docs/runbooks/breach-response.md` (72-hour clock, evidence
+  preservation, scoping queries) and `docs/runbooks/data-retention.md`.
+  Both are drafts with placeholders for contacts and legal confirmation.
+
+**Honest limits of M11:**
+- The audit row is written *after* the response, in its own transaction. If
+  that write fails the request is not failed (the mutation already
+  committed); the error goes to Sentry. A crash between the mutation's
+  commit and the audit write could lose that row. Closing the gap means
+  writing audit rows inside the request's own transaction -- a larger change.
+- Log retention (90 days) is an infrastructure setting, not app code.
+- Erased data persists in database backups until they age out.
+- Existing access tokens stay valid for up to 30 minutes after an account is
+  erased (there is no per-request "is this user deleted" check).
+- Export covers personal data held in this database; it does not collect data
+  held by processors (Firebase, MSG91, Razorpay, ...).
+
 
 ### M10 highlights
 

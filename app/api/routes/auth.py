@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.dependencies import AuthContext, get_current_auth, get_tenant_scoped_db
+from app.core.dependencies import AuthContext, get_current_auth, get_system_db, get_tenant_scoped_db
 from app.core.responses import ApiResponse
 from app.db.session import get_db
 from app.schemas.auth import (
@@ -31,7 +31,7 @@ async def request_otp(
 @router.post("/otp/verify", response_model=ApiResponse[TokenPairOut])
 async def verify_otp(
     payload: OTPVerifyIn,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_system_db),
 ) -> ApiResponse[TokenPairOut]:
     user, is_new_user = await auth_service.verify_otp(session, payload.phone, payload.otp)
     access_token, refresh_token = await auth_service.issue_token_pair(session, user)
@@ -50,7 +50,7 @@ async def verify_otp(
 @router.post("/refresh", response_model=ApiResponse[TokenRefreshOut])
 async def refresh_token(
     payload: RefreshIn,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_system_db),
 ) -> ApiResponse[TokenRefreshOut]:
     access_token, new_refresh_token = await auth_service.rotate_refresh_token(
         session, payload.refresh_token

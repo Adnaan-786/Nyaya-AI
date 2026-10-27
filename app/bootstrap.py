@@ -12,6 +12,7 @@ from app.core.handlers import (
     validation_exception_handler,
 )
 from app.core.logging import configure_logging, get_logger
+from app.core.audit_middleware import AuditMiddleware
 from app.core.middleware import RequestContextMiddleware
 
 logger = get_logger(__name__)
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     )
 
     # Middleware
+    app.add_middleware(AuditMiddleware)
     app.add_middleware(RequestContextMiddleware)
 
     # Exception handlers

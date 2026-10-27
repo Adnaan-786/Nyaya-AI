@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes.ai import router as ai_router
 from app.api.routes.app_config import router as app_config_router
+from app.api.routes.audit import router as audit_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.billing_lite import router as billing_lite_router
 from app.api.routes.calendar import router as calendar_router
@@ -12,6 +13,7 @@ from app.api.routes.documents import router as documents_router
 from app.api.routes.firm import router as firm_router
 from app.api.routes.health import router as health_router
 from app.api.routes.invoices import router as invoices_router
+from app.api.routes.legal import router as legal_router
 from app.api.routes.notifications import router as notifications_router
 from app.api.routes.payments import router as payments_router
 from app.api.routes.search import router as search_router
@@ -39,3 +41,5 @@ api_router.include_router(invoices_router)
 api_router.include_router(payments_router)
 api_router.include_router(subscription_router)
 api_router.include_router(app_config_router)
+api_router.include_router(audit_router)
+api_router.include_router(legal_router)

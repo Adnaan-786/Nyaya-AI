@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_access_token
-from app.db.rls import set_tenant
+from app.db.rls import set_system_context, set_tenant
 from app.db.session import get_db
 from app.db.tenant import TenantContext
 
@@ -60,7 +60,13 @@ async def get_tenant_context(
     return auth.as_tenant_context()
 
 
+# Routes reachable before the user has accepted the privacy notice
+# (plan C.12.3: "block API use except auth/legal routes").
+CONSENT_EXEMPT_PREFIXES = ("/v1/auth/", "/v1/legal/", "/v1/me", "/v1/devices")
+
+
 async def get_tenant_scoped_db(
+    request: Request,
     session: AsyncSession = Depends(get_db),
     tenant: TenantContext = Depends(get_tenant_context),
 ) -> AsyncSession:
@@ -70,4 +76,23 @@ async def get_tenant_scoped_db(
     route that reads/writes tenant-scoped tables.
     """
     await set_tenant(session, str(tenant.tenant_id))
+
+    path = request.url.path
+    if not path.startswith(CONSENT_EXEMPT_PREFIXES):
+        from app.core.exceptions import ConsentRequiredException
+        from app.services.consent_service import CURRENT_VERSION, has_current_consent
+
+        if not await has_current_consent(session, tenant.user_id):
+            raise ConsentRequiredException(details={"current_version": CURRENT_VERSION})
+
+    return session
+
+
+async def get_system_db(session: AsyncSession = Depends(get_db)) -> AsyncSession:
+    """
+    A session in cross-tenant system context. Only for pre-authentication
+    flows (OTP verify, token refresh) that must find a user by phone/id
+    before any tenant is known.
+    """
+    await set_system_context(session)
     return session

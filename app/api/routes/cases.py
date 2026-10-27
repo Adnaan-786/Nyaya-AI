@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import AuthContext, get_tenant_scoped_db
 from app.core.rbac import require
 from app.core.responses import ApiResponse, Meta
+from app.schemas.legal import LegalHoldIn
 from app.schemas.case import (
     CaseCreateIn,
     CaseNoteCreateIn,
@@ -240,3 +241,18 @@ async def add_case_note(
         session, tenant, case_id, author_id=auth.user_id, text=payload.text
     )
     return ApiResponse(success=True, data=CaseNoteOut.model_validate(note))
+
+
+@router.patch("/cases/{case_id}/legal-hold", response_model=ApiResponse[CaseOut])
+async def set_legal_hold(
+    case_id: UUID,
+    payload: LegalHoldIn,
+    auth: AuthContext = Depends(require("firm.manage")),
+    session: AsyncSession = Depends(get_tenant_scoped_db),
+) -> ApiResponse[CaseOut]:
+    """Litigation hold (plan C.12.2): documents on a held case survive DPDP erasure. firm_admin only."""
+    case = await case_service.get_case_or_404(session, auth.as_tenant_context(), case_id)
+    case.legal_hold = payload.legal_hold
+    await session.commit()
+    await session.refresh(case)
+    return ApiResponse(success=True, data=CaseOut.model_validate(case))

@@ -125,7 +125,17 @@ async def create_job(
 
     from app.workers.ai_worker import run_ai_job
 
-    run_ai_job.delay(str(job.id), str(tenant.tenant_id), type)
+    try:
+        run_ai_job.apply_async((str(job.id), str(tenant.tenant_id), type), retry=False)
+    except Exception as exc:  # noqa: BLE001 - broker down
+        # Don't leave a job "queued" that nothing will ever run, and
+        # don't stall or 500 the request: tell the app to retry (503).
+        await mark_failed(session, job, error="Job queue unavailable; please retry.")
+        from app.core.exceptions import UpstreamUnavailableException
+
+        raise UpstreamUnavailableException(
+            message="AI processing is temporarily unavailable. Please retry in a moment."
+        ) from exc
 
     return job
 

@@ -59,7 +59,9 @@ def generate_presigned_upload_url(key: str, content_type: str) -> str:
     )
 
 
-def generate_presigned_download_url(key: str, *, filename: str | None = None) -> str:
+def generate_presigned_download_url(
+    key: str, *, filename: str | None = None, expires_in: int | None = None
+) -> str:
     client = get_s3_client()
     params = {"Bucket": settings.minio_bucket, "Key": key}
     if filename:
@@ -67,7 +69,7 @@ def generate_presigned_download_url(key: str, *, filename: str | None = None) ->
     return client.generate_presigned_url(
         "get_object",
         Params=params,
-        ExpiresIn=settings.document_download_url_expiry_seconds,
+        ExpiresIn=expires_in or settings.document_download_url_expiry_seconds,
     )
 
 

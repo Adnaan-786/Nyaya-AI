@@ -85,6 +85,13 @@ class Case(Base, UUIDMixin, TimestampMixin, TenantMixin):
         nullable=False,
     )
 
+    # Litigation hold (plan C.12.2): while set, DPDP deletion must retain
+    # documents attached to this case.
+    legal_hold: Mapped[bool] = mapped_column(
+        default=False,
+        nullable=False,
+    )
+
     consecutive_sync_failures: Mapped[int] = mapped_column(
         default=0,
         nullable=False,

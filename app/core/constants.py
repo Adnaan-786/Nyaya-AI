@@ -7,6 +7,8 @@ class ErrorCode(StrEnum):
     TOKEN_EXPIRED = "TOKEN_EXPIRED"
     QUOTA_EXCEEDED = "QUOTA_EXCEEDED"
     FORBIDDEN_ROLE = "FORBIDDEN_ROLE"
+    # Additive to contract B.3: the DPDP consent gate (plan C.12.3).
+    CONSENT_REQUIRED = "CONSENT_REQUIRED"
 
     CASE_NOT_FOUND = "CASE_NOT_FOUND"
     FIRM_NOT_FOUND = "FIRM_NOT_FOUND"

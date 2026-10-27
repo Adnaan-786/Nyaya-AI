@@ -49,6 +49,7 @@ class CaseOut(BaseModel):
     next_hearing_date: datetime.date | None = None
     ecourts_synced: bool
     last_synced_at: datetime.datetime | None = None
+    legal_hold: bool = False
     created_at: datetime.datetime
 
 
@@ -95,7 +96,7 @@ class CaseNoteOut(BaseModel):
 
 
 class TimelineEventOut(BaseModel):
-    type: Literal["hearing", "note"]
+    type: Literal["hearing", "note", "document"]
     at: datetime.datetime
     data: dict
 

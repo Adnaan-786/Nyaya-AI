@@ -9,6 +9,7 @@ from .case_assignee import CaseAssignee
 from .case_note import CaseNote
 from .case import Case
 from .consent import Consent
+from .data_request import DataRequest
 from .device import Device
 from .doc_chunk import DocChunk
 from .document import Document
@@ -37,6 +38,7 @@ __all__ = [
     "CaseNote",
     "Case",
     "Consent",
+    "DataRequest",
     "Device",
     "DocChunk",
     "Document",

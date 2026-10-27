@@ -24,6 +24,18 @@ celery_app = Celery(
 )
 
 celery_app.conf.update(
+    # Publishing side: a dead broker must fail an enqueue in about two
+    # seconds, not stall the API request that triggered it (kombu's
+    # defaults retry for ~20 s). These are deliberately NOT worker-side
+    # settings: the worker keeps retrying its broker connection.
+    broker_connection_timeout=2,
+    task_publish_retry=False,
+    broker_transport_options={"socket_connect_timeout": 2},
+    broker_connection_retry_on_startup=True,
+    # Job/request state lives in Postgres; nothing reads Celery results.
+    # Without this, apply_async subscribes to the Redis result backend and
+    # retries that connection for ~20 s when Redis is unreachable.
+    task_ignore_result=True,
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
@@ -70,6 +82,24 @@ celery_app.conf.beat_schedule = {
         "task": "app.workers.billing_worker.overdue_and_reminders",
         "schedule": crontab(hour=9, minute=0),
     },
+    # Plan C.12: DPDP erasure after the 30-day window, export sweep,
+    # retention purge, and rolling audit partitions.
+    "dpdp-due-deletions": {
+        "task": "app.workers.dpdp_worker.process_due_deletions",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    "dpdp-pending-exports": {
+        "task": "app.workers.dpdp_worker.process_pending_exports",
+        "schedule": crontab(minute="*/5"),
+    },
+    "retention-purge": {
+        "task": "app.workers.retention_worker.purge_expired",
+        "schedule": crontab(hour=3, minute=30),
+    },
+    "audit-ensure-partitions": {
+        "task": "app.workers.retention_worker.ensure_audit_partitions",
+        "schedule": crontab(hour=1, minute=0),
+    },
     "billing-subscription-downgrades": {
         "task": "app.workers.billing_worker.subscription_downgrades",
         "schedule": crontab(hour=2, minute=0),
@@ -84,5 +114,7 @@ celery_app.conf.beat_schedule = {
 from app.workers import ai_worker as _ai_worker  # noqa: E402,F401
 from app.workers import billing_worker as _billing_worker  # noqa: E402,F401
 from app.workers import document_worker as _document_worker  # noqa: E402,F401
+from app.workers import dpdp_worker as _dpdp_worker  # noqa: E402,F401
+from app.workers import retention_worker as _retention_worker  # noqa: E402,F401
 from app.workers import ecourts_worker as _ecourts_worker  # noqa: E402,F401
 from app.workers import notification_worker as _notification_worker  # noqa: E402,F401
