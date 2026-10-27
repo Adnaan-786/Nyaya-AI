@@ -10,7 +10,9 @@ from app.core.security import utcnow
 from app.db.enums import AIJobStatus, NotificationType
 from app.db.tenant import TenantContext
 from app.models.ai_job import AIJob
-from app.services import notification_service
+from app.models.user import User
+from app.services.notification_dispatch_service import notify
+from app.services.notification_templates import ai_job_complete_copy
 
 settings = get_settings()
 
@@ -63,6 +65,17 @@ async def _enforce_quotas(session: AsyncSession, tenant: TenantContext) -> None:
             },
         )
 
+    # Daily quota is plan-driven (contract B.14). Imported here to keep
+    # module import order simple.
+    from app.models.tenant import Tenant
+    from app.services.plans import get_plan, next_plan_up
+
+    tenant_row = (
+        await session.execute(select(Tenant).where(Tenant.id == tenant.tenant_id))
+    ).scalar_one_or_none()
+    plan_id = (tenant_row.plan.value if hasattr(tenant_row.plan, "value") else tenant_row.plan) if tenant_row else "free"
+    plan = get_plan(plan_id)
+
     since = utcnow() - timedelta(days=1)
     today_stmt = (
         select(func.count())
@@ -72,13 +85,13 @@ async def _enforce_quotas(session: AsyncSession, tenant: TenantContext) -> None:
     )
     today_count = (await session.execute(today_stmt)).scalar_one()
 
-    if today_count >= settings.ai_daily_job_quota_per_tenant:
+    if today_count >= plan.ai_jobs_per_day:
         raise QuotaExceededException(
-            message="Daily AI job quota reached for this firm.",
+            message="Daily AI job quota reached for this firm's plan.",
             details={
-                "limit": settings.ai_daily_job_quota_per_tenant,
-                "plan": "default",
-                "upgrade_to": None,
+                "limit": plan.ai_jobs_per_day,
+                "plan": plan_id,
+                "upgrade_to": next_plan_up(plan_id),
             },
         )
 
@@ -138,14 +151,21 @@ async def mark_completed(session: AsyncSession, job: AIJob, *, result: dict) -> 
     job.error = None
     await session.commit()
 
-    await notification_service.notify_user(
+    user_result = await session.execute(select(User).where(User.id == job.user_id))
+    user = user_result.scalar_one_or_none()
+    language = user.language if user else "en"
+
+    title, body = ai_job_complete_copy(job_type=job.type, language=language)
+    await notify(
         session,
         tenant_id=job.tenant_id,
         user_id=job.user_id,
         type=NotificationType.AI_JOB_COMPLETE,
-        payload={"job_id": str(job.id), "job_type": job.type},
+        title=title,
+        body=body,
+        data={"job_id": str(job.id), "job_type": job.type},
+        channels={"push"},
     )
-    await session.commit()
 
 
 async def mark_failed(session: AsyncSession, job: AIJob, *, error: str) -> None:

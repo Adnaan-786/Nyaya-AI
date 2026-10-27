@@ -51,6 +51,8 @@ async def create_time_entry(
         date=payload.date,
         duration_minutes=payload.duration_minutes,
         description=payload.description,
+        billable=payload.billable,
+        rate_paise=payload.rate_paise,
     )
     return ApiResponse(success=True, data=TimeEntryOut.model_validate(entry))
 

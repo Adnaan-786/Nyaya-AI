@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, Integer, String
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -76,6 +76,13 @@ class Invoice(Base, UUIDMixin, TenantMixin, TimestampMixin):
         nullable=True,
     )
 
+    reminder_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    last_reminder_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     client = relationship(
         "Client",
         back_populates="invoices",
@@ -91,6 +98,8 @@ class Invoice(Base, UUIDMixin, TenantMixin, TimestampMixin):
         back_populates="invoice",
         cascade="all, delete-orphan",
     )
+
+    time_entries = relationship("TimeEntry", back_populates="invoice")
 
     tenant = relationship(
         "Tenant",

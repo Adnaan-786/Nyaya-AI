@@ -22,6 +22,11 @@ class Task(Base, UUIDMixin, TenantMixin, TimestampMixin):
         nullable=False,
     )
 
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     title: Mapped[str] = mapped_column(
         String(255),
         nullable=False,

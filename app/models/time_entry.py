@@ -38,6 +38,17 @@ class TimeEntry(Base, UUIDMixin, TenantMixin, TimestampMixin):
         nullable=True,
     )
 
+    # Contract B.5 fields missing from the original model; needed for
+    # "bill unbilled time entries" (plan C.11.1).
+    billable: Mapped[bool] = mapped_column(default=True, nullable=False)
+    rate_paise: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    invoice_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("invoices.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     tenant = relationship("Tenant", back_populates="time_entries")
     case = relationship("Case", back_populates="time_entries")
     user = relationship("User", back_populates="time_entries")
+    invoice = relationship("Invoice", back_populates="time_entries")

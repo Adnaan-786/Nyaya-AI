@@ -34,3 +34,20 @@ async def send_otp_sms(phone: str, otp: str) -> None:
     raise NotImplementedError(
         "Live MSG91 sending is not configured; set FAKE_MODE=true for now."
     )
+
+
+async def send_sms(phone: str, message: str) -> None:
+    """
+    Generic SMS send, used by the M9 notification dispatcher as the
+    fallback channel when WhatsApp fails or is unsubscribed (plan
+    C.10: "SMS fallback if WA fails/unsubscribed").
+    """
+    settings = get_settings()
+
+    if settings.fake_mode:
+        logger.info("sms_fake_send", phone=phone, message=message)
+        return
+
+    raise NotImplementedError(
+        "Live MSG91 SMS sending is not configured; set FAKE_MODE=true for now."
+    )

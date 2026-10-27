@@ -40,6 +40,8 @@ async def create_time_entry(
     date,
     duration_minutes: int,
     description: str | None,
+    billable: bool = True,
+    rate_paise: int | None = None,
 ) -> TimeEntry:
     entry = TimeEntry(
         tenant_id=tenant.tenant_id,
@@ -48,6 +50,8 @@ async def create_time_entry(
         date=date,
         duration_minutes=duration_minutes,
         description=description,
+        billable=billable,
+        rate_paise=rate_paise,
     )
     session.add(entry)
     await session.commit()

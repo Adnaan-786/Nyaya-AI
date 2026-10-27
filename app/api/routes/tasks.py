@@ -47,6 +47,7 @@ async def create_task(
         assignee_id=payload.assignee_id,
         due_date=payload.due_date,
         description=payload.description,
+        created_by=auth.user_id,
     )
     return ApiResponse(success=True, data=TaskOut.model_validate(task))
 

@@ -49,6 +49,31 @@ celery_app.conf.beat_schedule = {
         "task": "app.workers.ecourts_worker.sync_hearing_today_cases",
         "schedule": crontab(hour=19, minute=0),
     },
+    # Plan C.10 point 2: digest at user-configured time (scanned every
+    # notification_digest_scan_interval_minutes so each user's own
+    # digest_time is honored), morning reminder fixed at 07:30 IST,
+    # outcome nudge fixed at 20:00 IST.
+    "notification-digest-scan": {
+        "task": "app.workers.notification_worker.digest_scan",
+        "schedule": crontab(minute=f"*/{settings.notification_digest_scan_interval_minutes}"),
+    },
+    "notification-morning-reminders": {
+        "task": "app.workers.notification_worker.morning_reminders",
+        "schedule": crontab(hour=7, minute=30),
+    },
+    "notification-outcome-nudges": {
+        "task": "app.workers.notification_worker.outcome_nudges",
+        "schedule": crontab(hour=20, minute=0),
+    },
+    # Plan C.11.3 / C.11.6
+    "billing-overdue-and-reminders": {
+        "task": "app.workers.billing_worker.overdue_and_reminders",
+        "schedule": crontab(hour=9, minute=0),
+    },
+    "billing-subscription-downgrades": {
+        "task": "app.workers.billing_worker.subscription_downgrades",
+        "schedule": crontab(hour=2, minute=0),
+    },
 }
 
 # `celery_app.autodiscover_tasks(["app.workers"])` above follows
@@ -57,5 +82,7 @@ celery_app.conf.beat_schedule = {
 # the task modules explicitly instead, so their @celery_app.task
 # decorators actually run and register at worker startup.
 from app.workers import ai_worker as _ai_worker  # noqa: E402,F401
+from app.workers import billing_worker as _billing_worker  # noqa: E402,F401
 from app.workers import document_worker as _document_worker  # noqa: E402,F401
 from app.workers import ecourts_worker as _ecourts_worker  # noqa: E402,F401
+from app.workers import notification_worker as _notification_worker  # noqa: E402,F401

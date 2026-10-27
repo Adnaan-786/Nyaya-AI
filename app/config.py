@@ -160,6 +160,51 @@ class Settings(BaseSettings):
     research_rerank_top_k: int = Field(default=6)
     research_min_verified_citations: int = Field(default=2)
 
+    # =====================================================
+    # Notifications (module M9)
+    # =====================================================
+
+    # FCM HTTP v1 API (real push). Left unconfigured -> FAKE_MODE logs instead.
+    firebase_project_id: str = Field(default="")
+    firebase_credentials_json: str = Field(default="")  # path to service-account JSON
+
+    # Gupshup WhatsApp Business API (real WhatsApp templates).
+    gupshup_api_key: str = Field(default="")
+    gupshup_source_number: str = Field(default="")
+
+    # Scheduling (plan C.10 point 2). Digest time is per-user
+    # configurable (notification_settings.digest_time); these are the
+    # fixed-time jobs and the digest-scan cadence.
+    notification_default_digest_time: str = Field(default="19:00")
+    notification_morning_reminder_time: str = Field(default="07:30")
+    notification_outcome_nudge_time: str = Field(default="20:00")
+    notification_digest_scan_interval_minutes: int = Field(default=15)
+
+    msg91_auth_key: str = Field(default="")
+
+    # =====================================================
+    # Billing and Payments (module M10)
+    # =====================================================
+
+    razorpay_key_id: str = Field(default="")
+    razorpay_key_secret: str = Field(default="")
+    razorpay_webhook_secret: str = Field(default="")
+
+    invoice_default_gst_rate: int = Field(default=18)  # percent; 0 or 18 per contract
+    invoice_overdue_reminder_max_count: int = Field(default=3)
+    invoice_overdue_reminder_spacing_days: int = Field(default=5)
+
+    # App config (B.14)
+    app_min_supported_version: str = Field(default="1.0.0")
+    app_latest_version: str = Field(default="1.0.0")
+    app_support_email: str = Field(default="support@nyayaai.in")
+    app_support_phone: str = Field(default="")
+
+    # Shared-secret gate for PATCH /app/config (plan B.14: "admin
+    # mechanism to update it without redeploy"). No NyayaAI-staff auth
+    # system exists yet, so this is a documented, intentionally simple
+    # placeholder. Empty (default) means updates are always rejected.
+    admin_api_key: str = Field(default="")
 
     # =====================================================
     # Monitoring
@@ -182,4 +227,3 @@ def get_settings() -> Settings:
     during the application lifetime.
     """
     return Settings()
-

@@ -16,7 +16,9 @@ from app.integrations.ecourts import ECourtsProviderError, NormalizedCase, get_e
 from app.models.case import Case
 from app.models.case_assignee import CaseAssignee
 from app.models.ecourts_lookup_cache import ECourtsLookupCache
-from app.services import notification_service
+from app.models.user import User
+from app.services.notification_dispatch_service import notify
+from app.services.notification_templates import case_update_copy
 from app.services.case_service import validate_cnr
 
 settings = get_settings()
@@ -245,20 +247,27 @@ async def _apply_sync(session: AsyncSession, tenant: TenantContext, case: Case) 
         )
         assignee_ids = [row[0] for row in result.all()]
 
+        users_result = await session.execute(
+            select(User.id, User.language).where(User.id.in_(assignee_ids))
+        )
+        language_by_user = dict(users_result.all())
+
         change_summary = ", ".join(
             f"{field} changed" for field in changed_fields
         ) or "a new order/hearing entry was found"
 
         for user_id in assignee_ids:
-            await notification_service.notify_user(
+            language = language_by_user.get(user_id, "en")
+            title, body = case_update_copy(change_summary=change_summary, language=language)
+            await notify(
                 session,
                 tenant_id=tenant.tenant_id,
                 user_id=user_id,
                 type=NotificationType.CASE_UPDATE,
-                payload={
-                    "case_id": str(case.id),
-                    "change_summary": change_summary,
-                },
+                title=title,
+                body=body,
+                data={"case_id": str(case.id), "change_summary": change_summary},
+                channels={"push"},
             )
         await session.commit()
 

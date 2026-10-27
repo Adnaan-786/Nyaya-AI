@@ -4,8 +4,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ValidationException
+from app.db.enums import NotificationType
 from app.db.tenant import TenantContext
 from app.models.task import Task
+from app.models.user import User
+from app.services.notification_dispatch_service import notify
+from app.services.notification_templates import task_assigned_copy
 
 
 async def list_tasks(
@@ -55,6 +59,7 @@ async def create_task(
     assignee_id: UUID,
     due_date,
     description: str | None,
+    created_by: UUID | None = None,
 ) -> Task:
     task = Task(
         tenant_id=tenant.tenant_id,
@@ -63,10 +68,29 @@ async def create_task(
         title=title,
         due_date=due_date,
         description=description,
+        created_by=created_by,
     )
     session.add(task)
     await session.commit()
     await session.refresh(task)
+
+    if created_by is not None and assignee_id != created_by:
+        result = await session.execute(select(User).where(User.id == assignee_id))
+        assignee = result.scalar_one_or_none()
+        language = assignee.language if assignee else "en"
+
+        title_copy, body_copy = task_assigned_copy(task_title=title, language=language)
+        await notify(
+            session,
+            tenant_id=tenant.tenant_id,
+            user_id=assignee_id,
+            type=NotificationType.TASK_ASSIGNED,
+            title=title_copy,
+            body=body_copy,
+            data={"task_id": str(task.id)},
+            channels={"push"},
+        )
+
     return task
 
 

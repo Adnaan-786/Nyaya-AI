@@ -10,13 +10,170 @@
 | M4 — Core CRUD | Done |
 | M5 — eCourts Sync Service | Done |
 | M6 — Document Pipeline | Done |
-| M7 — AI Services | Done (this update) |
-| M9 — Notifications | Not started |
-| M10 — Billing and Payments | Not started |
+| M7 — AI Services | Done |
+| M9 — Notifications | Done (this update) |
+| M10 — Billing and Payments | Done (this update) |
 | M11 — Audit, DPDP, Retention | Not started |
 | M12 — Hardening and Deployment | Not started |
 
+
 ## 🚀 Module Highlights
+
+### M10 highlights
+
+- **Invoices** (`app/services/invoice_service.py`): auto-numbering
+  (`INV-2026-0001`, sequential per tenant per year), GST at 0% or 18%,
+  and **server-side recomputation of every line amount** -- client-sent
+  totals are ignored. Money is integer paise throughout. Line items can
+  also come from **unbilled, billable time entries** for a case
+  (`POST /invoices/from-time-entries`), which are then linked to the
+  invoice so they can't be billed twice.
+- **PDF** (`invoice_pdf.py`, reportlab): real PDF rendered and uploaded
+  to S3 on send. Chosen over WeasyPrint to avoid Cairo/Pango system
+  dependencies in the Docker image. *Not included yet:* UPI QR and firm
+  logo -- these are design decisions (need a `qrcode` dependency, the
+  firm's UPI VPA, and somewhere to store a logo), not credential
+  blockers.
+- **Payments** (contract B.10): `POST /payments/order`,
+  `POST /payments/verify`, `POST /payments/webhook`. Signature checks
+  (checkout callback and webhook) are **real HMAC-SHA256**, since they
+  need only the shared secret. The webhook is authoritative for flipping
+  an invoice to paid and is **idempotent** (a replayed event is a
+  no-op); `/verify` only confirms the signature, matching the contract's
+  "server status is truth, never the SDK result".
+- **Webhooks and RLS**: Razorpay calls the webhook with no bearer token,
+  but `payments`/`subscriptions` are RLS-protected, so a plain session
+  would silently see zero rows and never mark anything paid. The handler
+  first resolves the owning tenant (same system-context tenant loop the
+  M5/M9 workers use), then processes inside that tenant's RLS scope.
+- **Subscriptions** (contract B.14): static 4-tier catalog
+  (`plans.py`), `GET /plans`, `GET /subscription` (plan + usage vs
+  limits), `POST /subscription/checkout` (Razorpay Subscription),
+  `POST /subscription/cancel` (takes effect at cycle end), activation
+  webhook, and a daily cycle-end downgrade job.
+- **Quota enforcement is now plan-driven**: M7's AI daily limit reads
+  the tenant's actual plan and returns `402 QUOTA_EXCEEDED` with
+  `details.limit`, `details.plan` and `details.upgrade_to`. (The
+  concurrency cap stays a flat operational limit, not a plan feature.)
+- **App config** (`GET /app/config`, unauthenticated;
+  `PATCH /app/config` behind `X-Admin-Key`). The shared-secret gate is a
+  documented placeholder: app config is platform-wide, and no
+  NyayaAI-staff auth system exists yet. Empty `ADMIN_API_KEY` (default)
+  rejects all updates.
+- **Reconciliation** (`GET /invoices/reconciliation`, firm_admin):
+  paid / pending / overdue totals per month.
+- **Overdue job** (daily 09:00 IST): flips `sent` -> `overdue` past
+  `due_date`, then reminders -- max 3, at least 5 days apart.
+- **Fixes made while building this**: `notify()` now attaches the
+  contract B.8 `deep_link` to every push (previously no caller ever set
+  it); `TimeEntry` gained the contract's `billable`/`rate_paise` fields
+  (missing since M2); `Invoice` gained reminder-tracking fields.
+
+**Not yet built in M10:**
+- Real Razorpay API calls (orders / payment links / subscriptions) are
+  gated behind `RAZORPAY_KEY_ID`/`SECRET`; FAKE_MODE returns realistic
+  fake IDs. The plan's DoD item "Razorpay test-mode E2E" therefore
+  needs your test-mode keys and is **not** verified here. You also need
+  to create the Razorpay *Plans* (monthly/yearly per tier) in the
+  dashboard and put their IDs into `plans.py`.
+- Tenant GSTIN is not stored anywhere yet (plan lists it as optional),
+  so PDFs omit it.
+- Invoice numbering is max-existing + 1: fine at normal volume, but two
+  simultaneous creations could collide; use a DB sequence or advisory
+  lock if that matters.
+- Invoice-sent and overdue-reminder pushes reuse the
+  `payment_received` type because contract B.8 has no distinct type.
+- `/portal/*` client routes (deferred since M4) are still not built;
+  `/payments/order` already works for `role=client` on their own invoices.
+- Subscription `current_period_end` is estimated (+30/+365 days) at
+  activation; reading the real period from Razorpay's webhook payload is
+  a refinement once live events are available.
+- `notify()`, invoice/payment/subscription services and the webhook's
+  tenant resolution need a live Postgres and are not unit-tested here
+  (same boundary as earlier modules); the pure logic (GST, numbering,
+  signatures, plans, reminder rules, PDF) is covered.
+
+
+### M9 highlights
+
+- **Single dispatch entry point** (`app/services/notification_dispatch_service.py::notify()`),
+  exactly matching plan C.10's `notify(user, type, payload, channels)`
+  shape: always writes the in-app inbox row first, then attempts
+  push/WhatsApp/SMS over the requested channels, respecting each
+  user's own opt-outs (`NotificationSettings`) -- "unsubscribed users
+  never messaged" (plan C.10 DoD).
+- **This closes a loop I'd been flagging since M5**: `case_update`
+  (M5) and `ai_job_complete` (M7) notifications previously only wrote
+  a silent in-app row with a comment saying "full delivery is M9's
+  job." Both are now rewired through the real dispatcher — with
+  correct title/body copy in the *recipient's own language*, not a
+  hardcoded default. `task_assigned` (new in M9) fires on task
+  creation, skipping self-notification when the creator assigns to
+  themselves.
+- **Idempotency via `dedup_key`** (plan C.10 DoD: "all sends
+  idempotent -- no double digests on retry"): scheduled jobs pass a
+  key derived from the date/hearing so a Celery retry or beat misfire
+  can never double-send. Verified this is a real check, not just
+  documentation — it queries for an existing notification with a
+  matching key before writing a new one.
+- **Scheduled jobs** (`app/workers/notification_worker.py`), matching
+  plan C.10 point 2 exactly:
+  - **Daily digest** at each user's *own configured* time (not a
+    single global schedule) — a beat task scans every
+    `notification_digest_scan_interval_minutes` (default 15) and
+    fires for any user whose `digest_time` falls in the current
+    window, so per-user customization actually works without needing
+    one Celery Beat entry per user.
+  - **Morning reminder** fixed at 07:30 IST: one `hearing_reminder`
+    push per hearing scheduled that day.
+  - **Hearing-outcome nudge**, default 20:00 IST, for hearings today
+    that don't yet have `outcome_notes` recorded. *Design note:*
+    contract B.8's push-type table lists exactly six fixed types and
+    doesn't include a distinct "outcome nudge" type, even though plan
+    C.10 describes the feature — I reused `hearing_reminder` with a
+    `reminder_kind: "outcome_nudge"` payload marker rather than
+    inventing a 7th wire type not in the contract.
+  - `firm_admin` gets every hearing in the firm; `lawyer`/`intern` get
+    only hearings on cases they're assigned to — same scoping as M4's
+    calendar endpoints.
+- **Routes**: `GET /notifications` (paginated, `unread_only` filter),
+  `POST /notifications/read` (specific ids or "mark all"),
+  `GET/PATCH /notification-settings`.
+- **FCM push** (`app/integrations/fcm.py`): real HTTP v1 API call path
+  is genuinely started (correct endpoint, request shape, error
+  handling for invalid/unregistered tokens which get pruned from the
+  `devices` table), but the actual Google service-account OAuth2 token
+  exchange is left as a clean `NotImplementedError` rather than a
+  half-implemented guess at credential handling — same "don't build
+  against guessed credentials" policy as every other real-provider
+  stub in this codebase.
+- **WhatsApp** (`app/integrations/whatsapp.py`, Gupshup): stub pending
+  both an API key *and* actual Meta template approval, which plan
+  C.10 point 3 explicitly calls out as a **manual step your team has
+  to do** in the Gupshup/Meta dashboard (EN + HI variants) — not
+  something achievable in code regardless of credentials. The
+  dispatcher already knows to fall back to SMS when WhatsApp isn't
+  available for a given type.
+- **Bilingual copy** (`app/services/notification_templates.py`) for
+  all six contract B.8 push types, plus the exact deep-link scheme
+  from the same section (`nyayaai://case/{id}`, `nyayaai://today`,
+  etc.) — verified live for every type.
+- Filled two small pre-existing gaps while wiring this up: completed
+  `NotificationType` to match contract B.8's full type list (only
+  `case_update`/`ai_job_complete` existed before M9), and added
+  `Task.created_by` (present in the contract's Task model since M2 but
+  never actually added to the SQLAlchemy model until now).
+
+**Not yet built in M9:**
+- Actual WhatsApp template submission/approval in Meta's dashboard —
+  genuinely not a code task.
+- Real FCM push delivery (OAuth2 token exchange) and real Gupshup
+  sending — both behind credentials, same as every other "real mode"
+  stub across this project.
+- Push-token cleanup for tokens stale >60 days (plan C.5.5) — the
+  dispatcher already prunes tokens FCM reports as
+  invalid/unregistered, but there's no separate scheduled sweep for
+  merely-stale-but-not-yet-rejected tokens.
 
 ### M7 highlights — all four AI job types done
 

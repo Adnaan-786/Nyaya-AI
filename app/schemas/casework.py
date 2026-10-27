@@ -37,6 +37,8 @@ class TimeEntryCreateIn(BaseModel):
     date: datetime.date
     duration_minutes: int = Field(..., gt=0)
     description: str | None = None
+    billable: bool = True
+    rate_paise: int | None = Field(default=None, ge=0)
 
 
 class TimeEntryOut(BaseModel):
@@ -48,6 +50,9 @@ class TimeEntryOut(BaseModel):
     date: datetime.date
     duration_minutes: int
     description: str | None = None
+    billable: bool
+    rate_paise: int | None = None
+    invoice_id: UUID | None = None
 
 
 class ExpenseCreateIn(BaseModel):
